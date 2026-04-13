@@ -41,11 +41,16 @@ const Admin = {
         // We use a loop that allows UI updates so the browser doesn't crash
         for (let i = 0; i < 10000; i++) {
             const nft = generateNFT();
-            if (nft) allNFTs.push(nft);
+            if (nft) {
+                allNFTs.push(nft);
+                // UPGRADE: Sync to Supabase in background
+                this.syncToSupabase(nft);
+            }
             
             // Log progress every 1000 units
             if (i % 1000 === 0 && i > 0) {
                 console.log(`Forged: ${i}/10000`);
+                toast(`Progress: ${i} Mechs secured to Database`, "info");
             }
         }
 
@@ -53,6 +58,24 @@ const Admin = {
         if (typeof renderGallery === 'function') renderGallery(); 
         
         toast("10,000 Mech Rangers Forged Successfully!", "success");
+    },
+
+    // UPGRADE: New Helper to push data to the 'mechs' table
+    async syncToSupabase(nft) {
+        if (typeof supabase === 'undefined') return;
+
+        const { error } = await supabase
+            .from('mechs')
+            .upsert({
+                id: nft.id,
+                name: `Mech Ranger #${nft.id}`,
+                rarity: nft.rarity,
+                traits: nft.attributes, // Maps to your JSONB column
+                image_url: `ipfs://PENDING_IMAGE_CID/${nft.id}.svg`,
+                metadata_url: `ipfs://PENDING_METADATA_CID/${nft.id}.json`
+            });
+
+        if (error) console.error(`DB Sync Error for #${nft.id}:`, error.message);
     },
 
     // 3. Export for the Mint Site Bridge
