@@ -10,11 +10,12 @@
  * @returns {() => number}  function returning [0, 1)
  */
 function rng32(seed) {
-  let s = seed >>> 0;
+  // Ensure seed is non-zero to prevent generator collapse
+  let s = (seed >>> 0) || 0xDEADBEEF;
   return () => {
     s ^= s << 13;
-    s ^= s >> 7;
-    s ^= s << 17;
+    s ^= s >> 17;
+    s ^= s << 5;
     return (s >>> 0) / 4294967296;
   };
 }
@@ -27,11 +28,29 @@ function rng32(seed) {
  * @returns {Object}  selected option
  */
 function weightedPick(opts, rng) {
-  const total = opts.reduce((acc, o) => acc + o.weight, 0);
+  const total = opts.reduce((acc, o) => acc + (o.weight || 0), 0);
+  if (total <= 0) return opts[0];
+  
   let r = rng() * total;
   for (const o of opts) {
     r -= o.weight;
     if (r <= 0) return o;
   }
   return opts[opts.length - 1];
+}
+
+/**
+ * Upgraded Utility: Fisher-Yates Shuffle
+ * Useful for secondary decorative elements in the renderer.
+ * @param {Array} arr 
+ * @param {Function} rng 
+ * @returns {Array}
+ */
+function shuffle(arr, rng) {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }

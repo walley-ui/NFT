@@ -113,13 +113,13 @@ const ROASTS = {
             "Oh look, `$user` invited their mom. Groundbreaking. Back to the Common tier.",
             "You're not a Ranger; you're a spectator. Stop wasting our bandwidth.",
             "Only {count} invites? I've seen rugpulls with more community support.",
-            "You invited `$last_ref`? Even a broken bot could do better than that.",
+            "You invited `{last_ref}`? Even a broken bot could do better than that.",
             "Your invite count is lower than your credit score. Fix it.",
             "At {count}, you are officially the 'background noise' of this community.",
             "Zero progress. Just like your bank account after that last 'safe' moonshot."
         ],
         mid: [
-            "You managed to invite {last_ref}? Wow. One more person who's going to out-mint you.",
+            "You managed to invite `{last_ref}`? Wow. One more person who's going to out-mint you.",
             "You’re doing just enough to be forgotten. `$user` is the definition of 'Mid'.",
             "Congratulations, you’re the smartest person in the loser bracket.",
             "You have {count} invites. In the real world, we call that 'negligible'.",
@@ -158,26 +158,28 @@ const STINGERS = [
 ];
 
 function getRoast(type, tier, data) {
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    
     // 75% chance to build a brutal unique dynamic sentence
     if (Math.random() > 0.25) {
-        const h = ROASTS.fragments.hooks[Math.floor(Math.random() * ROASTS.fragments.hooks.length)];
+        const h = pick(ROASTS.fragments.hooks);
         const sPool = ROASTS.fragments.subjects[tier] || ROASTS.fragments.subjects.parasite;
-        const s = sPool[Math.floor(Math.random() * sPool.length)];
-        const v = ROASTS.fragments.verbs[Math.floor(Math.random() * ROASTS.fragments.verbs.length)];
-        const f = ROASTS.fragments.finishers[Math.floor(Math.random() * ROASTS.fragments.finishers.length)];
-        const st = STINGERS[Math.floor(Math.random() * STINGERS.length)];
+        const s = pick(sPool);
+        const v = pick(ROASTS.fragments.verbs);
+        const f = pick(ROASTS.fragments.finishers);
+        const st = pick(STINGERS);
         
-        return `${h} ${s} ${v} ${f} ${st}`.replace('`$user`', data.user)
-                                          .replace('{count}', data.count)
-                                          .replace('{last_ref}', data.lastRef || "some random");
+        return `${h} ${s} ${v} ${f} ${st}`.replace(/`\$user`/g, data.user)
+                                          .replace(/{count}/g, data.count)
+                                          .replace(/{last_ref}/g, data.lastRef || "some random");
     }
 
     // Pick from the curated pool
     let pool = type === 'welcome' ? ROASTS.welcome : (ROASTS.recheck[tier] || ROASTS.recheck.parasite);
-    let base = pool[Math.floor(Math.random() * pool.length)];
-    let stinger = STINGERS[Math.floor(Math.random() * STINGERS.length)];
+    let base = pick(pool);
+    let stinger = pick(STINGERS);
     
-    return base.replace('`$user`', data.user)
-               .replace('{count}', data.count)
-               .replace('{last_ref}', data.lastRef || "some random") + stinger;
+    return (base + stinger).replace(/`\$user`/g, data.user)
+                           .replace(/{count}/g, data.count)
+                           .replace(/{last_ref}/g, data.lastRef || "some random");
 }

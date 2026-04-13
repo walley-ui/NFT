@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -335,8 +336,7 @@
           Deploy with Hardhat, Foundry, or Remix.
         </div>
       </div>
-
-      <div class="contract-layout">
+     <div class="contract-layout">
 
         <div>
           <div class="contract-panel">
@@ -474,40 +474,67 @@
     </div>
   </div>
 
-</div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/traits.js"></script>
 <script src="js/rng.js"></script>
+
 <script src="js/generator.js"></script>
 <script src="js/renderer.js"></script>
-<script src="js/export.js"></script>
+
+<script src="js/ui.js"></script>
 <script src="js/modal.js"></script>
+<script src="js/export.js"></script>
 <script src="js/contract.js"></script> 
 <script src="js/roast.js"></script>
-<script src="js/ui.js"></script>
 
 <script src="js/bridge.js"></script>
 
 <script>
+  /**
+   * GLOBAL INITIALIZATION LOGIC
+   * High-Level orchestration for the Mech Rangers Pipeline
+   */
   window.onload = () => {
-      // 1. Maintain existing pipeline startup
-      genBatch(); 
+      console.log("⬡ Mech Rangers Pipeline Initializing...");
+
+      // 1. Core Startup
+      // Check if global state objects exist from linked scripts
+      if (typeof genBatch === 'function') {
+          genBatch(); // Auto-generate starting batch
+      }
+
+      // Show the NEW badge on contract tab after short delay
       setTimeout(() => {
           const badge = document.getElementById('contractBadge');
           if(badge) badge.classList.add('show');
       }, 1000);
 
       // 2. Initialize the Phase Switcher
+      // Target: 2026-04-20
       const LAUNCH_DATE = new Date("2026-04-20T14:00:00Z").getTime();
       const now = Date.now();
 
       if (now >= LAUNCH_DATE) {
-          // Switch to Bridge Mode (Site B)
+          // Switch to Bridge Mode (Site B - Public Launch)
           document.body.classList.add('phase-bridge');
-          if (typeof initBridge === 'function') initBridge();
+          if (typeof initBridge === 'function') {
+              initBridge();
+          } else {
+              console.warn("initBridge not found. Bridge script may be missing.");
+          }
       } else {
-          // Maintain Gatekeeper Mode (Site A)
-          if (typeof initGatekeeper === 'function') initGatekeeper();
+          // Maintain Gatekeeper Mode (Site A - Pipeline Development)
+          if (typeof initGatekeeper === 'function') {
+              initGatekeeper();
+          }
+          console.log("⬡ Pipeline Layer Locked for Development");
+      }
+
+      // 3. Data Integration: Sync Contract UI with actual Supply Caps
+      if (typeof updateContract === 'function') {
+          updateContract();
       }
   };
 </script>

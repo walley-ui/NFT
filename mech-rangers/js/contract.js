@@ -16,6 +16,8 @@ function getContractConfig() {
     maxWallet: document.getElementById('cMaxWallet')?.value || '5',
     royalty:   parseFloat(document.getElementById('cRoyalty')?.value)   || 5,
     baseURI:   document.getElementById('cBaseURI')?.value   || 'ipfs://YOUR_METADATA_CID/',
+    // UPGRADE: Added Merkle Root reader to align with Admin Forge
+    merkleRoot: document.getElementById('cMerkleRoot')?.value || '0x0000000000000000000000000000000000000000000000000000000000000000'
   };
 }
 
@@ -43,12 +45,12 @@ function buildSolidityHTML(cfg) {
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_PER_WALLET = <span class="num">${cfg.maxWallet}</span>;
     <span class="type">uint256</span> <span class="kw">public</span> teamReserve           = <span class="num">100</span>;
 
-    <span class="cm">// ── Rarity Hard Caps ──────────────────────────────</span>
+    <span class="cm">// ── Rarity Hard Caps (Synced with generator.js) ──</span>
     <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityCap;
     <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityMinted;
 
-    <span class="cm">// ── Whitelist ──────────────────────────────────────</span>
-    <span class="type">bytes32</span> <span class="kw">public</span> merkleRoot;
+    <span class="cm">// ── Whitelist (Merkle Root from Admin Snapshot) ──</span>
+    <span class="type">bytes32</span> <span class="kw">public</span> merkleRoot = <span class="type">${cfg.merkleRoot}</span>;
     <span class="type">bool</span>    <span class="kw">public</span> whitelistOnly = <span class="kw">true</span>;
     <span class="type">mapping</span>(<span class="type">address</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> walletMinted;
 
@@ -72,12 +74,13 @@ function buildSolidityHTML(cfg) {
     {
         _baseTokenURI    = baseURI_;
         _royaltyReceiver = msg.sender;
-        <span class="cm">// Hard-cap each rarity tier</span>
-        rarityCap[<span class="str">"legendary"</span>] = <span class="num">100</span>;
-        rarityCap[<span class="str">"epic"</span>]      = <span class="num">900</span>;
-        rarityCap[<span class="str">"rare"</span>]     = <span class="num">2000</span>;
-        rarityCap[<span class="str">"uncommon"</span>] = <span class="num">3000</span>;
-        rarityCap[<span class="str">"common"</span>]   = <span class="num">4000</span>;
+        
+        <span class="cm">// UPGRADE: Caps now match your dynamic generator state</span>
+        rarityCap[<span class="str">"legendary"</span>] = <span class="num">${SUPPLY_CAPS.legendary}</span>;
+        rarityCap[<span class="str">"epic"</span>]      = <span class="num">${SUPPLY_CAPS.epic}</span>;
+        rarityCap[<span class="str">"rare"</span>]      = <span class="num">${SUPPLY_CAPS.rare}</span>;
+        rarityCap[<span class="str">"uncommon"</span>]  = <span class="num">${SUPPLY_CAPS.uncommon}</span>;
+        rarityCap[<span class="str">"common"</span>]    = <span class="num">${SUPPLY_CAPS.common}</span>;
     }
 
     <span class="cm">// ── Public Mint (With Proof-based Allowance for Survivors) ───────────────────</span>
@@ -90,7 +93,6 @@ function buildSolidityHTML(cfg) {
         <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity,             <span class="str">"Insufficient ETH"</span>);
         
         <span class="kw">if</span> (whitelistOnly) {
-            <span class="cm">// Hashing sender + allowance for secure tier verification</span>
             <span class="type">bytes32</span> leaf = <span class="fn">keccak256</span>(<span class="fn">abi.encodePacked</span>(msg.sender, maxAllowance));
             <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(merkleProof, merkleRoot, leaf), <span class="str">"Invalid proof"</span>);
             <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= maxAllowance, <span class="str">"Exceeds tier allowance"</span>);
@@ -162,21 +164,19 @@ function buildSolidityHTML(cfg) {
    HARDHAT DEPLOY SCRIPT (BASE MAINNET)
 ───────────────────────────────────────────── */
 function buildDeployHTML(cfg) {
-  return `<span class="cm">// scripts/deploy.js (Hardhat - Optimized for Base)</span>
+  return `<span class="cm">// scripts/deploy.js (Hardhat - Optimized for Base Mainnet)</span>
 <span class="kw">const</span> { ethers } = <span class="fn">require</span>(<span class="str">"hardhat"</span>);
 
 <span class="kw">async function</span> <span class="fn">main</span>() {
   <span class="kw">const</span> [deployer] = <span class="kw">await</span> ethers.<span class="fn">getSigners</span>();
-  console.<span class="fn">log</span>(<span class="str">"Deploying to Base Mainnet from:"</span>, deployer.address);
+  console.<span class="fn">log</span>(<span class="str">"Deploying ${cfg.name} to Base from:"</span>, deployer.address);
 
   <span class="kw">const</span> baseURI = <span class="str">"${cfg.baseURI}"</span>;
-
   <span class="kw">const</span> Factory  = <span class="kw">await</span> ethers.<span class="fn">getContractFactory</span>(<span class="str">"${cfg.name}"</span>);
   <span class="kw">const</span> contract = <span class="kw">await</span> Factory.<span class="fn">deploy</span>(baseURI);
+  
   <span class="kw">await</span> contract.<span class="fn">waitForDeployment</span>();
-
-  <span class="kw">const</span> addr = <span class="kw">await</span> contract.<span class="fn">getAddress</span>();
-  console.<span class="fn">log</span>(<span class="str">"✓ Mech Ranger Unit Deployed on Base:"</span>, addr);
+  console.<span class="fn">log</span>(<span class="str">"✓ Mech Ranger Unit Deployed on Base:"</span>, <span class="kw">await</span> contract.<span class="fn">getAddress</span>());
 }
 
 <span class="fn">main</span>().<span class="fn">catch</span>(e => { console.<span class="fn">error</span>(e); process.<span class="fn">exit</span>(1); });`;
@@ -220,6 +220,7 @@ function updateMintSim() {
     { key:'common',    label:'COMMON',    col:'#4a4a72' },
   ];
 
+  // UPGRADE: Revenue calculation now reflects the 10k batch size
   const estRevenue = total * price;
 
   wrap.innerHTML = TIERS.map(t => `
@@ -236,8 +237,8 @@ function updateMintSim() {
   const sRoy = document.getElementById('simRoyalty');
 
   if(sTot) sTot.textContent = total.toLocaleString();
-  if(sRev) sRev.textContent = `${estRevenue.toFixed(0)} ETH`;
-  if(sRoy) sRoy.textContent = `${royalty}% Royalty (Base Optimized)`;
+  if(sRev) sRev.textContent = estRevenue.toFixed(2) + ' ETH';
+  if(sRoy) sRoy.textContent = royalty + '% Royalty (Base Secured)';
 }
 
 /* ─────────────────────────────────────────────
@@ -248,10 +249,9 @@ const NETWORK_RPCS = {
 };
 
 function pickNet(el, name, chainId) {
-  // Logic: Force Base Mainnet Selection
   document.querySelectorAll('.network-badge').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const rpcInput = document.getElementById('netRPC');
   if(rpcInput) rpcInput.value = NETWORK_RPCS['8453'];
-  toast(`LOCKED: ${name} Deployment Only`, 'warn');
+  toast('NETWORK LOCKED: ' + name + ' Deployment Only', 'warn');
 }

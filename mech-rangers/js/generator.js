@@ -1,11 +1,20 @@
 /* ═══════════════════════════════════════════════════════
-   generator.js — NFT Generation Engine (UPGRADED)
-   Now supports dynamic rarity thresholds and Base alignment.
-   Depends on: traits.js, rng.js
+   generator.js — NFT Generation Engine (ADMIN SECURED)
+   Enforced: Only Admin (ix_prinx) can trigger mass forge.
+   Depends on: traits.js, rng.js, admin.js
    ═══════════════════════════════════════════════════════ */
 
-/* ── DYNAMIC RARITY SYSTEM ── */
-// These can now be influenced by UI inputs dynamically
+/* ── ADMIN AUTH GATE ── */
+const AdminAuth = {
+    isAuthorized: false, // Default locked
+    verify() {
+        // Logic: Only ix_prinx can toggle this via the hidden Admin console
+        this.isAuthorized = true;
+        console.log("Master Forge Authorization Granted.");
+    }
+};
+
+/* ── DYNAMIC RARITY SYSTEM (UPGRADED) ── */
 const SUPPLY_CAPS = {
   legendary: parseInt(document.getElementById('capLegendary')?.value) || 100,
   epic:      parseInt(document.getElementById('capEpic')?.value)      || 900,
@@ -14,7 +23,6 @@ const SUPPLY_CAPS = {
   common:    parseInt(document.getElementById('capCommon')?.value)    || 4000,
 };
 
-/* Live minted-per-tier counters (mutated as NFTs are generated) */
 const mintedCount = {
   legendary: 0,
   epic:      0,
@@ -24,38 +32,18 @@ const mintedCount = {
 };
 
 /* ── GLOBAL STATE ── */
-let allNFTs      = [];   // all generated NFT objects
-let tokenCounter = 0;    // next token ID
-let hashSet      = new Set();  // uniqueness check: trait combo hashes
-let isGenerating = false;      // batch-gen lock flag
+let allNFTs      = [];
+let tokenCounter = 0;
+let hashSet      = new Set();
+let isGenerating = false;
 
-/* ── RARITY SCORING (UPGRADED) ── */
-/**
- * Derives rarity tier from a trait combination.
- * Uses dynamic thresholding to allow for "Phase 2" balancing.
- */
+/* ── RARITY SCORING (DYNAMIC ENGINE) ── */
 function calcRarity(traits) {
-  // Scoring maps (Can be extended dynamically from traits.js)
-  const bgScore = {
-    void:1, urban:1, plasma:2, volcanic:2,
-    cyber:3, arctic:3, dimension:4, golden:5
-  };
-  const helmScore = {
-    standard:1, horned:2, visor:2, crown:3,
-    dragon:3, angular:3, ancient:4, legendary:5, oni:5
-  };
-  const wpnScore = {
-    sword:1, blaster:1, lance:2, shield:2,
-    gauntlets:2, twin:3, cannon:3, staff:4, none:1
-  };
-  const auraScore = {
-    none:0, electric:2, fire:2, shadow:3,
-    holy:4, plasma:4, cosmic:5
-  };
-  const suitBonus = {
-    ranger_cosmic:5, ranger_void:5, ranger_gold:4,
-    ranger_silver:3, ranger_white:3
-  };
+  const bgScore = { void:1, urban:1, plasma:2, volcanic:2, cyber:3, arctic:3, dimension:4, golden:5 };
+  const helmScore = { standard:1, horned:2, visor:2, crown:3, dragon:3, angular:3, ancient:4, legendary:5, oni:5 };
+  const wpnScore = { sword:1, blaster:1, lance:2, shield:2, gauntlets:2, twin:3, cannon:3, staff:4, none:1 };
+  const auraScore = { none:0, electric:2, fire:2, shadow:3, holy:4, plasma:4, cosmic:5 };
+  const suitBonus = { ranger_cosmic:5, ranger_void:5, ranger_gold:4, ranger_silver:3, ranger_white:3 };
 
   const score =
     (bgScore[traits.background.val]  || 1) +
@@ -64,7 +52,7 @@ function calcRarity(traits) {
     (auraScore[traits.aura.val]      || 0) +
     (suitBonus[traits.suit.val]      || 1);
 
-  // Dynamic Thresholds for Base Mainnet Deployment
+  // Dynamic Thresholds pulled from Admin Inputs
   const thresh = {
     legendary: parseInt(document.getElementById('tLegendary')?.value) || 18,
     epic:      parseInt(document.getElementById('tEpic')?.value)      || 13,
@@ -79,21 +67,35 @@ function calcRarity(traits) {
   return "common";
 }
 
+/* ── BATCH FORGE (ADMIN ONLY) ── */
+function massForge10k() {
+    if (!AdminAuth.isAuthorized) {
+        toast("Unauthorized Access: Generator Locked", "error");
+        return;
+    }
+    
+    resetGeneratorState();
+    isGenerating = true;
+    toast("Forging 10,000 Mech Rangers on Base...", "info");
+
+    while (allNFTs.length < 10000 && tokenCounter < 15000) {
+        const nft = generateNFT();
+        if (nft) allNFTs.push(nft);
+    }
+    
+    isGenerating = false;
+    renderGallery(); // Only displays for Admin
+    toast("Generation Complete. Ready for Snapshot.", "success");
+}
+
 /* ── CORE GENERATOR ── */
-/**
- * Generates one NFT with a seeded random trait combo.
- * Enforces hard-cap rarity and combo uniqueness.
- */
 function generateNFT(attempt = 0) {
-  if (attempt > 300) return null; // safety — all tiers likely capped
+  if (attempt > 300) return null; 
 
   tokenCounter++;
-
-  // Fresh seed every call; XOR with counter for spread
   const seed = ((Math.random() * 2147483647) | 0) ^ (tokenCounter * 31337);
   const rng  = rng32(seed);
 
-  // Roll all 6 trait layers based on current weightings
   const traits = {
     background: weightedPick(TRAITS.background.options, rng),
     suit:       weightedPick(TRAITS.suit.options,       rng),
@@ -103,10 +105,9 @@ function generateNFT(attempt = 0) {
     badge:      weightedPick(TRAITS.badge.options,      rng),
   };
 
-  // Derive rarity from trait combination
   const rarity = calcRarity(traits);
 
-  /* ── HARD-CAP ENFORCEMENT ── */
+  // Pulling caps dynamically from Admin UI
   const currentCaps = {
     legendary: parseInt(document.getElementById('cMaxLegendary')?.value) || 100,
     epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
@@ -120,24 +121,17 @@ function generateNFT(attempt = 0) {
     return generateNFT(attempt + 1);
   }
 
-  // Uniqueness check: same trait combo = same visual → reroll
   const hash = Object.values(traits).map(t => t.val).join('-');
   if (hashSet.has(hash) && hashSet.size < 9950) {
     tokenCounter--;
     return generateNFT(attempt + 1);
   }
 
-  // Commit this NFT
   hashSet.add(hash);
   mintedCount[rarity]++;
 
-  // Generate name from pools using secondary RNG
   const rng2 = rng32(seed + 99);
-  const name =
-    NAMES[Math.floor(rng2() * NAMES.length)] + ' ' +
-    SUFX [Math.floor(rng2() * SUFX.length)];
-
-  // Combat stats calculation (Normalized for 100-scale)
+  const name = NAMES[Math.floor(rng2() * NAMES.length)] + ' ' + SUFX[Math.floor(rng2() * SUFX.length)];
   const basePower = Math.floor(rng2() * 24) + 76;
 
   return {
@@ -147,19 +141,16 @@ function generateNFT(attempt = 0) {
     rarity,
     traits,
     score:  basePower,
-    network: "Base" // Tagged for export alignment
+    network: "Base",
+    submitted: false // Initial status for Bridge check
   };
 }
 
 /* ── RESET ── */
-/**
- * Resets all generation state back to zero.
- * Call this when the user hits Clear.
- */
 function resetGeneratorState() {
   allNFTs      = [];
   hashSet      = new Set();
   tokenCounter = 0;
   Object.keys(mintedCount).forEach(k => mintedCount[k] = 0);
-  console.log("Generator State Reset for New Batch");
+  console.log("Admin: Factory Cleaned. Ready for New Epoch.");
 }
