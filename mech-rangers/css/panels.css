@@ -1,0 +1,400 @@
+/* ═══════════════════════════════════════════════════════
+   panels.css — Panel 1: Generator · Panel 2: Rarity Engine
+               Panel 3: Export/IPFS · Panel 4: Smart Contract
+   ═══════════════════════════════════════════════════════ */
+
+/* ── SHARED SECTION HEAD ── */
+.section-head  { padding: 40px 0 24px; }
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem; letter-spacing: 6px;
+  color: var(--text); margin-bottom: 6px;
+}
+.section-title span { color: var(--cyan); }
+.section-desc {
+  font-size: .9rem; color: var(--muted2);
+  max-width: 600px; line-height: 1.6;
+}
+
+/* ═══════════════════════════════
+   PANEL 1 — GENERATOR
+═══════════════════════════════ */
+.gen-hero { padding: 48px 0 32px; text-align: center; }
+.gen-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3.2rem, 8vw, 7.5rem);
+  letter-spacing: 10px; line-height: .85;
+}
+.gen-title .t1 { color: var(--text); }
+.gen-title .t2 {
+  background: linear-gradient(90deg, var(--red), var(--cyan) 50%, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gen-sub {
+  margin-top: 14px; font-size: .95rem;
+  color: var(--muted2); letter-spacing: 4px; text-transform: uppercase;
+}
+
+/* Rarity cap pills */
+.caps-bar {
+  display: flex; gap: 10px;
+  flex-wrap: wrap; justify-content: center;
+  margin: 20px 0 28px;
+}
+.cap-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--border2);
+  background: rgba(0,0,0,.4);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .68rem; letter-spacing: 1px;
+  position: relative; overflow: hidden;
+  transition: background .4s ease;
+}
+.cap-dot { width: 7px; height: 7px; border-radius: 50%; }
+.cap-label { color: var(--text); }
+.cap-count { color: var(--muted2); }
+.cap-max   { color: var(--muted); }
+
+.cap-pill.legendary { border-color: rgba(255,196,0,.4); }
+.cap-pill.legendary .cap-dot { background: var(--gold);   box-shadow: 0 0 6px var(--gold); }
+.cap-pill.epic      { border-color: rgba(180,79,255,.4); }
+.cap-pill.epic      .cap-dot { background: var(--purple); box-shadow: 0 0 6px var(--purple); }
+.cap-pill.rare      { border-color: rgba(0,229,255,.4); }
+.cap-pill.rare      .cap-dot { background: var(--cyan);   box-shadow: 0 0 6px var(--cyan); }
+.cap-pill.uncommon  { border-color: rgba(0,230,118,.4); }
+.cap-pill.uncommon  .cap-dot { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+.cap-pill.common    { border-color: var(--border2); }
+.cap-pill.common    .cap-dot { background: var(--muted2); }
+
+/* Progress bar */
+.prog-wrap { margin: 0 0 20px; display: none; }
+.prog-wrap.on { display: block; }
+.prog-bg   { height: 3px; background: var(--border); position: relative; overflow: visible; }
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  transition: width .08s; position: relative;
+}
+.prog-fill::after {
+  content: '';
+  position: absolute; right: -4px; top: -4px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 16px var(--cyan), 0 0 30px rgba(0,229,255,.4);
+}
+.prog-rarity-bar { display: flex; height: 3px; margin-top: 3px; overflow: hidden; }
+.prb { height: 100%; transition: width .3s; }
+.prb.legendary { background: var(--gold); }
+.prb.epic      { background: var(--purple); }
+.prb.rare      { background: var(--cyan); }
+.prb.uncommon  { background: var(--green); }
+.prb.common    { background: var(--muted); }
+.prog-txt {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .68rem; color: var(--muted2);
+  text-align: center; margin-top: 8px;
+}
+
+/* Filter row */
+.filter-row {
+  display: flex; gap: 8px;
+  flex-wrap: wrap; justify-content: center;
+  margin-bottom: 22px;
+}
+.fbtn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .68rem; padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  cursor: pointer; transition: all .2s; letter-spacing: 1px;
+}
+.fbtn:hover, .fbtn.active   { border-color: var(--cyan);   color: var(--cyan); }
+.fbtn.legendary             { border-color: rgba(255,196,0,.3); color: rgba(255,196,0,.6); }
+.fbtn.legendary.active      { border-color: var(--gold);   color: var(--gold);   background: rgba(255,196,0,.07); }
+.fbtn.epic                  { border-color: rgba(180,79,255,.3); color: rgba(180,79,255,.6); }
+.fbtn.epic.active           { border-color: var(--purple); color: var(--purple); background: rgba(180,79,255,.07); }
+.fbtn.rare.active           { background: rgba(0,229,255,.07); }
+.fbtn.uncommon              { border-color: rgba(0,230,118,.3); color: rgba(0,230,118,.6); }
+.fbtn.uncommon.active       { border-color: var(--green);  color: var(--green);  background: rgba(0,230,118,.07); }
+
+/* Empty grid state */
+.empty {
+  grid-column: 1 / -1; text-align: center;
+  padding: 80px 0; color: var(--muted);
+}
+.empty h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem; letter-spacing: 4px;
+  color: var(--border2); margin-bottom: 10px;
+}
+
+/* ═══════════════════════════════
+   PANEL 2 — RARITY ENGINE
+═══════════════════════════════ */
+.rarity-engine {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px; margin-bottom: 40px;
+}
+@media (max-width: 760px) { .rarity-engine { grid-template-columns: 1fr; } }
+
+.rarity-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px; position: relative; overflow: hidden;
+}
+.rarity-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+}
+.rarity-card.legendary::before { background: var(--gold); }
+.rarity-card.epic::before      { background: var(--purple); }
+.rarity-card.rare::before      { background: var(--cyan); }
+.rarity-card.uncommon::before  { background: var(--green); }
+.rarity-card.common::before    { background: var(--muted); }
+
+.rc-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 14px;
+}
+.rc-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem; letter-spacing: 3px;
+  display: flex; align-items: center; gap: 10px;
+}
+.rc-dot { width: 9px; height: 9px; border-radius: 50%; }
+.rc-count {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .75rem; color: var(--muted2);
+}
+.rc-bar-bg { height: 6px; background: var(--border); overflow: hidden; margin-bottom: 10px; }
+.rc-bar-fill { height: 100%; transition: width .5s ease; }
+.rarity-card.legendary .rc-bar-fill { background: var(--gold); }
+.rarity-card.epic      .rc-bar-fill { background: var(--purple); }
+.rarity-card.rare      .rc-bar-fill { background: var(--cyan); }
+.rarity-card.uncommon  .rc-bar-fill { background: var(--green); }
+.rarity-card.common    .rc-bar-fill { background: var(--muted); }
+
+.rc-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+.rc-stat  { font-family: 'Share Tech Mono', monospace; font-size: .65rem; color: var(--muted2); }
+.rc-stat strong { color: var(--text); }
+
+/* Trait distribution table */
+.trait-dist { margin-top: 32px; }
+.trait-dist-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem; letter-spacing: 4px;
+  margin-bottom: 16px; color: var(--muted2);
+}
+.trait-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+.trait-table th {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .62rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.trait-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: .82rem; color: var(--text);
+}
+.trait-table tr:hover td { background: rgba(255,255,255,.02); }
+.trait-w-bar {
+  height: 3px; background: var(--cyan); border-radius: 0;
+  display: inline-block; vertical-align: middle;
+  margin-right: 8px; opacity: .6;
+}
+
+/* ═══════════════════════════════
+   PANEL 3 — EXPORT & IPFS
+═══════════════════════════════ */
+.export-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px; margin-bottom: 32px;
+}
+@media (max-width: 760px) { .export-grid { grid-template-columns: 1fr; } }
+
+.export-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px; position: relative;
+}
+.export-card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem; letter-spacing: 3px;
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 10px;
+}
+.export-icon { font-size: 1.4rem; }
+.export-desc {
+  font-size: .82rem; color: var(--muted2);
+  line-height: 1.6; margin-bottom: 16px;
+}
+.export-preview {
+  background: rgba(0,0,0,.5);
+  border: 1px solid var(--border);
+  padding: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65rem; color: var(--cyan);
+  line-height: 1.8; margin-bottom: 14px;
+  max-height: 130px; overflow-y: auto;
+  white-space: pre;
+}
+.cid-input-row {
+  display: flex; gap: 8px;
+  margin-bottom: 12px; align-items: center;
+}
+.cid-label {
+  font-size: .68rem; color: var(--muted);
+  letter-spacing: 1px; text-transform: uppercase;
+  white-space: nowrap;
+}
+.cid-in {
+  flex: 1;
+  background: rgba(0,0,0,.4);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .72rem; padding: 8px 10px; outline: none;
+}
+.cid-in:focus { border-color: var(--cyan); }
+
+/* IPFS step guide */
+.ipfs-steps { margin-top: 20px; }
+.step-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.step-item:last-child { border-bottom: none; }
+.step-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .7rem; width: 26px; height: 26px; min-width: 26px;
+  border: 1px solid var(--cyan); color: var(--cyan);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.step-title  { font-size: .88rem; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.step-desc   { font-size: .78rem; color: var(--muted2); line-height: 1.6; }
+.code-snippet {
+  background: rgba(0,0,0,.6);
+  border: 1px solid var(--border);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .62rem; color: var(--green);
+  padding: 10px 12px; margin-top: 8px;
+  line-height: 1.7; white-space: pre; overflow-x: auto;
+}
+.code-snippet .kw  { color: var(--purple); }
+.code-snippet .str { color: var(--gold); }
+.code-snippet .cm  { color: var(--muted2); }
+
+/* ═══════════════════════════════
+   PANEL 4 — SMART CONTRACT
+═══════════════════════════════ */
+.contract-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px; padding-bottom: 80px;
+}
+@media (max-width: 900px) { .contract-layout { grid-template-columns: 1fr; } }
+
+.contract-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0;
+}
+.contract-panel-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.contract-panel-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem; letter-spacing: 3px; color: var(--muted2);
+}
+.contract-panel-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .58rem; padding: 2px 7px;
+  border: 1px solid var(--border2); color: var(--muted);
+}
+
+/* Solidity syntax-highlighted code block */
+.sol-code {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65rem; line-height: 1.75;
+  padding: 20px; color: #a8b2d8;
+  max-height: 480px; overflow-y: auto;
+  background: rgba(0,0,0,.4);
+}
+.sol-code .kw  { color: #c792ea; }
+.sol-code .type{ color: #82aaff; }
+.sol-code .str { color: #c3e88d; }
+.sol-code .cm  { color: #546e7a; font-style: italic; }
+.sol-code .num { color: #f78c6c; }
+.sol-code .fn  { color: #82aaff; }
+.sol-code .ev  { color: var(--gold); }
+
+/* Deploy right-side cards */
+.deploy-panel { display: flex; flex-direction: column; gap: 14px; }
+.deploy-card  { background: var(--surface); border: 1px solid var(--border); padding: 18px; }
+.deploy-card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem; letter-spacing: 3px;
+  color: var(--muted2); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.deploy-card-title::before {
+  content: ''; width: 3px; height: 16px; background: var(--cyan);
+}
+
+/* Form fields inside deploy cards */
+.field-row   { margin-bottom: 10px; }
+.field-label {
+  font-size: .65rem; color: var(--muted);
+  letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 4px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.field-in {
+  width: 100%; background: rgba(0,0,0,.4);
+  border: 1px solid var(--border2);
+  color: var(--text); font-family: 'Share Tech Mono', monospace;
+  font-size: .78rem; padding: 9px 11px; outline: none;
+}
+.field-in:focus { border-color: var(--cyan); }
+
+/* Network badges */
+.network-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Share Tech Mono', monospace; font-size: .65rem;
+  padding: 4px 10px;
+  border: 1px solid var(--border2);
+  margin-right: 6px; margin-bottom: 6px;
+  cursor: pointer; transition: all .2s;
+}
+.network-badge:hover, .network-badge.active { border-color: var(--cyan); color: var(--cyan); }
+.network-badge .ndot { width: 6px; height: 6px; border-radius: 50%; }
+.network-badge.eth  .ndot { background: #627eea; }
+.network-badge.poly .ndot { background: #8247e5; }
+.network-badge.base .ndot { background: #0052ff; }
+.network-badge.arb  .ndot { background: #28a0f0; }
+
+/* Mint supply simulator inside contract panel */
+.mint-sim { background: rgba(0,0,0,.4); border: 1px solid var(--border); padding: 14px; margin-top: 10px; }
+.mint-sim-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65rem; color: var(--muted);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+}
+.mint-tier-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px;
+  font-family: 'Share Tech Mono', monospace; font-size: .62rem;
+}
+.mt-label { width: 70px; color: var(--muted); }
+.mt-bar-bg  { flex: 1; height: 4px; background: var(--border); }
+.mt-bar-fill{ height: 100%; transition: width .6s ease; }
+.mt-count   { width: 60px; text-align: right; color: var(--text); }

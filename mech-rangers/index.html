@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MECH RANGERS — NFT Production Pipeline</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets — order matters -->
+  <link rel="stylesheet" href="css/base.css">        <!-- tokens, reset, layout, bg, header, tabs -->
+  <link rel="stylesheet" href="css/panels.css">      <!-- generator, rarity, export, contract panels -->
+  <link rel="stylesheet" href="css/components.css">  <!-- buttons, cards, modal, bottom bar, toasts -->
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     ANIMATED BACKGROUND
+════════════════════════════════════════════ -->
+<div class="bg-wrap">
+  <div class="bg-grid"></div>
+  <div class="bg-scan"></div>
+  <div class="bg-vignette"></div>
+  <div class="bg-orb o1"></div>
+  <div class="bg-orb o2"></div>
+  <div class="bg-orb o3"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════ -->
+<header>
+  <div class="wrap header-inner">
+    <div class="logo-block">
+      <div class="logo"><span class="m">MECH</span><span class="r">Rangers</span></div>
+      <div class="logo-tag">NFT PRODUCTION PIPELINE<br>v2.0 — FULL MINT SYSTEM</div>
+    </div>
+
+    <div class="hdr-stats">
+      <div class="hstat">
+        <span class="hstat-val cyan"   id="sTot">0</span>
+        <span class="hstat-label">Generated</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat-val gold"   id="sLeg">0</span>
+        <span class="hstat-label">Legendary</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat-val purple" id="sEpic">0</span>
+        <span class="hstat-label">Epic</span>
+      </div>
+      <div class="hstat">
+        <span class="hstat-val green"  id="sUniq">0</span>
+        <span class="hstat-label">Unique</span>
+      </div>
+    </div>
+
+    <div class="hdr-pipeline-tag">⬡ PIPELINE ACTIVE</div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     TABS
+════════════════════════════════════════════ -->
+<div class="tabs wrap" style="max-width:none;padding:0 28px">
+  <button class="tab active" onclick="switchTab(0,this)">
+    <span class="tab-num">01</span>GENERATOR
+  </button>
+  <button class="tab" onclick="switchTab(1,this)">
+    <span class="tab-num">02</span>RARITY ENGINE
+  </button>
+  <button class="tab" onclick="switchTab(2,this)">
+    <span class="tab-num">03</span>EXPORT &amp; IPFS
+  </button>
+  <button class="tab" onclick="switchTab(3,this)">
+    <span class="tab-num">04</span>SMART CONTRACT
+    <span class="tab-badge" id="contractBadge">NEW</span>
+  </button>
+</div>
+
+<!-- Toast notifications container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 1 — GENERATOR
+════════════════════════════════════════════ -->
+<div class="panel active" id="panel0">
+  <div class="wrap">
+
+    <div class="gen-hero">
+      <div class="gen-title">
+        <div class="t1">MECH</div>
+        <div class="t2">RANGERS</div>
+      </div>
+      <div class="gen-sub">10,000 Unique Programmatic NFTs — Sketchy Warrior Edition</div>
+    </div>
+
+    <!-- Hard-cap rarity live counters -->
+    <div class="caps-bar" id="capsBar">
+      <div class="cap-pill legendary" id="cap-legendary">
+        <div class="cap-dot"></div>
+        <span class="cap-label">LEGENDARY</span>
+        <span class="cap-count" id="cnt-legendary">0</span>
+        <span class="cap-max">/ 100</span>
+      </div>
+      <div class="cap-pill epic" id="cap-epic">
+        <div class="cap-dot"></div>
+        <span class="cap-label">EPIC</span>
+        <span class="cap-count" id="cnt-epic">0</span>
+        <span class="cap-max">/ 900</span>
+      </div>
+      <div class="cap-pill rare" id="cap-rare">
+        <div class="cap-dot"></div>
+        <span class="cap-label">RARE</span>
+        <span class="cap-count" id="cnt-rare">0</span>
+        <span class="cap-max">/ 2000</span>
+      </div>
+      <div class="cap-pill uncommon" id="cap-uncommon">
+        <div class="cap-dot"></div>
+        <span class="cap-label">UNCOMMON</span>
+        <span class="cap-count" id="cnt-uncommon">0</span>
+        <span class="cap-max">/ 3000</span>
+      </div>
+      <div class="cap-pill common" id="cap-common">
+        <div class="cap-dot"></div>
+        <span class="cap-label">COMMON</span>
+        <span class="cap-count" id="cnt-common">0</span>
+        <span class="cap-max">/ 4000</span>
+      </div>
+    </div>
+
+    <!-- Generate controls -->
+    <div class="controls">
+      <button class="btn btn-gen"    onclick="genBatch()">⚡ GENERATE BATCH</button>
+      <input  type="number" class="num-in" id="batchN" value="24" min="1" max="200">
+      <button class="btn btn-all"    onclick="genAll()">🔥 FULL 10K RUN</button>
+      <button class="btn btn-outline" onclick="genOne()">+ ONE</button>
+      <button class="btn btn-danger" onclick="clearAll()">✕ CLEAR</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="prog-wrap" id="progWrap">
+      <div class="prog-bg">
+        <div class="prog-fill" id="progFill" style="width:0%"></div>
+      </div>
+      <div class="prog-rarity-bar" id="progRarBar">
+        <div class="prb legendary" id="prb-legendary" style="width:0%"></div>
+        <div class="prb epic"      id="prb-epic"      style="width:0%"></div>
+        <div class="prb rare"      id="prb-rare"      style="width:0%"></div>
+        <div class="prb uncommon"  id="prb-uncommon"  style="width:0%"></div>
+        <div class="prb common"    id="prb-common"    style="width:0%"></div>
+      </div>
+      <div class="prog-txt" id="progTxt">Deploying warriors...</div>
+    </div>
+
+    <!-- Rarity filter buttons -->
+    <div class="filter-row" id="filterRow" style="display:none">
+      <button class="fbtn active"    onclick="setFilter('all',this)">ALL</button>
+      <button class="fbtn legendary" onclick="setFilter('legendary',this)">★ LEGENDARY</button>
+      <button class="fbtn epic"      onclick="setFilter('epic',this)">◆ EPIC</button>
+      <button class="fbtn rare"      onclick="setFilter('rare',this)">▲ RARE</button>
+      <button class="fbtn uncommon"  onclick="setFilter('uncommon',this)">● UNCOMMON</button>
+      <button class="fbtn common"    onclick="setFilter('common',this)">○ COMMON</button>
+    </div>
+
+    <div class="div"></div>
+
+    <!-- NFT grid -->
+    <div class="nft-grid" id="grid">
+      <div class="empty">
+        <h2>NO MECHS DEPLOYED</h2>
+        <p>Hit GENERATE BATCH to forge your warriors</p>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /panel0 -->
+
+<!-- ═══════════════════════════════════════════
+     PANEL 2 — RARITY ENGINE
+════════════════════════════════════════════ -->
+<div class="panel" id="panel1">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="section-title">RARITY <span>ENGINE</span></div>
+      <div class="section-desc">
+        Hard-cap distribution control — guarantees exact rarity supply.
+        No accidental legendary over-mint. Reroll system enforces every tier limit.
+      </div>
+    </div>
+
+    <!-- Rarity tier cards — built by ui.js buildRarityEngine() -->
+    <div class="rarity-engine" id="rarityEngineGrid"></div>
+
+    <div class="div"></div>
+
+    <div class="trait-dist">
+      <div class="trait-dist-title">TRAIT WEIGHT DISTRIBUTION</div>
+      <!-- Built by ui.js buildRarityEngine() -->
+      <div id="traitTablesWrap"></div>
+    </div>
+
+  </div>
+</div><!-- /panel1 -->
+
+<!-- ═══════════════════════════════════════════
+     PANEL 3 — EXPORT & IPFS
+════════════════════════════════════════════ -->
+<div class="panel" id="panel2">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="section-title">EXPORT <span>&amp;</span> IPFS</div>
+      <div class="section-desc">
+        OpenSea-ready metadata + individual SVG export.
+        Plug your Pinata CID and every JSON auto-resolves to the correct IPFS image path.
+      </div>
+    </div>
+
+    <div class="export-grid">
+
+      <!-- SVG Export card -->
+      <div class="export-card">
+        <div class="export-card-title">
+          <span class="export-icon">🖼</span> SVG EXPORT
+        </div>
+        <div class="export-desc">
+          Exports each NFT as an individual high-res SVG (1000×1000px).
+          After upload to Pinata, each file becomes
+          <code style="color:var(--cyan);font-size:.75rem">ipfs://CID/{id}.svg</code>
+        </div>
+        <div class="export-preview" id="svgPreview">// SVG sample preview
+// Generate NFTs first to see preview...</div>
+        <button class="btn btn-gen" style="width:100%" onclick="exportSVGsIndividually()">
+          ↓ EXPORT ALL SVGs INDIVIDUALLY
+        </button>
+      </div>
+
+      <!-- Metadata JSON export card -->
+      <div class="export-card">
+        <div class="export-card-title">
+          <span class="export-icon">📄</span> METADATA JSON
+        </div>
+        <div class="export-desc">
+          Individual OpenSea-compatible JSON per token.
+          Set your IPFS CID below — embedded into every metadata file automatically.
+        </div>
+        <div class="cid-input-row">
+          <span class="cid-label">Image CID</span>
+          <input class="cid-in" id="imageCID"
+                 placeholder="QmYourImageCID..."
+                 value="QmXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX">
+        </div>
+        <div class="export-preview" id="metaPreview">// Metadata sample
+// Generate NFTs first...</div>
+        <button class="btn btn-purple" style="width:100%" onclick="exportMetadataIndividually()">
+          ↓ EXPORT ALL METADATA FILES
+        </button>
+      </div>
+
+    </div><!-- /export-grid -->
+
+    <!-- Batch export bar -->
+    <div class="export-card" style="margin-bottom:20px">
+      <div class="export-card-title">
+        <span class="export-icon">📦</span> BATCH EXPORT
+      </div>
+      <div class="export-desc">
+        Download everything at once as a single JSON array or combined SVG.
+        For production, use individual exports + Pinata bulk upload.
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-outline" onclick="exportAllMetaJSON()">↓ All Metadata (JSON Array)</button>
+        <button class="btn btn-outline" onclick="exportSVGpack()">↓ SVG Pack (first 100)</button>
+        <button class="btn btn-outline" onclick="copyMetaSample()">⬡ Copy Sample JSON</button>
+      </div>
+    </div>
+
+    <!-- IPFS step-by-step guide -->
+    <div class="export-card">
+      <div class="export-card-title">
+        <span class="export-icon">🌐</span> PINATA IPFS UPLOAD GUIDE
+      </div>
+      <div class="ipfs-steps">
+
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Export SVGs individually</div>
+            <div class="step-desc">
+              Use the SVG Export button above. You'll get
+              <code style="color:var(--cyan)">1.svg</code>,
+              <code style="color:var(--cyan)">2.svg</code> …
+              <code style="color:var(--cyan)">10000.svg</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Upload SVGs to Pinata</div>
+            <div class="step-desc">
+              Create a folder upload on <strong>pinata.cloud</strong>.
+              Upload all SVGs into one folder. Copy the Image CID.
+            </div>
+            <div class="code-snippet"><span class="cm"># Using Pinata SDK (Node.js)</span>
+<span class="kw">npm</span> install @pinata/sdk
+
+<span class="kw">import</span> pinataSDK <span class="kw">from</span> <span class="str">'@pinata/sdk'</span>
+<span class="kw">const</span> pinata = <span class="kw">new</span> pinataSDK(API_KEY, SECRET)
+<span class="kw">await</span> pinata.pinFromFS(<span class="str">'./svgs'</span>)  <span class="cm">// → Image CID</span></div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Set Image CID &amp; export metadata</div>
+            <div class="step-desc">
+              Paste your Image CID in the field above. Export all metadata files.
+              Each JSON will have
+              <code style="color:var(--cyan)">"image": "ipfs://YOUR_CID/{id}.svg"</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Upload metadata folder to Pinata</div>
+            <div class="step-desc">
+              Upload your metadata folder. The resulting Metadata CID goes into
+              your smart contract's <code style="color:var(--cyan)">baseURI</code>.
+            </div>
+            <div class="code-snippet"><span class="kw">await</span> pinata.pinFromFS(<span class="str">'./metadata'</span>) <span class="cm">// → Metadata CID</span>
+<span class="cm">// baseURI = "ipfs://METADATA_CID/"</span>
+<span class="cm">// token 1 → ipfs://METADATA_CID/1.json</span></div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">Deploy contract with Metadata CID</div>
+            <div class="step-desc">
+              Head to the Smart Contract tab. Set the baseURI and deploy to your target network.
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /ipfs-steps -->
+    </div>
+
+  </div>
+</div><!-- /panel2 -->
+
+<!-- ═══════════════════════════════════════════
+     PANEL 4 — SMART CONTRACT
+════════════════════════════════════════════ -->
+<div class="panel" id="panel3">
+  <div class="wrap">
+
+    <div class="section-head">
+      <div class="section-title">SMART <span>CONTRACT</span></div>
+      <div class="section-desc">
+        Production-ready ERC-721 with mint price, whitelist, reveal system, and royalties.
+        Deploy with Hardhat, Foundry, or Remix.
+      </div>
+    </div>
+
+    <div class="contract-layout">
+
+      <!-- LEFT — Contract code + deploy script -->
+      <div>
+        <div class="contract-panel">
+          <div class="contract-panel-head">
+            <div class="contract-panel-title">MechRangers.sol</div>
+            <div class="contract-panel-tag">Solidity ^0.8.20 · OpenZeppelin</div>
+          </div>
+          <!-- Filled by contract.js buildContractCode() -->
+          <div class="sol-code" id="solCode"></div>
+        </div>
+
+        <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);padding:20px">
+          <div class="deploy-card-title">HARDHAT DEPLOY SCRIPT</div>
+          <!-- Filled by contract.js buildContractCode() -->
+          <div class="code-snippet" style="margin-top:8px" id="deployScript"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT — Config + network + simulator -->
+      <div class="deploy-panel">
+
+        <div class="deploy-card">
+          <div class="deploy-card-title">CONTRACT CONFIG</div>
+          <div class="field-row">
+            <div class="field-label">Contract Name</div>
+            <input class="field-in" id="cName" value="MechRangers">
+          </div>
+          <div class="field-row">
+            <div class="field-label">Token Symbol</div>
+            <input class="field-in" id="cSymbol" value="MECHR">
+          </div>
+          <div class="field-row">
+            <div class="field-label">Max Supply</div>
+            <input class="field-in" id="cMaxSupply" value="10000">
+          </div>
+          <div class="field-row">
+            <div class="field-label">Mint Price (ETH)</div>
+            <input class="field-in" id="cPrice" value="0.05" step="0.001">
+          </div>
+          <div class="field-row">
+            <div class="field-label">Max Per Wallet</div>
+            <input class="field-in" id="cMaxWallet" value="5">
+          </div>
+          <div class="field-row">
+            <div class="field-label">Royalty % (EIP-2981)</div>
+            <input class="field-in" id="cRoyalty" value="5">
+          </div>
+          <div class="field-row">
+            <div class="field-label">Metadata Base URI</div>
+            <input class="field-in" id="cBaseURI" placeholder="ipfs://YOUR_METADATA_CID/">
+          </div>
+          <button class="btn btn-gen" style="width:100%;margin-top:6px" onclick="updateContract()">
+            ↺ UPDATE CONTRACT
+          </button>
+        </div>
+
+        <div class="deploy-card">
+          <div class="deploy-card-title">TARGET NETWORK</div>
+          <div style="margin-bottom:10px">
+            <div class="network-badge eth active" onclick="pickNet(this,'Ethereum Mainnet','1')">
+              <div class="ndot"></div>Ethereum
+            </div>
+            <div class="network-badge poly" onclick="pickNet(this,'Polygon Mainnet','137')">
+              <div class="ndot"></div>Polygon
+            </div>
+            <div class="network-badge base" onclick="pickNet(this,'Base','8453')">
+              <div class="ndot"></div>Base
+            </div>
+            <div class="network-badge arb" onclick="pickNet(this,'Arbitrum One','42161')">
+              <div class="ndot"></div>Arbitrum
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-label">RPC URL</div>
+            <input class="field-in" id="netRPC" placeholder="https://mainnet.infura.io/v3/YOUR_KEY">
+          </div>
+          <div class="field-row">
+            <div class="field-label">Deployer Private Key</div>
+            <input class="field-in" type="password" id="netKey" placeholder="0x… (never share this)">
+          </div>
+        </div>
+
+        <div class="deploy-card">
+          <div class="deploy-card-title">MINT SIMULATOR</div>
+          <div class="mint-sim">
+            <div class="mint-sim-title">SUPPLY ALLOCATION PREVIEW</div>
+            <!-- Filled by contract.js updateMintSim() -->
+            <div id="mintSimRows"></div>
+          </div>
+          <div style="margin-top:14px;font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--muted2);line-height:1.7">
+            <div>Total Supply: <strong style="color:var(--text)"  id="simTotal">10,000</strong></div>
+            <div>Est. Revenue: <strong style="color:var(--green)" id="simRevenue">500 ETH</strong></div>
+            <div>Royalties:    <strong style="color:var(--cyan)"  id="simRoyalty">5% on secondary</strong></div>
+          </div>
+        </div>
+
+        <div class="deploy-card">
+          <div class="deploy-card-title">FEATURES</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--muted2);line-height:2">
+            <div style="color:var(--green)">✓ ERC-721 + EIP-2981 Royalties</div>
+            <div style="color:var(--green)">✓ Reveal System (hidden → reveal)</div>
+            <div style="color:var(--green)">✓ Whitelist Merkle Root</div>
+            <div style="color:var(--green)">✓ Max Per Wallet Limit</div>
+            <div style="color:var(--green)">✓ Mint Price + Withdraw</div>
+            <div style="color:var(--green)">✓ Owner Mint (team reserve)</div>
+            <div style="color:var(--green)">✓ Pausable</div>
+            <div style="color:var(--cyan)">→ OpenZeppelin v5 base</div>
+          </div>
+        </div>
+
+      </div><!-- /deploy-panel -->
+    </div><!-- /contract-layout -->
+
+  </div>
+</div><!-- /panel3 -->
+
+<!-- ═══════════════════════════════════════════
+     BOTTOM BAR
+════════════════════════════════════════════ -->
+<div class="bottom-bar" id="bottomBar">
+  <div class="bb-info">
+    <strong id="bbCount">0</strong> NFTs ready ·
+    <strong id="bbLeg">0</strong> Legendary · Ready for pipeline
+  </div>
+  <div class="bb-actions">
+    <button class="btn btn-outline" onclick="switchTab(2, document.querySelectorAll('.tab')[2])">
+      → EXPORT &amp; IPFS
+    </button>
+    <button class="btn btn-gen" onclick="exportAllMetaJSON()">↓ Quick Export</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL
+════════════════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="mArtWrap"></div>
+    <div class="modal-body">
+      <div class="modal-name" id="mName"></div>
+      <div class="modal-meta" id="mMeta"></div>
+      <div class="traits-grid" id="mTraits"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="exportSingleSVG()">↓ SVG</button>
+        <button class="btn btn-outline" onclick="exportSingleMeta()">↓ JSON</button>
+        <button class="btn btn-gen"     onclick="copyTokenJSON()">⬡ Copy Metadata</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCRIPTS — load order matters
+     traits   → rng → generator → renderer
+     → export → modal → contract → ui → boot
+════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/traits.js"></script>    <!-- TRAITS data, NAMES, SUFX               -->
+<script src="js/rng.js"></script>       <!-- rng32(), weightedPick()                -->
+<script src="js/generator.js"></script> <!-- generateNFT(), state, resetState()     -->
+<script src="js/renderer.js"></script>  <!-- renderSVG()                            -->
+<script src="js/export.js"></script>    <!-- dlBlob(), buildMetaObj(), exporters    -->
+<script src="js/modal.js"></script>     <!-- openModal(), closeModal(), per-token   -->
+<script src="js/contract.js"></script> 
+<script src="js/roast.js"></script>     <!-- buildContractCode(), updateMintSim()   -->
+<script src="js/ui.js"></script>        <!-- createCard(), renderGrid(), tabs, etc  -->
+
+<!-- Boot -->
+<script>
+  genBatch(); // Auto-generate first batch on load
+  setTimeout(() => document.getElementById('contractBadge').classList.add('show'), 1000);
+</script>
+
+</body>
+</html>
