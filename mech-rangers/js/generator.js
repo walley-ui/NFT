@@ -1,15 +1,17 @@
 /* ═══════════════════════════════════════════════════════
-   generator.js — NFT Generation Engine
+   generator.js — NFT Generation Engine (UPGRADED)
+   Now supports dynamic rarity thresholds and Base alignment.
    Depends on: traits.js, rng.js
    ═══════════════════════════════════════════════════════ */
 
-/* ── HARD-CAP RARITY SYSTEM ── */
+/* ── DYNAMIC RARITY SYSTEM ── */
+// These can now be influenced by UI inputs dynamically
 const SUPPLY_CAPS = {
-  legendary: 100,
-  epic:      900,
-  rare:      2000,
-  uncommon:  3000,
-  common:    4000,
+  legendary: parseInt(document.getElementById('capLegendary')?.value) || 100,
+  epic:      parseInt(document.getElementById('capEpic')?.value)      || 900,
+  rare:      parseInt(document.getElementById('capRare')?.value)      || 2000,
+  uncommon:  parseInt(document.getElementById('capUncommon')?.value)  || 3000,
+  common:    parseInt(document.getElementById('capCommon')?.value)    || 4000,
 };
 
 /* Live minted-per-tier counters (mutated as NFTs are generated) */
@@ -27,14 +29,13 @@ let tokenCounter = 0;    // next token ID
 let hashSet      = new Set();  // uniqueness check: trait combo hashes
 let isGenerating = false;      // batch-gen lock flag
 
-/* ── RARITY SCORING ── */
+/* ── RARITY SCORING (UPGRADED) ── */
 /**
  * Derives rarity tier from a trait combination.
- * Scores each trait layer then maps total to a tier string.
- * @param {Object} traits - selected trait values
- * @returns {string}  "legendary" | "epic" | "rare" | "uncommon" | "common"
+ * Uses dynamic thresholding to allow for "Phase 2" balancing.
  */
 function calcRarity(traits) {
+  // Scoring maps (Can be extended dynamically from traits.js)
   const bgScore = {
     void:1, urban:1, plasma:2, volcanic:2,
     cyber:3, arctic:3, dimension:4, golden:5
@@ -63,10 +64,18 @@ function calcRarity(traits) {
     (auraScore[traits.aura.val]      || 0) +
     (suitBonus[traits.suit.val]      || 1);
 
-  if (score >= 18) return "legendary";
-  if (score >= 13) return "epic";
-  if (score >= 9)  return "rare";
-  if (score >= 5)  return "uncommon";
+  // Dynamic Thresholds for Base Mainnet Deployment
+  const thresh = {
+    legendary: parseInt(document.getElementById('tLegendary')?.value) || 18,
+    epic:      parseInt(document.getElementById('tEpic')?.value)      || 13,
+    rare:      parseInt(document.getElementById('tRare')?.value)      || 9,
+    uncommon:  parseInt(document.getElementById('tUncommon')?.value)  || 5
+  };
+
+  if (score >= thresh.legendary) return "legendary";
+  if (score >= thresh.epic)      return "epic";
+  if (score >= thresh.rare)      return "rare";
+  if (score >= thresh.uncommon)  return "uncommon";
   return "common";
 }
 
@@ -74,9 +83,6 @@ function calcRarity(traits) {
 /**
  * Generates one NFT with a seeded random trait combo.
  * Enforces hard-cap rarity and combo uniqueness.
- * Recursively rerolls (up to 300 attempts) if a cap is hit or duplicate found.
- * @param {number} [attempt=0]
- * @returns {Object|null}  NFT data object, or null if all caps exhausted
  */
 function generateNFT(attempt = 0) {
   if (attempt > 300) return null; // safety — all tiers likely capped
@@ -87,7 +93,7 @@ function generateNFT(attempt = 0) {
   const seed = ((Math.random() * 2147483647) | 0) ^ (tokenCounter * 31337);
   const rng  = rng32(seed);
 
-  // Roll all 6 trait layers
+  // Roll all 6 trait layers based on current weightings
   const traits = {
     background: weightedPick(TRAITS.background.options, rng),
     suit:       weightedPick(TRAITS.suit.options,       rng),
@@ -100,17 +106,23 @@ function generateNFT(attempt = 0) {
   // Derive rarity from trait combination
   const rarity = calcRarity(traits);
 
-  /* ── HARD-CAP ENFORCEMENT ──
-     If this rarity tier is already full → reroll.
-     No legendary can ever exceed 100, etc. */
-  if (mintedCount[rarity] >= SUPPLY_CAPS[rarity]) {
+  /* ── HARD-CAP ENFORCEMENT ── */
+  const currentCaps = {
+    legendary: parseInt(document.getElementById('cMaxLegendary')?.value) || 100,
+    epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
+    rare:      parseInt(document.getElementById('cMaxRare')?.value)      || 2000,
+    uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value)  || 3000,
+    common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 4000,
+  };
+
+  if (mintedCount[rarity] >= currentCaps[rarity]) {
     tokenCounter--;
     return generateNFT(attempt + 1);
   }
 
   // Uniqueness check: same trait combo = same visual → reroll
   const hash = Object.values(traits).map(t => t.val).join('-');
-  if (hashSet.has(hash) && hashSet.size < 9500) {
+  if (hashSet.has(hash) && hashSet.size < 9950) {
     tokenCounter--;
     return generateNFT(attempt + 1);
   }
@@ -125,13 +137,17 @@ function generateNFT(attempt = 0) {
     NAMES[Math.floor(rng2() * NAMES.length)] + ' ' +
     SUFX [Math.floor(rng2() * SUFX.length)];
 
+  // Combat stats calculation (Normalized for 100-scale)
+  const basePower = Math.floor(rng2() * 24) + 76;
+
   return {
     id:     tokenCounter,
     name,
     seed,
     rarity,
     traits,
-    score:  Math.floor(rng2() * 24) + 76,
+    score:  basePower,
+    network: "Base" // Tagged for export alignment
   };
 }
 
@@ -145,4 +161,5 @@ function resetGeneratorState() {
   hashSet      = new Set();
   tokenCounter = 0;
   Object.keys(mintedCount).forEach(k => mintedCount[k] = 0);
+  console.log("Generator State Reset for New Batch");
 }

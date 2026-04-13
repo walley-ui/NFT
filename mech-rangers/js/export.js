@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    export.js — All Export · Download · IPFS Preview Logic
+   Upgraded for Base Mainnet + OpenSea Tier Alignment
    Depends on: traits.js, generator.js, renderer.js
    ═══════════════════════════════════════════════════════ */
 
@@ -19,7 +20,8 @@ function dlBlob(blob, filename) {
    IPFS CID HELPER
 ───────────────────────────────────────────── */
 function getImageCID() {
-  return document.getElementById('imageCID')?.value || 'QmYOUR_IMAGE_CID';
+  // Dynamically pulls the CID from your IPFS panel
+  return document.getElementById('imageCID')?.value || 'Qm_BASE_MECH_COLLECTION_CID';
 }
 
 /* ─────────────────────────────────────────────
@@ -28,10 +30,11 @@ function getImageCID() {
 function buildMetaObj(nft) {
   const cid = getImageCID();
   return {
-    name: `Mech Rangers #${String(nft.id).padStart(4,'0')} — ${nft.name}`,
-    description: `A unique Mech Ranger warrior from the 10,000-piece collection. ${
-      nft.rarity.charAt(0).toUpperCase() + nft.rarity.slice(1)
-    } tier. Serial #${nft.id}.`,
+    name: `Mech Ranger #${String(nft.id).padStart(4,'0')} — ${nft.name}`,
+    description: `A unique Mech Ranger warrior from the 10,000-piece collection. Tier: ${
+      nft.rarity.toUpperCase()
+    }. Optimized for Base Mainnet.`,
+    // OpenSea standard for Base IPFS assets
     image:         `ipfs://${cid}/${nft.id}.svg`,
     external_url:  `https://mechrangers.io/token/${nft.id}`,
     background_color: "050508",
@@ -40,37 +43,52 @@ function buildMetaObj(nft) {
         trait_type: TRAITS[k].name,
         value:      v.label,
       })),
-      { trait_type: "Rarity", value: nft.rarity.charAt(0).toUpperCase() + nft.rarity.slice(1) },
-      { trait_type: "Score",  value: nft.score, display_type: "number" },
+      { trait_type: "Rarity Tier", value: nft.rarity.charAt(0).toUpperCase() + nft.rarity.slice(1) },
+      { trait_type: "Combat Score",  value: nft.score, display_type: "number" },
+      { trait_type: "Network", value: "Base" }
     ],
   };
 }
 
 /* ─────────────────────────────────────────────
+   MERKLE TREE EXPORT (NEW)
+   Aligns local results with tree.json for Phase 2
+───────────────────────────────────────────── */
+function exportMerkleTreeData() {
+  if (!allNFTs.length) { toast('Generate Rangers first!', 'warn'); return; }
+  // Dynamically group IDs by rarity for whitelist logic
+  const treeData = {
+    generatedCount: allNFTs.length,
+    exportDate: new Date().toISOString(),
+    network: "Base",
+    rangers: allNFTs.map(n => ({ id: n.id, tier: n.rarity }))
+  };
+  dlBlob(new Blob([JSON.stringify(treeData, null, 2)], { type: 'application/json' }), 'mint-snapshot.json');
+  toast('Mint snapshot exported for Bridge', 'success');
+}
+
+/* ─────────────────────────────────────────────
    INDIVIDUAL SVG EXPORT
-   Each file named by token ID: 1.svg, 2.svg …
-   Browser-rate-limited via setTimeout chain.
 ───────────────────────────────────────────── */
 function exportSVGsIndividually() {
   if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
-  toast(`Exporting ${allNFTs.length} SVGs individually…`, 'info');
+  toast(`Exporting ${allNFTs.length} SVGs to local disk…`, 'info');
   let i = 0;
   const next = () => {
     if (i >= allNFTs.length) return;
     const nft = allNFTs[i++];
     dlBlob(new Blob([renderSVG(nft, 1000)], { type: 'image/svg+xml' }), `${nft.id}.svg`);
-    setTimeout(next, 60);   // 60ms gap avoids browser download throttle
+    setTimeout(next, 60); 
   };
   next();
 }
 
 /* ─────────────────────────────────────────────
    INDIVIDUAL METADATA JSON EXPORT
-   Each file named by token ID: 1.json, 2.json …
 ───────────────────────────────────────────── */
 function exportMetadataIndividually() {
   if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
-  toast(`Exporting ${allNFTs.length} JSON metadata files…`, 'info');
+  toast(`Exporting ${allNFTs.length} JSON files for IPFS upload…`, 'info');
   let i = 0;
   const next = () => {
     if (i >= allNFTs.length) return;
@@ -92,21 +110,21 @@ function exportAllMetaJSON() {
   const data = allNFTs.map(buildMetaObj);
   dlBlob(
     new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-    `mech-rangers-metadata-${allNFTs.length}.json`
+    `mech-rangers-full-metadata.json`
   );
-  toast(`Exported ${allNFTs.length} metadata records`, 'success');
+  toast(`Exported batch: ${allNFTs.length} records`, 'success');
 }
 
 /* ─────────────────────────────────────────────
-   BATCH — SVG PACK (first 100 in one file)
+   BATCH — SVG PACK
 ───────────────────────────────────────────── */
 function exportSVGpack() {
   if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
   const content = allNFTs.slice(0, 100)
-    .map(n => `<!-- #${n.id}: ${n.name} (${n.rarity}) -->\n${renderSVG(n, 500)}`)
+    .map(n => `\n${renderSVG(n, 500)}`)
     .join('\n\n');
-  dlBlob(new Blob([content], { type: 'image/svg+xml' }), 'mech-rangers-svgs-first100.svg');
-  toast('SVG pack (first 100) exported', 'success');
+  dlBlob(new Blob([content], { type: 'image/svg+xml' }), 'mech-rangers-preview-pack.svg');
+  toast('Preview SVG pack generated', 'success');
 }
 
 /* ─────────────────────────────────────────────
@@ -115,25 +133,23 @@ function exportSVGpack() {
 function copyMetaSample() {
   if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
   navigator.clipboard?.writeText(JSON.stringify(buildMetaObj(allNFTs[0]), null, 2));
-  toast('Sample metadata copied to clipboard', 'success');
+  toast('Metadata sample copied for testing', 'success');
 }
 
 /* ─────────────────────────────────────────────
-   LIVE PREVIEWS (shown in Export panel cards)
+   LIVE PREVIEWS
 ───────────────────────────────────────────── */
 function updateSVGPreview() {
   const el = document.getElementById('svgPreview');
   if (!el || !allNFTs[0]) return;
   const n = allNFTs[0];
   el.textContent =
-    `<!-- Token #${n.id} (${n.rarity}) -->\n` +
-    `<svg ...>\n` +
-    `  <!-- Background: ${n.traits.background.label} -->\n` +
-    `  <!-- Suit:       ${n.traits.suit.label} -->\n` +
-    `  <!-- Helmet:     ${n.traits.helmet.label} -->\n` +
-    `  <!-- Weapon:     ${n.traits.weapon.label} -->\n` +
-    `  <!-- Aura:       ${n.traits.aura.label} -->\n` +
-    `  <!-- Badge:      ${n.traits.badge.label} -->\n` +
+    `\n` +
+    `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ...>\n` +
+    `  \n` +
+    `  \n` +
+    `  \n` +
+    `  \n` +
     `</svg>`;
 }
 
