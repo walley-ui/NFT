@@ -209,11 +209,12 @@ function updateMintSim() {
   const wrap = document.getElementById('mintSimRows');
   if (!wrap) return;
 
-  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.05;
+  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.005;
   const total   = parseInt(document.getElementById('cMaxSupply')?.value)   || 10000;
   const royalty = parseFloat(document.getElementById('cRoyalty')?.value)   || 5;
 
   const TIERS = [
+    { key:'mythic',    label:'MYTHIC',    col:'#ff0055' },
     { key:'legendary', label:'LEGENDARY', col:'#ffc400' },
     { key:'epic',      label:'EPIC',      col:'#b44fff' },
     { key:'rare',      label:'RARE',      col:'#00e5ff' },

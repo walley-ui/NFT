@@ -19,8 +19,8 @@ const SUPPLY_CAPS = {
   legendary: parseInt(document.getElementById('capLegendary')?.value) || 100,
   epic:      parseInt(document.getElementById('capEpic')?.value)      || 900,
   rare:      parseInt(document.getElementById('capRare')?.value)      || 2000,
-  uncommon:  parseInt(document.getElementById('capUncommon')?.value)  || 3980,
-  common:    parseInt(document.getElementById('capCommon')?.value)    || 4000,
+  uncommon:  parseInt(document.getElementById('capUncommon')?.value)  || 3000,
+  common:    parseInt(document.getElementById('capCommon')?.value)    || 3890,
   mythic:    parseInt(document.getElementById('capMythic')?.value)    || 20
 };
 
@@ -118,14 +118,19 @@ function generateNFT(attempt = 0) {
     epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
     rare:      parseInt(document.getElementById('cMaxRare')?.value)      || 2000,
     uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value)  || 3000,
-    common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 4000,
+    common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 3890,
   };
 
   if (mintedCount[rarity] >= currentCaps[rarity]) {
-    tokenCounter--;
-    return generateNFT(attempt + 1);
-  }
+    rarity = "common";
+    }
 
+    // If even 'common' is full, then we are truly done
+    if (mintedCount[rarity] >= currentCaps[rarity]) {
+    tokenCounter--;
+    return null; 
+    }
+  
   const hash = Object.values(traits).map(t => t.val).join('-');
   if (hashSet.has(hash) && hashSet.size < 9950) {
     tokenCounter--;
