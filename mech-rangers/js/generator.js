@@ -56,13 +56,14 @@ function calcRarity(traits) {
 
   // Dynamic Thresholds pulled from Admin Inputs
   const thresh = {
+
     legendary: parseInt(document.getElementById('tLegendary')?.value) || 18,
     epic:      parseInt(document.getElementById('tEpic')?.value)      || 13,
     rare:      parseInt(document.getElementById('tRare')?.value)      || 9,
     uncommon:  parseInt(document.getElementById('tUncommon')?.value)  || 5
   };
 
-  if (score >= 20) return "mythic"; 
+  if (score >= 22) return "mythic"; 
   if (score >= thresh.legendary) return "legendary";
   if (score >= thresh.epic)      return "epic";
   if (score >= thresh.rare)      return "rare";
@@ -112,6 +113,7 @@ function generateNFT(attempt = 0) {
 
   // Pulling caps dynamically from Admin UI
   const currentCaps = {
+    mythic:    parseInt(document.getElementById('cMaxMythic')?.value)    || 20,
     legendary: parseInt(document.getElementById('cMaxLegendary')?.value) || 100,
     epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
     rare:      parseInt(document.getElementById('cMaxRare')?.value)      || 2000,
