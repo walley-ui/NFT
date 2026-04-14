@@ -3,7 +3,7 @@
    ONLY FOR ADMIN (ix_prinx)
    Connects to: generator.js (AdminAuth)
    ═══════════════════════════════════════════════════════ */
-
+const sharp = require('sharp'); 
 const Admin = {
     isAuthenticated: false,
 
@@ -71,7 +71,7 @@ const Admin = {
                 name: `Mech Ranger #${nft.id}`,
                 rarity: nft.rarity,
                 traits: nft.attributes, // Maps to your JSONB column
-                image_url: `ipfs://PENDING_IMAGE_CID/${nft.id}.svg`,
+                image_url: `ipfs://PENDING_IMAGE_CID/${nft.id}.png`,
                 metadata_url: `ipfs://PENDING_METADATA_CID/${nft.id}.json`
             });
 

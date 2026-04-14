@@ -34,7 +34,7 @@ function buildMetaObj(nft) {
     description: "A unique Mech Ranger warrior from the 10,000-piece collection. Tier: " + 
       nft.rarity.toUpperCase() + ". Optimized for Base Mainnet.",
     // OpenSea standard for Base IPFS assets
-    image:         "ipfs://" + cid + "/" + nft.id + ".svg",
+    image: "ipfs://" + cid + "/" + nft.id + ".png",
     external_url:  "https://mechrangers.io/token/" + nft.id,
     background_color: "050508",
     attributes: [

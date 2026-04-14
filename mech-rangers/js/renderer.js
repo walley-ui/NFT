@@ -10,7 +10,7 @@
  * @param {number} sz   - Output size in px (square)
  * @returns {string}    - Complete SVG markup
  */
-function renderSVG(nft, sz) {
+function renderSVG(nft, sz = 1000) {
   const rng  = rng32(nft.seed + 7777);
   const suit = nft.traits.suit;
   const P    = suit.primary;

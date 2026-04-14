@@ -6,7 +6,7 @@
 
 /* ── CONFIG ─────────────────────────────────────────── */
 const BRIDGE_CONFIG = {
-  contractAddress: '0x8453...', // Replace with your Base contract
+  contractAddress: 'UPDATE TO MY ACTUAL CONTRACT ADDRESS', 
   mintPriceEth: '0.05',
   chainId: 8453, 
   chainName: 'Base',
