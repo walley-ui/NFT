@@ -43,9 +43,14 @@ const Admin = {
             const nft = generateNFT();
             if (nft) {
                 allNFTs.push(nft);
-                // UPGRADE: Sync to Supabase in background
+               // --- PHOTO MAKER START ---
+                const svgMarkup = renderSVG(nft, 1000); 
+                const buffer = Buffer.from(svgMarkup);
+                await sharp(buffer).png().toFile(`./output/images/${nft.id}.png`); 
+                // --- PHOTO MAKER END ---
+                                                                
                 this.syncToSupabase(nft);
-            }
+                           }
             
             // Log progress every 1000 units
             if (i % 1000 === 0 && i > 0) {

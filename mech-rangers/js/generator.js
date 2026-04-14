@@ -19,8 +19,9 @@ const SUPPLY_CAPS = {
   legendary: parseInt(document.getElementById('capLegendary')?.value) || 100,
   epic:      parseInt(document.getElementById('capEpic')?.value)      || 900,
   rare:      parseInt(document.getElementById('capRare')?.value)      || 2000,
-  uncommon:  parseInt(document.getElementById('capUncommon')?.value)  || 3000,
+  uncommon:  parseInt(document.getElementById('capUncommon')?.value)  || 3980,
   common:    parseInt(document.getElementById('capCommon')?.value)    || 4000,
+  mythic:    parseInt(document.getElementById('capMythic')?.value)    || 20
 };
 
 const mintedCount = {
@@ -29,6 +30,7 @@ const mintedCount = {
   rare:      0,
   uncommon:  0,
   common:    0,
+  mythic:    0,
 };
 
 /* ── GLOBAL STATE ── */
@@ -60,6 +62,7 @@ function calcRarity(traits) {
     uncommon:  parseInt(document.getElementById('tUncommon')?.value)  || 5
   };
 
+  if (score >= 20) return "mythic"; 
   if (score >= thresh.legendary) return "legendary";
   if (score >= thresh.epic)      return "epic";
   if (score >= thresh.rare)      return "rare";
