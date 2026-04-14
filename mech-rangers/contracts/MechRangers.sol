@@ -16,7 +16,7 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     // ── Supply & Pricing ──────────────────────────────────────
     uint256 public totalSupply;
     uint256 public constant MAX_SUPPLY     = 10000;
-    uint256 public mintPrice               = 0.05 ether; 
+    uint256 public mintPrice               = 0.005 ether; 
     uint256 public constant MAX_PER_WALLET = 5;
     uint256 public teamReserve             = 100;
 

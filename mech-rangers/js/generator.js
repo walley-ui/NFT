@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    generator.js — NFT Generation Engine (ADMIN SECURED)
-   Enforced: Only Admin (ix_prinx) can trigger mass forge.
+   
    Depends on: traits.js, rng.js, admin.js
    ═══════════════════════════════════════════════════════ */
 
@@ -8,7 +8,7 @@
 const AdminAuth = {
     isAuthorized: false, // Default locked
     verify() {
-        // Logic: Only ix_prinx can toggle this via the hidden Admin console
+        
         this.isAuthorized = true;
         console.log("Master Forge Authorization Granted.");
     }
@@ -145,7 +145,7 @@ function generateNFT(attempt = 0) {
     traits,
     score:  basePower,
     network: "Base",
-    submitted: false // Initial status for Bridge check
+    submitted: false 
   };
 }
 
