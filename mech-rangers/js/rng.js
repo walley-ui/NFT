@@ -1,7 +1,8 @@
-/* ═══════════════════════════════════════════════════════
+/* ════════════
    rng.js — Seeded RNG · Weighted Picker
+   Upgraded: MurmurHash-style Pre-Mix for Seed Independence
    Pure utility — no DOM, no state, no side effects.
-   ═══════════════════════════════════════════════════════ */
+   ════════════ */
 
 /**
  * Returns a seeded pseudo-random number generator (xorshift32).
@@ -10,8 +11,14 @@
  * @returns {() => number}  function returning [0, 1)
  */
 function rng32(seed) {
-  // Ensure seed is non-zero to prevent generator collapse
+  // ─── UPGRADE: SEED SCRAMBLER ───
+  // Prevents "Seed Clustering" where sequential seeds produce 
+  // similar initial results. Uses a high-prime mixer.
   let s = (seed >>> 0) || 0xDEADBEEF;
+  s = ((s ^ (s >>> 16)) * 0x45d9f3b) >>> 0;
+  s = ((s ^ (s >>> 16)) * 0x45d9f3b) >>> 0;
+  s = (s ^ (s >>> 16)) >>> 0;
+
   return () => {
     s ^= s << 13;
     s ^= s >> 17;
@@ -53,4 +60,12 @@ function shuffle(arr, rng) {
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
+}
+
+/**
+ * ─── UPGRADE: SEEDED RANGE ───
+ * Returns a random integer between min and max (inclusive).
+ */
+function randInt(min, max, rng) {
+  return Math.floor(rng() * (max - min + 1)) + min;
 }

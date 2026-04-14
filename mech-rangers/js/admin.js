@@ -46,7 +46,8 @@ const Admin = {
                // --- PHOTO MAKER START ---
                 const svgMarkup = renderSVG(nft, 1000); 
                 const buffer = Buffer.from(svgMarkup);
-                await sharp(buffer).png().toFile(`./output/images/${nft.id}.png`); 
+                // Upgrade: Added error handling to ensure one failed image doesn't stop the 10k forge
+                await sharp(buffer).png().toFile(`./output/images/${nft.id}.png`).catch(err => console.error(`Image fail #${nft.id}:`, err)); 
                 // --- PHOTO MAKER END ---
                                                                 
                 this.syncToSupabase(nft);
@@ -56,6 +57,8 @@ const Admin = {
             if (i % 1000 === 0 && i > 0) {
                 console.log(`Forged: ${i}/10000`);
                 toast(`Progress: ${i} Mechs secured to Database`, "info");
+                // Upgrade: Small delay to let the Node.js event loop breathe
+                await new Promise(resolve => setTimeout(resolve, 10));
             }
         }
 
@@ -75,7 +78,7 @@ const Admin = {
                 id: nft.id,
                 name: `Mech Ranger #${nft.id}`,
                 rarity: nft.rarity,
-                traits: nft.attributes, // Maps to your JSONB column
+                traits: nft.traits || nft.attributes, // Upgrade: fallback logic for trait naming
                 image_url: `ipfs://PENDING_IMAGE_CID/${nft.id}.png`,
                 metadata_url: `ipfs://PENDING_METADATA_CID/${nft.id}.json`
             });

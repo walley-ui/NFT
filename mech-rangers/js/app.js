@@ -37,6 +37,11 @@ function setupAdminEnvironment() {
 
     // Initialize Admin-only components
     if (typeof updateContract === 'function') updateContract();
+    
+    // Upgrade: Auto-trigger verification prompt for ix_prinx if not authenticated
+    if (typeof Admin !== 'undefined' && !Admin.isAuthenticated) {
+        console.log("System standby: Awaiting Admin Secret.");
+    }
 }
 
 /**
@@ -78,7 +83,23 @@ function setupUniversalListeners() {
 }
 
 // Global Toast System (Used by Admin & User actions)
+// Upgrade: Integrated fallback for dynamic ui.js toast system
 function toast(msg, type = 'info') {
+    const wrap = document.getElementById('toastWrap');
+    if (wrap) {
+        // Use the advanced dynamic toast system from ui.js if available
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `<div class="toast-dot"></div>${msg}`;
+        wrap.appendChild(el);
+        requestAnimationFrame(() => el.style.opacity = '1');
+        setTimeout(() => {
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 500);
+        }, 3500);
+        return;
+    }
+
     const t = document.getElementById('toast');
     if (!t) return;
     

@@ -45,12 +45,13 @@ function getTierData(points) {
 /**
  * 3. LEAF ENCODER (STRICT ALIGNMENT)
  * Matches Solidity: keccak256(abi.encodePacked(address, uint256))
+ * Upgrade: Force checksummed addresses to avoid Merkle mismatches
  */
 function encodeLeaf(wallet, maxAllowance) {
     return Buffer.from(
         ethers.solidityPackedKeccak256(
             ['address', 'uint256'],
-            [wallet.toLowerCase(), maxAllowance]
+            [ethers.getAddress(wallet), maxAllowance]
         ).slice(2),
         'hex'
     );
@@ -76,13 +77,18 @@ async function generateSnapshot() {
 
     const whitelist = [];
     const tierCounts = { mythic: 0, legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0 };
+    const seenWallets = new Set(); // Upgrade: Prevent duplicate leaf corruption
 
     // Map users to Whitelist objects
     users.forEach(user => {
+        const addr = user.wallet_address.toLowerCase();
+        if (seenWallets.has(addr)) return; // Skip duplicates
+        
         const tierData = getTierData(user.points);
         if (tierData.allowance > 0) {
+            seenWallets.add(addr);
             whitelist.push({
-                wallet: user.wallet_address.toLowerCase(),
+                wallet: addr,
                 allowance: tierData.allowance,
                 tier: tierData.tier,
                 points: user.points,
@@ -125,6 +131,7 @@ Generated: ${new Date().toISOString()}
 FINAL MERKLE ROOT: ${root}
 ------------------------------------------
 TIER BREAKDOWN:
+Mythic:    ${tierCounts.mythic}
 Legendary: ${tierCounts.legendary}
 Epic:      ${tierCounts.epic}
 Rare:      ${tierCounts.rare}
@@ -136,7 +143,7 @@ ACTION: Paste the ROOT into setMerkleRoot("${root}") on Base Mainnet.
 `;
     fs.writeFileSync(certPath, certContent);
 
-    console.log("\n✅ SNAPSHOT SUCCESSFUL");
+    console.log("\n SNAPSHOT SUCCESSFUL");
     console.log(`ROOT: ${root}`);
     console.log(`Output: public/tree.json`);
     console.log("════════════════════════════════════════");

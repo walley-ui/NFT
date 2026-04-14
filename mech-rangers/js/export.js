@@ -21,7 +21,9 @@ function dlBlob(blob, filename) {
 ───────────────────────────────────────────── */
 function getImageCID() {
   // Dynamically pulls the CID from your IPFS panel
-  return document.getElementById('imageCID')?.value || 'Qm_BASE_MECH_COLLECTION_CID';
+  // Upgrade: Trim whitespace to prevent broken metadata URLs
+  const rawCID = document.getElementById('imageCID')?.value || 'Qm_BASE_MECH_COLLECTION_CID';
+  return rawCID.trim();
 }
 
 /* ─────────────────────────────────────────────
@@ -39,8 +41,8 @@ function buildMetaObj(nft) {
     background_color: "050508",
     attributes: [
       ...Object.entries(nft.traits).map(([k, v]) => ({
-        trait_type: TRAITS[k].name,
-        value:      v.label,
+        trait_type: TRAITS[k]?.name || k,
+        value:      v.label || v.val,
       })),
       { trait_type: "Rarity Tier", value: nft.rarity.charAt(0).toUpperCase() + nft.rarity.slice(1) },
       { trait_type: "Combat Score",  value: nft.score, display_type: "number" },
@@ -54,7 +56,10 @@ function buildMetaObj(nft) {
    Aligns local results with bridge.js for Phase 2
 ───────────────────────────────────────────── */
 function exportMerkleTreeData() {
-  if (!allNFTs.length) { toast('Generate Rangers first!', 'warn'); return; }
+  if (!allNFTs.length) { 
+    if (typeof toast === 'function') toast('Generate Rangers first!', 'warn'); 
+    return; 
+  }
   
   // UPGRADE: Now creates a full address-to-ID mapping for the Bridge
   const treeData = {
@@ -71,21 +76,22 @@ function exportMerkleTreeData() {
   };
   
   dlBlob(new Blob([JSON.stringify(treeData, null, 2)], { type: 'application/json' }), 'mint-snapshot.json');
-  toast('Mint snapshot exported for Bridge', 'success');
+  if (typeof toast === 'function') toast('Mint snapshot exported for Bridge', 'success');
 }
 
 /* ─────────────────────────────────────────────
    INDIVIDUAL SVG EXPORT
 ───────────────────────────────────────────── */
 function exportSVGsIndividually() {
-  if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
-  toast('Exporting ' + allNFTs.length + ' SVGs to local disk...', 'info');
+  if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate NFTs first!', 'warn'); return; }
+  if (typeof toast === 'function') toast('Exporting ' + allNFTs.length + ' SVGs to local disk...', 'info');
   let i = 0;
   const next = () => {
     if (i >= allNFTs.length) return;
     const nft = allNFTs[i++];
     dlBlob(new Blob([renderSVG(nft, 1000)], { type: 'image/svg+xml' }), nft.id + '.svg');
-    setTimeout(next, 60); 
+    // Upgrade: Increased timeout for large 10k batches to prevent browser stall
+    setTimeout(next, 100); 
   };
   next();
 }
@@ -94,8 +100,8 @@ function exportSVGsIndividually() {
    INDIVIDUAL METADATA JSON EXPORT
 ───────────────────────────────────────────── */
 function exportMetadataIndividually() {
-  if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
-  toast('Exporting ' + allNFTs.length + ' JSON files for IPFS upload...', 'info');
+  if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate NFTs first!', 'warn'); return; }
+  if (typeof toast === 'function') toast('Exporting ' + allNFTs.length + ' JSON files for IPFS upload...', 'info');
   let i = 0;
   const next = () => {
     if (i >= allNFTs.length) return;
@@ -113,34 +119,34 @@ function exportMetadataIndividually() {
    BATCH — ALL METADATA AS ONE JSON ARRAY
 ───────────────────────────────────────────── */
 function exportAllMetaJSON() {
-  if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
+  if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate NFTs first!', 'warn'); return; }
   const data = allNFTs.map(buildMetaObj);
   dlBlob(
     new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
     'mech-rangers-full-metadata.json'
   );
-  toast('Exported batch: ' + allNFTs.length + ' records', 'success');
+  if (typeof toast === 'function') toast('Exported batch: ' + allNFTs.length + ' records', 'success');
 }
 
 /* ─────────────────────────────────────────────
    BATCH — SVG PACK
 ───────────────────────────────────────────── */
 function exportSVGpack() {
-  if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
+  if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate NFTs first!', 'warn'); return; }
   const content = allNFTs.slice(0, 100)
     .map(n => "\n" + renderSVG(n, 500))
     .join('\n\n');
   dlBlob(new Blob([content], { type: 'image/svg+xml' }), 'mech-rangers-preview-pack.svg');
-  toast('Preview SVG pack generated', 'success');
+  if (typeof toast === 'function') toast('Preview SVG pack generated', 'success');
 }
 
 /* ─────────────────────────────────────────────
    CLIPBOARD — SINGLE SAMPLE JSON
 ───────────────────────────────────────────── */
 function copyMetaSample() {
-  if (!allNFTs.length) { toast('Generate NFTs first!', 'warn'); return; }
+  if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate NFTs first!', 'warn'); return; }
   navigator.clipboard?.writeText(JSON.stringify(buildMetaObj(allNFTs[0]), null, 2));
-  toast('Metadata sample copied for testing', 'success');
+  if (typeof toast === 'function') toast('Metadata sample copied for testing', 'success');
 }
 
 /* ─────────────────────────────────────────────
@@ -150,14 +156,9 @@ function updateSVGPreview() {
   const el = document.getElementById('svgPreview');
   if (!el || !allNFTs[0]) return;
   const n = allNFTs[0];
-  el.textContent =
-    "\n" +
-    '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ...>\n' +
-    "  \n" +
-    "  \n" +
-    "  \n" +
-    "  \n" +
-    "</svg>";
+  // Upgrade: Dynamically show the actual SVG code for the first unit
+  const actualSVG = renderSVG(n, 100);
+  el.textContent = actualSVG.substring(0, 500) + "...";
 }
 
 function updateMetaPreview() {
@@ -173,12 +174,12 @@ function updateMetaPreview() {
  * UPGRADE: Added CSV Export for OpenSea Bulk Listing
  */
 function exportOpenSeaCSV() {
-  if (!allNFTs.length) { toast('Generate Rangers first!', 'warn'); return; }
+  if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate Rangers first!', 'warn'); return; }
   let csv = "token_id,name,description,image_url,external_url\n";
   allNFTs.forEach(n => {
     const meta = buildMetaObj(n);
     csv += n.id + ',"' + meta.name + '","' + meta.description + '","' + meta.image + '","' + meta.external_url + '"\n';
   });
   dlBlob(new Blob([csv], { type: 'text/csv' }), 'opensea-listing-helper.csv');
-  toast('CSV list generated for Base deployment', 'success');
+  if (typeof toast === 'function') toast('CSV list generated for Base deployment', 'success');
 }

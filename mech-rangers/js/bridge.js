@@ -71,6 +71,32 @@ async function bridgeConnect() {
   }
   try {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    
+    // Upgrade: Auto-switch to Base Mainnet if on wrong chain
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (parseInt(currentChainId, 16) !== BRIDGE_CONFIG.chainId) {
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x' + BRIDGE_CONFIG.chainId.toString(16) }],
+            });
+        } catch (switchError) {
+            // If chain is not added, add it
+            if (switchError.code === 4902) {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: '0x' + BRIDGE_CONFIG.chainId.toString(16),
+                        chainName: BRIDGE_CONFIG.chainName,
+                        rpcUrls: [BRIDGE_CONFIG.rpcUrl],
+                        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+                        blockExplorerUrls: ["https://basescan.org"]
+                    }]
+                });
+            }
+        }
+    }
+
     document.getElementById('bridgeWalletInput').value = accounts[0];
     bridgeVerifyAddress();
   } catch (err) {

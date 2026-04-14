@@ -74,22 +74,23 @@ function calcRarity(traits) {
 /* ── BATCH FORGE (ADMIN ONLY) ── */
 function massForge10k() {
     if (!AdminAuth.isAuthorized) {
-        toast("Unauthorized Access: Generator Locked", "error");
+        if (typeof toast === 'function') toast("Unauthorized Access: Generator Locked", "error");
         return;
     }
     
     resetGeneratorState();
     isGenerating = true;
-    toast("Forging 10,000 Mech Rangers on Base...", "info");
+    if (typeof toast === 'function') toast("Forging 10,000 Mech Rangers on Base...", "info");
 
-    while (allNFTs.length < 10000 && tokenCounter < 15000) {
+    // Upgrade: Increased counter limit to ensure uniqueness check finds enough samples
+    while (allNFTs.length < 10000 && tokenCounter < 25000) {
         const nft = generateNFT();
         if (nft) allNFTs.push(nft);
     }
     
     isGenerating = false;
-    renderGallery(); // Only displays for Admin
-    toast("Generation Complete. Ready for Snapshot.", "success");
+    if (typeof renderGallery === 'function') renderGallery(); // Only displays for Admin
+    if (typeof toast === 'function') toast("Generation Complete. Ready for Snapshot.", "success");
 }
 
 /* ── CORE GENERATOR ── */
@@ -109,7 +110,8 @@ function generateNFT(attempt = 0) {
     badge:      weightedPick(TRAITS.badge.options,      rng),
   };
 
-  const rarity = calcRarity(traits);
+  // Upgrade: Changed to 'let' to allow rarity reassignment if a tier is capped
+  let rarity = calcRarity(traits);
 
   // Pulling caps dynamically from Admin UI
   const currentCaps = {
@@ -118,21 +120,21 @@ function generateNFT(attempt = 0) {
     epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
     rare:      parseInt(document.getElementById('cMaxRare')?.value)      || 2000,
     uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value)  || 3000,
-    common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 3890,
+    common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 3980,
   };
 
   // Speed Fix: If the rolled rarity is full, force it to 'common'
-  if (mintedCount[rarity] >= currentCaps[rarity]) {
-  rarity = "common";
+  if (mintedCount[rarity] >= (currentCaps[rarity] || 0)) {
+    rarity = "common";
   }
 
   // final Safety: If 'common' is also full, find ANY tier with space left
-  if (mintedCount[rarity] >= currentCaps[rarity]) {
-  rarity = Object.keys(currentCaps).find(t => mintedCount[t] < currentCaps[t]);
-  if (!rarity) {
-  tokenCounter--;
-  return null; 
-  }
+  if (mintedCount[rarity] >= (currentCaps[rarity] || 0)) {
+    rarity = Object.keys(currentCaps).find(t => mintedCount[t] < currentCaps[t]);
+    if (!rarity) {
+      tokenCounter--;
+      return null; 
+    }
   }
   
   const hash = Object.values(traits).map(t => t.val).join('-');

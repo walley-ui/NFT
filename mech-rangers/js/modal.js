@@ -15,13 +15,17 @@ function openModal(nft) {
 
   // Re-render at larger size for modal view
   const svgMarkup = renderSVG(nft, 500);
-  document.getElementById('mArtWrap').innerHTML =
-    svgMarkup.replace('<svg ', '<svg class="modal-art" ');
+  const artWrap = document.getElementById('mArtWrap');
+  if (artWrap) {
+    artWrap.innerHTML = svgMarkup.replace('<svg ', '<svg class="modal-art" ');
+  }
 
   // Name + meta strip
-  document.getElementById('mName').textContent = nft.name;
+  const nameEl = document.getElementById('mName');
+  if (nameEl) nameEl.textContent = nft.name;
 
   const rarCol = {
+    mythic:    '#ff0055',
     legendary: 'var(--gold)',
     epic:      'var(--purple)',
     rare:      'var(--cyan)',
@@ -30,44 +34,55 @@ function openModal(nft) {
   };
 
   // UPGRADE: Aligned with Base Mainnet Metadata standards
-  document.getElementById('mMeta').innerHTML = 
-    '<span style="color:' + rarCol[nft.rarity] + '">' + nft.rarity.toUpperCase() + '</span>' +
-    '<span>#' + String(nft.id).padStart(4,'0') + '</span>' +
-    '<span>Score: ' + nft.score + '</span>' +
-    '<span>' + nft.traits.suit.label + '</span>' +
-    '<span class="net-badge">BASE</span>';
+  const metaEl = document.getElementById('mMeta');
+  if (metaEl) {
+    metaEl.innerHTML = 
+      '<span style="color:' + (rarCol[nft.rarity] || '#fff') + '">' + nft.rarity.toUpperCase() + '</span>' +
+      '<span style="cursor:pointer" onclick="copyToClipboard(\'' + nft.id + '\')">#' + String(nft.id).padStart(4,'0') + '</span>' +
+      '<span>Score: ' + nft.score + '</span>' +
+      '<span>' + (nft.traits.suit?.label || 'Standard') + '</span>' +
+      '<span class="net-badge">BASE</span>';
+  }
 
   // Trait grid
   const traitKeys = ['background','suit','helmet','weapon','aura','badge'];
-  document.getElementById('mTraits').innerHTML = traitKeys.map(function(k) {
-    const v  = nft.traits[k];
-    const wt = v.weight ? v.weight + 'w' : '';
-    return (
-      '<div class="trait-item">' +
-        '<div class="trait-cat">' + TRAITS[k].name + '</div>' +
-        '<div class="trait-val">' + v.label + '</div>' +
-        '<div class="trait-rarity">' + wt + '</div>' +
-      '</div>'
-    );
-  }).join('');
+  const traitsGrid = document.getElementById('mTraits');
+  if (traitsGrid) {
+    traitsGrid.innerHTML = traitKeys.map(function(k) {
+      const v  = nft.traits[k];
+      if (!v) return ''; // Upgrade: Safety check for missing traits
+      const wt = v.weight ? v.weight + 'w' : '';
+      const catName = TRAITS[k]?.name || k;
+      return (
+        '<div class="trait-item">' +
+          '<div class="trait-cat">' + catName + '</div>' +
+          '<div class="trait-val">' + (v.label || v.val) + '</div>' +
+          '<div class="trait-rarity">' + wt + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
 
   // Rarity border on modal
   const m = document.getElementById('modal');
-  m.className = 'modal ' + nft.rarity;
+  if (m) m.className = 'modal ' + nft.rarity;
 
-  document.getElementById('overlay').classList.add('open');
+  const overlay = document.getElementById('overlay');
+  if (overlay) overlay.classList.add('open');
 }
 
 /* ─────────────────────────────────────────────
    CLOSE MODAL
 ───────────────────────────────────────────── */
 function closeModal(e) {
-  const isOverlayClick  = e && e.target === document.getElementById('overlay');
+  const overlayEl = document.getElementById('overlay');
+  const isOverlayClick  = e && e.target === overlayEl;
   const isButtonClick   = e && e.currentTarget && e.currentTarget.tagName === 'BUTTON';
   const isDirectCall    = !e;
 
   if (isDirectCall || isOverlayClick || isButtonClick) {
-    document.getElementById('overlay').classList.remove('open');
+    if (overlayEl) overlayEl.classList.remove('open');
+    activeModal = null; // Upgrade: Clear active state on close
   }
 }
 
@@ -77,19 +92,34 @@ function closeModal(e) {
 function exportSingleSVG() {
   if (!activeModal) return;
   const svg = renderSVG(activeModal, 1000);
-  dlBlob(new Blob([svg], { type: 'image/svg+xml' }), activeModal.id + '.svg');
-  toast('SVG exported: ' + activeModal.id + '.svg', 'success');
+  if (typeof dlBlob === 'function') {
+    dlBlob(new Blob([svg], { type: 'image/svg+xml' }), activeModal.id + '.svg');
+    if (typeof toast === 'function') toast('SVG exported: ' + activeModal.id + '.svg', 'success');
+  }
 }
 
 function exportSingleMeta() {
   if (!activeModal) return;
-  const meta = buildMetaObj(activeModal);
-  dlBlob(new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' }), activeModal.id + '.json');
-  toast('Metadata exported: ' + activeModal.id + '.json', 'success');
+  // Upgrade: Uses the buildMetaObj from export.js to ensure consistency
+  if (typeof buildMetaObj === 'function' && typeof dlBlob === 'function') {
+    const meta = buildMetaObj(activeModal);
+    dlBlob(new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' }), activeModal.id + '.json');
+    if (typeof toast === 'function') toast('Metadata exported: ' + activeModal.id + '.json', 'success');
+  }
 }
 
 function copyTokenJSON() {
-  if (!activeModal) return;
-  navigator.clipboard?.writeText(JSON.stringify(buildMetaObj(activeModal), null, 2));
-  toast('Metadata copied to clipboard', 'success');
+  if (!activeModal || !navigator.clipboard) return;
+  if (typeof buildMetaObj === 'function') {
+    const jsonStr = JSON.stringify(buildMetaObj(activeModal), null, 2);
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      if (typeof toast === 'function') toast('Metadata copied to clipboard', 'success');
+    });
+  }
+}
+
+// Helper for quick ID copying
+function copyToClipboard(txt) {
+    navigator.clipboard.writeText(txt);
+    if (typeof toast === 'function') toast('ID ' + txt + ' copied', 'info');
 }

@@ -16,8 +16,10 @@ function getContractConfig() {
     maxWallet: document.getElementById('cMaxWallet')?.value || '5',
     royalty:   parseFloat(document.getElementById('cRoyalty')?.value)   || 5,
     baseURI:   document.getElementById('cBaseURI')?.value   || 'ipfs://YOUR_METADATA_CID/',
-    // UPGRADE: Added Merkle Root reader to align with Admin Forge
-    merkleRoot: document.getElementById('cMerkleRoot')?.value || '0x0000000000000000000000000000000000000000000000000000000000000000'
+    // UPGRADE: Pulling the actual generated Merkle Root if it exists in state
+    merkleRoot: typeof _snapshot !== 'undefined' && _snapshot?.merkleRoot 
+                ? _snapshot.merkleRoot 
+                : (document.getElementById('cMerkleRoot')?.value || '0x0000000000000000000000000000000000000000000000000000000000000000')
   };
 }
 
@@ -25,7 +27,9 @@ function getContractConfig() {
    SOLIDITY CONTRACT — (BASE COMPATIBLE)
 ───────────────────────────────────────────── */
 function buildSolidityHTML(cfg) {
-  const priceWei = `${(cfg.price * 1000).toFixed(0)} finney`;
+  // Upgrade: Improved Wei conversion for the contract display
+  const priceInWei = (cfg.price * 1e18).toString();
+  
   return `<span class="cm">// SPDX-License-Identifier: MIT</span>
 <span class="cm">// Mech Rangers ERC-721 — Production Contract v2.1 (Base Mainnet)</span>
 <span class="kw">pragma solidity</span> ^<span class="num">0.8.20</span>;
@@ -41,7 +45,7 @@ function buildSolidityHTML(cfg) {
     <span class="cm">// ── Supply &amp; Pricing ──────────────────────────────</span>
     <span class="type">uint256</span> <span class="kw">public</span> totalSupply;
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_SUPPLY   = <span class="num">${cfg.maxSupply}</span>;
-    <span class="type">uint256</span> <span class="kw">public</span> mintPrice             = <span class="num">${priceWei}</span>;
+    <span class="type">uint256</span> <span class="kw">public</span> mintPrice             = <span class="num">${cfg.price} ether</span>;
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_PER_WALLET = <span class="num">${cfg.maxWallet}</span>;
     <span class="type">uint256</span> <span class="kw">public</span> teamReserve           = <span class="num">100</span>;
 
@@ -75,7 +79,7 @@ function buildSolidityHTML(cfg) {
         _baseTokenURI    = baseURI_;
         _royaltyReceiver = msg.sender;
         
-        <span class="cm">// UPGRADE: Caps now match your dynamic generator state</span>
+        <span class="cm">// UPGRADE: Caps auto-synced from generator.js SUPPLY_CAPS</span>
         rarityCap[<span class="str">"legendary"</span>] = <span class="num">${SUPPLY_CAPS.legendary}</span>;
         rarityCap[<span class="str">"epic"</span>]      = <span class="num">${SUPPLY_CAPS.epic}</span>;
         rarityCap[<span class="str">"rare"</span>]      = <span class="num">${SUPPLY_CAPS.rare}</span>;
@@ -136,27 +140,27 @@ function buildSolidityHTML(cfg) {
     }
 
     <span class="kw">function</span> <span class="fn">withdraw</span>() <span class="kw">external onlyOwner</span> {
-        (<span class="type">bool</span> ok,) = msg.sender.<span class="fn">call</span>{value: <span class="fn">address</span>(<span class="kw">this</span>).<span class="fn">balance</span>}(<span class="str">""</span>);
-        <span class="kw">require</span>(ok, <span class="str">"Withdraw failed"</span>);
+        (<span class="type">bool</span> ok,) = msg.sender.<span class="fn">call</span>{value: <span class="fn">address</span>(<span class="kw) {balance: address(this).balance}("");
+        require(ok, "Withdraw failed");
     }
 
-    <span class="kw">function</span> <span class="fn">supportsInterface</span>(<span class="type">bytes4</span> id)
-        <span class="kw">public view override</span>(<span class="type">ERC721</span>, <span class="type">IERC165</span>) <span class="kw">returns</span> (<span class="type">bool</span>)
+    function supportsInterface(bytes4 id)
+        public view override(ERC721, IERC165) returns (bool)
     {
-        <span class="kw">return</span> id == <span class="kw">type</span>(<span class="type">IERC2981</span>).<span class="fn">interfaceId</span> || <span class="kw">super</span>.<span class="fn">supportsInterface</span>(id);
+        return id == type(IERC2981).interfaceId || super.supportsInterface(id);
     }
 
-    <span class="kw">function</span> <span class="fn">_toString</span>(<span class="type">uint256</span> value) <span class="kw">internal pure returns</span> (<span class="type">string memory</span>) {
-        <span class="kw">if</span> (value == <span class="num">0</span>) <span class="kw">return</span> <span class="str">"0"</span>;
-        <span class="type">uint256</span> temp = value; <span class="type">uint256</span> digits;
-        <span class="kw">while</span> (temp != <span class="num">0</span>) { digits++; temp /= <span class="num">10</span>; }
-        <span class="type">bytes memory</span> buffer = <span class="kw">new bytes</span>(digits);
-        <span class="kw">while</span> (value != <span class="num">0</span>) {
+    function _toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) return "0";
+        uint256 temp = value; uint256 digits;
+        while (temp != 0) { digits++; temp /= 10; }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
             digits--;
-            buffer[digits] = <span class="type">bytes1</span>(<span class="type">uint8</span>(<span class="num">48</span> + value % <span class="num">10</span>));
-            value /= <span class="num">10</span>;
+            buffer[digits] = bytes1(uint8(48 + value % 10));
+            value /= 10;
         }
-        <span class="kw">return</span> <span class="type">string</span>(buffer);
+        return string(buffer);
     }
 }`;
 }
@@ -199,7 +203,7 @@ function buildContractCode() {
 
 function updateContract() {
   buildContractCode();
-  toast('Base Logic Synchronized', 'success');
+  if (typeof toast === 'function') toast('Base Logic Synchronized', 'success');
 }
 
 /* ─────────────────────────────────────────────
@@ -209,7 +213,7 @@ function updateMintSim() {
   const wrap = document.getElementById('mintSimRows');
   if (!wrap) return;
 
-  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.005;
+  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.05;
   const total   = parseInt(document.getElementById('cMaxSupply')?.value)   || 10000;
   const royalty = parseFloat(document.getElementById('cRoyalty')?.value)   || 5;
 
@@ -222,17 +226,19 @@ function updateMintSim() {
     { key:'common',    label:'COMMON',    col:'#4a4a72' },
   ];
 
-  // UPGRADE: Revenue calculation now reflects the 10k batch size
   const estRevenue = total * price;
 
-  wrap.innerHTML = TIERS.map(t => `
+  wrap.innerHTML = TIERS.map(t => {
+    const cap = (typeof SUPPLY_CAPS !== 'undefined' ? SUPPLY_CAPS[t.key] : 1);
+    const count = (typeof mintedCount !== 'undefined' ? mintedCount[t.key] : 0);
+    return `
     <div class="mint-tier-row">
       <div class="mt-label" style="color:${t.col}">${t.label}</div>
       <div class="mt-bar-bg">
-        <div class="mt-bar-fill" style="width:${(mintedCount[t.key]/SUPPLY_CAPS[t.key]*100).toFixed(1)}%;background:${t.col}"></div>
+        <div class="mt-bar-fill" style="width:${((count / cap) * 100).toFixed(1)}%;background:${t.col}"></div>
       </div>
-      <div class="mt-count">${mintedCount[t.key]}/${SUPPLY_CAPS[t.key]}</div>
-    </div>`).join('');
+      <div class="mt-count">${count}/${cap}</div>
+    </div>`}).join('');
 
   const sTot = document.getElementById('simTotal');
   const sRev = document.getElementById('simRevenue');
@@ -255,5 +261,5 @@ function pickNet(el, name, chainId) {
   el.classList.add('active');
   const rpcInput = document.getElementById('netRPC');
   if(rpcInput) rpcInput.value = NETWORK_RPCS['8453'];
-  toast('NETWORK LOCKED: ' + name + ' Deployment Only', 'warn');
+  if (typeof toast === 'function') toast('NETWORK LOCKED: ' + name + ' Deployment Only', 'warn');
 }

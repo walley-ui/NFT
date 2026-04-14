@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    ui.js — Grid · Cards · Stats · Filters · Tabs · Toasts
+   Upgraded: Parallax Card Depth & Performance Ticking
    Depends on: traits.js, generator.js, renderer.js
    ═══════════════════════════════════════════════════════ */
 
@@ -61,6 +62,21 @@ function createCard(nft) {
   card.className     = `nft-card ${nft.rarity}`;
   card.setAttribute('data-tier', nft.rarity);
   card.style.animationDelay = `${(Math.random() * .25).toFixed(2)}s`;
+
+  // UPGRADE: Parallax Tilt Logic
+  card.onmousemove = (e) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const xc = rect.width / 2;
+    const yc = rect.height / 2;
+    const dx = ((x - xc) / xc) * 10;
+    const dy = ((y - yc) / yc) * -10;
+    card.style.transform = `perspective(600px) rotateY(${dx}deg) rotateX(${dy}deg) scale(1.02)`;
+  };
+  card.onmouseleave = () => {
+    card.style.transform = `perspective(600px) rotateY(0deg) rotateX(0deg) scale(1)`;
+  };
 
   const dots = Object.entries(nft.traits)
     .map(([k, v]) =>
