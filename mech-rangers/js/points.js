@@ -27,6 +27,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // 2. TIER & ALLOWANCE LOGIC (Aligned with Contract & Generator)
 const TIER_THRESHOLDS = [
+    { tier: 'mythic',    minPoints: 350, allowance: 20 },
     { tier: 'legendary', minPoints: 100, allowance: 10 },
     { tier: 'epic',      minPoints: 50,  allowance: 5  },
     { tier: 'rare',      minPoints: 20,  allowance: 3  },
@@ -57,7 +58,7 @@ function encodeLeaf(wallet, maxAllowance) {
 
 async function generateSnapshot() {
     console.log("📸 MECH RANGERS — SNAPSHOT ENGINE START");
-    console.log("════════════════════════════════════════");
+    console.log("══════");
 
     // Pull from Supabase (assuming table 'referrals' with columns 'wallet_address' and 'points')
     console.log("[1/4] Querying Supabase Leaderboard...");
@@ -74,7 +75,7 @@ async function generateSnapshot() {
     console.log(`[2/4] Processing ${users.length} unique wallets...`);
 
     const whitelist = [];
-    const tierCounts = { legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0 };
+    const tierCounts = { mythic: 0, legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0 };
 
     // Map users to Whitelist objects
     users.forEach(user => {

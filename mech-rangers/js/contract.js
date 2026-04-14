@@ -81,6 +81,7 @@ function buildSolidityHTML(cfg) {
         rarityCap[<span class="str">"rare"</span>]      = <span class="num">${SUPPLY_CAPS.rare}</span>;
         rarityCap[<span class="str">"uncommon"</span>]  = <span class="num">${SUPPLY_CAPS.uncommon}</span>;
         rarityCap[<span class="str">"common"</span>]    = <span class="num">${SUPPLY_CAPS.common}</span>;
+        rarityCap[<span class="str">"mythic"</span>]    = <span class="num">${SUPPLY_CAPS.mythic}</span>;
     }
 
     <span class="cm">// ── Public Mint (With Proof-based Allowance for Survivors) ───────────────────</span>

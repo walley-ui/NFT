@@ -39,6 +39,10 @@ const ROASTS = {
                 "your over-inflated reputation", "your aggressive networking", "your unstable power",
                 "your looming disaster", "your temporary seat at the table"
             ],
+            mythic: [
+                "your god-tier luck", "your reality-bending wallet", "your temporary immortality", 
+                "your glitch-in-the-matrix stats", "your cosmic-level ego"
+                 ],
             legendary: [
                 "your empire", "your throne", "your highness", "your superiority complex", "your luck multiplier", 
                 "your 1% status", "your legendary stench", "your whale status", "your god-complex", "your crown",
@@ -135,6 +139,11 @@ const ROASTS = {
             "Top 100 is calling, but you're still on hold. Step it up.",
             "You have {count} invites. Don't let it go to your head, you're still a target."
         ],
+        mythic: [
+            "Mythic? Either you're a dev or you've never seen sunlight. Congrats, `$user`.",
+            "At {count} invites, you've transcended humanity. Too bad your social skills didn't.",
+            "You're a Mythic Ranger now. Please don't forget the peasants you stepped on to get here."
+            ],
         legendary: [
             "You’re at the top, which means everyone below you wants to step on your neck.",
             "Finally, someone with a brain. Too bad your multiplier can't fix your personality.",

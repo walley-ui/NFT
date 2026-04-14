@@ -101,7 +101,7 @@ function updateStats() {
   document.getElementById('bbLeg').textContent   = mintedCount.legendary;
 
   // Cap pill fill (background gradient as fill indicator)
-  const TIERS = ['legendary','epic','rare','uncommon','common'];
+  const TIERS = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
   TIERS.forEach(r => {
     const countEl = document.getElementById('cnt-' + r);
     if (countEl) countEl.textContent = mintedCount[r];
@@ -131,7 +131,7 @@ function updateStats() {
 ───────────────────────────────────────────── */
 function updateRarityBar() {
   const t = allNFTs.length || 1;
-  ['legendary','epic','rare','uncommon','common'].forEach(r => {
+ ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'].forEach(r => {
     const el = document.getElementById('prb-' + r);
     if (el) {
        // Upgrade: Add CSS transitions to the width change
