@@ -57,6 +57,8 @@
 .cap-count { color: var(--muted2); }
 .cap-max   { color: var(--muted); }
 
+.cap-pill.mythic { border-color: rgba(255,0,255,.5); }
+.cap-pill.mythic .cap-dot { background: var(--mythic); box-shadow: 0 0 10px var(--mythic); }
 .cap-pill.legendary { border-color: rgba(255,196,0,.4); }
 .cap-pill.legendary .cap-dot { background: var(--gold);   box-shadow: 0 0 6px var(--gold); }
 .cap-pill.epic      { border-color: rgba(180,79,255,.4); }
@@ -86,6 +88,7 @@
 }
 .prog-rarity-bar { display: flex; height: 3px; margin-top: 3px; overflow: hidden; }
 .prb { height: 100%; transition: width .3s; }
+.prb.mythic     { background: var(--mythic); }
 .prb.legendary { background: var(--gold); }
 .prb.epic      { background: var(--purple); }
 .prb.rare      { background: var(--cyan); }
@@ -111,6 +114,8 @@
   cursor: pointer; transition: all .2s; letter-spacing: 1px;
 }
 .fbtn:hover, .fbtn.active   { border-color: var(--cyan);   color: var(--cyan); }
+.fbtn.mythic             { border-color: rgba(255,0,255,.3); color: rgba(255,0,255,.6); }
+.fbtn.mythic.active      { border-color: var(--mythic); color: var(--mythic); background: rgba(255,0,255,.07); }
 .fbtn.legendary             { border-color: rgba(255,196,0,.3); color: rgba(255,196,0,.6); }
 .fbtn.legendary.active      { border-color: var(--gold);   color: var(--gold);   background: rgba(255,196,0,.07); }
 .fbtn.epic                  { border-color: rgba(180,79,255,.3); color: rgba(180,79,255,.6); }
@@ -149,6 +154,7 @@
   content: ''; position: absolute;
   top: 0; left: 0; right: 0; height: 2px;
 }
+.rarity-card.mythic::before { background: var(--mythic); }
 .rarity-card.legendary::before { background: var(--gold); }
 .rarity-card.epic::before      { background: var(--purple); }
 .rarity-card.rare::before      { background: var(--cyan); }

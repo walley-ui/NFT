@@ -51,11 +51,12 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
         // UPGRADE: Using standard ERC2981 internal setter
         _setDefaultRoyalty(msg.sender, 500); // 5%
 
+        rarityCap["mythic"]    = 20;
         rarityCap["legendary"] = 100;
         rarityCap["epic"]      = 900;
         rarityCap["rare"]      = 2000;
         rarityCap["uncommon"]  = 3000;
-        rarityCap["common"]    = 4000;
+        rarityCap["common"]    = 3980;
     }
 
     // ── Public Mint ───────────────────────────────────────────

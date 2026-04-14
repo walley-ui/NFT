@@ -102,6 +102,10 @@
 .nft-card.rare      { border-color: rgba(0,229,255,.35); }
 
 /* Hover glows per rarity */
+.nft-card.mythic {
+  border-color: rgba(255,0,255,.6);
+  animation: cardIn .4s ease both, mythicGlow 2.5s ease-in-out infinite;
+  }
 .nft-card:hover.legendary { box-shadow: 0 16px 48px rgba(255,196,0,.2),   0 0 0 1px var(--gold); }
 .nft-card:hover.epic      { box-shadow: 0 16px 48px rgba(180,79,255,.2),   0 0 0 1px var(--purple); }
 .nft-card:hover.rare      { box-shadow: 0 16px 48px rgba(0,229,255,.15),   0 0 0 1px var(--cyan); }
@@ -127,6 +131,10 @@
   from { opacity: 0; transform: translateY(16px) scale(.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes mythicGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(255,0,255,.3); }
+  50%       { box-shadow: 0 0 35px rgba(255,0,255,.6), 0 0 70px rgba(255,0,255,.2); }
+  }
 @keyframes legendGlow {
   0%, 100% { box-shadow: 0 0 10px rgba(255,196,0,.25); }
   50%       { box-shadow: 0 0 28px rgba(255,196,0,.5), 0 0 60px rgba(255,196,0,.15); }
@@ -152,6 +160,7 @@
   font-size: .55rem; letter-spacing: 1px;
   padding: 2px 6px; font-weight: 700;
 }
+.rbadge.mythic    { background: var(--mythic);  color: #fff; }
 .rbadge.legendary { background: var(--gold);   color: #000; }
 .rbadge.epic      { background: var(--purple);  color: #fff; }
 .rbadge.rare      { background: var(--cyan);    color: #000; }
