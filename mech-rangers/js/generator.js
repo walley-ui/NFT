@@ -121,15 +121,19 @@ function generateNFT(attempt = 0) {
     common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 3890,
   };
 
+  // Speed Fix: If the rolled rarity is full, force it to 'common'
   if (mintedCount[rarity] >= currentCaps[rarity]) {
-    rarity = "common";
-    }
+  rarity = "common";
+  }
 
-    // If even 'common' is full, then we are truly done
-    if (mintedCount[rarity] >= currentCaps[rarity]) {
-    tokenCounter--;
-    return null; 
-    }
+  // final Safety: If 'common' is also full, find ANY tier with space left
+  if (mintedCount[rarity] >= currentCaps[rarity]) {
+  rarity = Object.keys(currentCaps).find(t => mintedCount[t] < currentCaps[t]);
+  if (!rarity) {
+  tokenCounter--;
+  return null; 
+  }
+  }
   
   const hash = Object.values(traits).map(t => t.val).join('-');
   if (hashSet.has(hash) && hashSet.size < 9950) {

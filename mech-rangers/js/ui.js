@@ -240,7 +240,7 @@ function genAll() {
 
   document.getElementById('progWrap').classList.add('on');
   let done  = 0;
-  const batchSize = 400;
+  const batchSize = 1000; // Increased for performance
 
   const tick = () => {
     const n = Math.min(batchSize, rem - done);
@@ -258,13 +258,14 @@ function genAll() {
       `FORGING... ${allNFTs.length.toLocaleString()} / 10,000 (${pct}%) — ` +
       `LEG:${mintedCount.legendary} EPIC:${mintedCount.epic} RARE:${mintedCount.rare}`;
     
-    updateStats();
+    // Performance Update: updateStats removed from inner loop to avoid DOM thrashing
 
     if (allNFTs.length < 10000 && done < rem) {
       requestAnimationFrame(tick);
     } else {
       window.isGenerating = false;
-      renderGrid();
+      updateStats(); // FINAL UPDATE
+      renderGrid();  // FINAL RENDER
       document.getElementById('progTxt').textContent =
         `✓ COLLECTION COMPLETE — ${allNFTs.length.toLocaleString()} MECHS FORGED`;
       toast('10K collection complete! 🔥', 'success');
