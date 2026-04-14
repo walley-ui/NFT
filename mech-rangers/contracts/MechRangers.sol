@@ -4,12 +4,13 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract MechRangers is ERC721, Ownable, IERC2981, Pausable {
+// UPGRADE: Inheriting from ERC2981 directly is more gas-efficient than IERC2981
+contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     using Strings for uint256;
 
     // ── Supply & Pricing ──────────────────────────────────────
@@ -26,7 +27,7 @@ contract MechRangers is ERC721, Ownable, IERC2981, Pausable {
     // ── Whitelist & Provenance ────────────────────────────────
     bytes32 public merkleRoot;
     bool    public whitelistOnly = true;
-    string  public provenanceHash; // Metadata integrity verification
+    string  public provenanceHash; 
     mapping(address => uint256) public walletMinted;
 
     // ── Reveal System ─────────────────────────────────────────
@@ -34,25 +35,22 @@ contract MechRangers is ERC721, Ownable, IERC2981, Pausable {
     string  public  hiddenURI = "ipfs://HIDDEN_CID/hidden.json";
     bool    public  revealed  = false;
 
-    // ── Royalties (EIP-2981) ──────────────────────────────────
-    uint96  private _royaltyFee      = 500; // 5%
-    address private _royaltyReceiver;
-
     // ── Events ────────────────────────────────────────────────
     event Minted(address indexed to, uint256 indexed tokenId);
     event Revealed(string baseURI);
     event BaseURISet(string newURI);
-    event PermanentURI(string _value, uint256 indexed _id); // OpenSea Metadata Freeze
+    event PermanentURI(string _value, uint256 indexed _id);
 
     // ── Constructor ───────────────────────────────────────────
     constructor(string memory initialBaseURI)
         ERC721("MechRangers", "MECHR")
         Ownable(msg.sender)
     {
-        _baseTokenURI    = initialBaseURI;
-        _royaltyReceiver = msg.sender;
+        _baseTokenURI = initialBaseURI;
+        
+        // UPGRADE: Using standard ERC2981 internal setter
+        _setDefaultRoyalty(msg.sender, 500); // 5%
 
-        // Production Rarity Mapping
         rarityCap["legendary"] = 100;
         rarityCap["epic"]      = 900;
         rarityCap["rare"]      = 2000;
@@ -61,11 +59,6 @@ contract MechRangers is ERC721, Ownable, IERC2981, Pausable {
     }
 
     // ── Public Mint ───────────────────────────────────────────
-    /**
-     * @notice Mints a specific quantity of Mech Rangers
-     * @param quantity Number of NFTs to mint
-     * @param merkleProof Required if whitelistOnly is true
-     */
     function mint(
         uint256 quantity,
         bytes32[] calldata merkleProof
@@ -119,24 +112,16 @@ contract MechRangers is ERC721, Ownable, IERC2981, Pausable {
         return string(abi.encodePacked(_baseTokenURI, tokenId.toString(), ".json"));
     }
 
-    // ── EIP-2981 Royalties ────────────────────────────────────
-    function royaltyInfo(uint256, uint256 salePrice)
-        external view override
-        returns (address, uint256)
-    {
-        return (_royaltyReceiver, (salePrice * _royaltyFee) / 10000);
-    }
-
     // ── Admin Functions ───────────────────────────────────────
     function setMintPrice(uint256 newPrice)   external onlyOwner { mintPrice = newPrice; }
     function setMerkleRoot(bytes32 newRoot)   external onlyOwner { merkleRoot = newRoot; }
     function setWhitelistOnly(bool state)     external onlyOwner { whitelistOnly = state; }
     function setHiddenURI(string memory uri)  external onlyOwner { hiddenURI = uri; }
     
+    // UPGRADE: Simplified royalty setter using ERC2981 standard
     function setRoyaltyInfo(address receiver, uint96 fee) external onlyOwner {
-        require(fee <= 1000, "Fee too high"); // Max 10%
-        _royaltyReceiver = receiver;
-        _royaltyFee = fee;
+        require(fee <= 1000, "Fee too high"); 
+        _setDefaultRoyalty(receiver, fee);
     }
 
     function setBaseURI(string memory uri) external onlyOwner {
@@ -155,11 +140,11 @@ contract MechRangers is ERC721, Ownable, IERC2981, Pausable {
     }
 
     // ── Interface Support ─────────────────────────────────────
+    // UPGRADE: Fixed conflict with OpenZeppelin v5 supportsInterface
     function supportsInterface(bytes4 interfaceId)
-        public view override(ERC721, IERC165)
+        public view override(ERC721, ERC2981)
         returns (bool)
     {
-        return interfaceId == type(IERC2981).interfaceId
-            || super.supportsInterface(interfaceId);
+        return super.supportsInterface(interfaceId);
     }
 }

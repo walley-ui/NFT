@@ -1,9 +1,7 @@
 const { HardhatUserConfig } = require("hardhat/config");
-require("@nomicfoundation/hardhat-toolbox-viem");
 require("@nomicfoundation/hardhat-ignition-viem");
 require("dotenv").config();
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
     version: "0.8.24",
@@ -16,16 +14,12 @@ module.exports = {
     },
   },
   networks: {
-    hardhat: {
-      chainId: 31337,
-    },
     "base-sepolia": {
-      url: process.env.BASE_RPC_URL || "https://base.org",
+      url: process.env.BASE_RPC_URL || "https://sepolia.base.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    },
-    base: {
-      url: "https://base.org",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      // Adjusted to fit your 0.068 ETH balance
+      gas: 3500000, 
+      gasPrice: 1500000000, // 1.5 gwei
     },
   },
 };
