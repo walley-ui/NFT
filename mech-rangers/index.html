@@ -8,13 +8,28 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/base.css">        <link rel="stylesheet" href="css/panels.css">      <link rel="stylesheet" href="css/components.css">  <style>
-    /* New Integration Styles: Preserves layout while enabling Phase Switching */
-    #bridge-layer { display: none; position: fixed; inset: 0; z-index: 9999; background: #050505; overflow-y: auto; }
-    .hidden-logic { display: none !important; }
-    .phase-bridge #pipeline-layer { display: none !important; }
-    .phase-bridge #bridge-layer { display: block !important; }
+  <link rel="stylesheet" href="css/base.css">        <link rel="stylesheet" href="css/panels.css">      <link rel="stylesheet" href="css/components.css"> 
+  
+<style>
+  /* This hides the Admin Dashboard completely when it's time to recruit */
+  body.phase-bridge #pipeline-layer { 
+  display: none !important; 
+  }
+
+  /* This makes the Signup Page show up on top of everything else */
+  #bridge-layer { 
+  display: none; 
+  position: fixed; 
+  inset: 0; 
+  z-index: 99999; 
+  background: #050505; 
+  }
+
+  body.phase-bridge #bridge-layer { 
+  display: block !important; 
+  }
   </style>
+
 </head>
 <body>
 
@@ -511,50 +526,41 @@
 <script src="js/bridge.js"></script>
 
 <script>
-  /**
-   * GLOBAL INITIALIZATION LOGIC
-   * High-Level orchestration for the Mech Rangers Pipeline
-   */
-  window.onload = () => {
-      console.log("⬡ Mech Rangers Pipeline Initializing...");
+window.onload = () => {
+console.log(" Mech Rangers Phase System Activating...");
 
-      // 1. Core Startup
-      // Check if global state objects exist from linked scripts
-    //  if (typeof genBatch === 'function') {
-     //     genBatch(); // Auto-generate starting batch
-   //   }
+// 1. Set the Timeline
+// We use 04-05 so it is definitely in the past (starts the Recruiter now)
+const RECRUIT_START = new Date("2026-04-05T00:00:00Z").getTime();
+const CHECKER_START = new Date("2026-04-22T00:00:00Z").getTime();
+const now = Date.now();
 
-      // Show the NEW badge on contract tab after short delay
-      setTimeout(() => {
-          const badge = document.getElementById('contractBadge');
-          if(badge) badge.classList.add('show');
-      }, 1000);
+// 2. Run the Switcher
+if (now >= RECRUIT_START) {
+// ACTIVATE BRIDGE MODE
+document.body.classList.add('phase-bridge');
+          
+          // FORCE HIDE THE ADMIN page
+          const adminPanel = document.getElementById('pipeline-layer');
+          if(adminPanel) adminPanel.style.display = 'none';
 
-      // 2. Initialize the Phase Switcher
-      // Target: 2026-04-20
-     // Phase 1 (Recruiter) starts April 15. Phase 2 (Bridge/Checker) starts April 22.
-     const RECRUIT_START = new Date("2026-04-5T00:00:00Z").getTime();
-     const CHECKER_START = new Date("2026-04-22T00:00:00Z").getTime();
-     const now = Date.now();
-
-     if (now >= RECRUIT_START) {
-     document.body.classList.add('phase-bridge');
-               
-               if (now >= CHECKER_START && typeof initBridge === 'function') {
-               initBridge(); // Switches to WL Checker on April 22
-               } else if (typeof initRecruiter === 'function') {
-               initRecruiter(); // Shows Recruitment Form today
-               }
-               } else {
-               console.log(" Pipeline Layer Locked for Development");
-               }
-
-      // 3. Data Integration: Sync Contract UI with actual Supply Caps
-      if (typeof updateContract === 'function') {
-          updateContract();
-      }
-  };
-</script>
+          // CHOOSE THE PAGE
+          if (now >= CHECKER_START && typeof initBridge === 'function') {
+          console.log("Phase: Whitelist Checker");
+          initBridge(); 
+          } else if (typeof initRecruiter === 'function') {
+          console.log("Phase: Recruitment Form");
+          initRecruiter(); 
+          } else {
+          console.error("Critical: Recruiter/Bridge script not found!");
+          }
+          } else {
+          // STAY IN ADMIN MODE
+          console.log("Phase: Admin Pipeline");
+          if (typeof updateContract === 'function') updateContract();
+          }
+          };
+          </script>
 
 </body>
 </html>
