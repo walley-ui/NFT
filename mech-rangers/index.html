@@ -40,26 +40,27 @@
         <div class="logo-tag">NFT PRODUCTION PIPELINE<br>v2.0 — FULL MINT SYSTEM</div>
       </div>
 
-      <div class="hdr-stats">
-        <div class="hstat">
-          
-          <span class="hstat-val cyan"   id="sTot">0</span>
-          <span class="hstat-label">Generated</span>
-        </div>
-        <div class="hstat">
-          <span class="hstat-val gold"   id="sLeg">0</span>
-          <span class="hstat-label">Legendary</span>
-        </div>
-        <div class="hstat">
-          <span class="hstat-val purple" id="sEpic">0</span>
-          <span class="hstat-label">Epic</span>
-        </div>
-        <div class="hstat">
-          <span class="hstat-val green"  id="sUniq">0</span>
-              <div class="hstat">
-             <span class="hstat-val mythic" id="sMyth">0</span>
-          <span class="hstat-label">Unique</span>
-        </div>
+    <div class="hdr-stats">
+      <div class="hstat">
+      <span class="hstat-val cyan" id="sTot">0</span>
+      <span class="hstat-label">Generated</span>
+      </div>
+      <div class="hstat">
+      <span class="hstat-val mythic" id="sMyth">0</span>
+      <span class="hstat-label">Mythic</span>
+      </div>
+      <div class="hstat">
+      <span class="hstat-val gold" id="sLeg">0</span>
+      <span class="hstat-label">Legendary</span>
+      </div>
+      <div class="hstat">
+      <span class="hstat-val purple" id="sEpic">0</span>
+      <span class="hstat-label">Epic</span>
+      </div>
+      <div class="hstat">
+      <span class="hstat-val green" id="sUniq">0</span>
+      <span class="hstat-label">Unique</span>
+      </div>
       </div>
 
       <div class="hdr-pipeline-tag">⬡ PIPELINE ACTIVE</div>
@@ -136,8 +137,8 @@
           <div class="cap-dot"></div>
           <span class="cap-label">COMMON</span>
           <span class="cap-count" id="cnt-common">0</span>
-          <span class="cap-max">/ 3890</span>
-          <input type="hidden" id="cMaxCommon" value="3890">
+          <span class="cap-max">/ 3880</span>
+          <input type="hidden" id="cMaxCommon" value="3880">
         </div>
       </div>
 
@@ -245,7 +246,7 @@
             <span class="cid-label">Image CID</span>
             <input class="cid-in" id="imageCID"
                    placeholder="QmYourImageCID..."
-                   value="QmYourImageCIDPlaceholderStandardTesting123456789">
+                   value="Bafybeie7lnobmou7qtruauhemo4pholisx5dnlfyu7b3vhk5czaarzic3e">
           </div>
           <div class="export-preview" id="metaPreview">// Metadata sample
   // Generate NFTs first...</div>
@@ -506,7 +507,7 @@
 <script src="js/export.js"></script>
 <script src="js/contract.js"></script> 
 <script src="js/roast.js"></script>
-
+<script src="js/recruiter.js"></script>
 <script src="js/bridge.js"></script>
 
 <script>
@@ -531,24 +532,22 @@
 
       // 2. Initialize the Phase Switcher
       // Target: 2026-04-20
-      const LAUNCH_DATE = new Date("2026-04-20T14:00:00Z").getTime();
-      const now = Date.now();
+     // Phase 1 (Recruiter) starts April 15. Phase 2 (Bridge/Checker) starts April 22.
+     const RECRUIT_START = new Date("2026-04-5T00:00:00Z").getTime();
+     const CHECKER_START = new Date("2026-04-22T00:00:00Z").getTime();
+     const now = Date.now();
 
-      if (now >= LAUNCH_DATE) {
-          // Switch to Bridge Mode (Site B - Public Launch)
-          document.body.classList.add('phase-bridge');
-          if (typeof initBridge === 'function') {
-              initBridge();
-          } else {
-              console.warn("initBridge not found. Bridge script may be missing.");
-          }
-      } else {
-          // Maintain Gatekeeper Mode (Site A - Pipeline Development)
-          if (typeof initGatekeeper === 'function') {
-              initGatekeeper();
-          }
-          console.log("⬡ Pipeline Layer Locked for Development");
-      }
+     if (now >= RECRUIT_START) {
+     document.body.classList.add('phase-bridge');
+               
+               if (now >= CHECKER_START && typeof initBridge === 'function') {
+               initBridge(); // Switches to WL Checker on April 22
+               } else if (typeof initRecruiter === 'function') {
+               initRecruiter(); // Shows Recruitment Form today
+               }
+               } else {
+               console.log(" Pipeline Layer Locked for Development");
+               }
 
       // 3. Data Integration: Sync Contract UI with actual Supply Caps
       if (typeof updateContract === 'function') {
