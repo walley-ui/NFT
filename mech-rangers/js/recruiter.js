@@ -5,6 +5,7 @@
 ═══════════════════════════════════════════════════════ */
 
 import { createClient } from '@supabase/supabase-js';
+import { getRoast } from './roast.js';
 
 // Securely pull environment variables via Vite
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -92,7 +93,7 @@ export async function submitRecruitment() {
 
   const code = wallet.slice(-4).toUpperCase() + Math.random().toString(36).substring(2, 4).toUpperCase();
   
-  // Persist to Supabase
+  // Persist to Supabase using the hardened insert policy
   const { error } = await _supabase
     .from('recruits')
     .insert([{
@@ -107,6 +108,14 @@ export async function submitRecruitment() {
     if (error.code === '23505') toast("Wallet already enlisted!", "warn");
     else toast("Database Error", "error");
     return;
+  }
+
+  // Log to referrals table if there was a referrer
+  if (referrer) {
+    await _supabase.from('referrals').insert([{
+        referrer_wallet: referrer, // Note: Expects the code or wallet based on your logic
+        recruit_wallet: wallet
+    }]);
   }
 
   _recruitData = { wallet, twitter, refCode: code, referrals: 0, followed: true };
@@ -151,8 +160,8 @@ export function renderRecruitUI() {
         <input type="text" id="recTwitter" class="field-in" placeholder="@username" style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3)">
       </div>
       <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none;" onclick="submitRecruitment()" disabled>FORGE ENROLLMENT</button>
-      <div style="margin-top:20px; padding:16px; border:1px dashed #1c1c30; background:rgba(93,42,24,0.05); text-align:center;">
-        <div style="font-family:'Bebas Neue'; font-size:1.4rem; color:#3a3a5a; letter-spacing:4px">COMING SOON</div>
+      <div style="margin-top:20px; padding:16px; border:1px dashed #5d2a18; background:rgba(93,42,24,0.05); text-align:center;">
+        <div style="font-family:'Bebas Neue'; font-size:1.4rem; color:#8b4513; letter-spacing:4px">DISCORD: COMING SOON</div>
       </div>
     </div>
   `;
@@ -165,10 +174,22 @@ export function renderRecruitSuccess() {
   const refLink = `${window.location.origin}?ref=${_recruitData.refCode}`;
 
   let currentRoast = "SYSTEM ONLINE...";
+  let tier = 'parasite';
+  
+  if (_recruitData.referrals > 10) tier = 'threat';
+  if (_recruitData.referrals > 50) tier = 'legendary';
+
   if (typeof getRoast === 'function') {
-      currentRoast = getRoast('welcome', 'parasite', { 
+      currentRoast = getRoast('welcome', tier, { 
         user: _recruitData.twitter || "Operative", 
         count: _recruitData.referrals 
+      });
+      
+      // LOG THE BURN TO SUPABASE (Hardened RPC call)
+      _supabase.rpc('log_roast_event', {
+        user_wallet: _recruitData.wallet,
+        tier: tier,
+        burn: currentRoast
       });
   }
   
@@ -179,15 +200,21 @@ export function renderRecruitSuccess() {
         <div style="margin-bottom:20px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:15px">
             <div style="font-size:1.1rem; font-family:'Share Tech Mono'; color:#ffab91; font-style:italic;">"${currentRoast.toUpperCase()}"</div>
         </div>
+        <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">YOUR INVITE CODE</div>
         <div style="font-size:2rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:8px;">${_recruitData.refCode}</div>
       </div>
       <div class="field-row">
            <input type="text" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center;">
       </div>
-      <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513" onclick="copyRef('${refLink}')">COPY LINK</button>
-      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none" onclick="tweetRef('${refLink}')">𝕏 ANNOUNCE</button>
+      <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
+      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none" onclick="tweetRef('${refLink}')">𝕏 SHARE TO TWITTER</button>
+      
+      <div style="margin-top:25px; font-size:0.6rem; color:#6a6a9a; text-align:center; font-family:'Share Tech Mono'">
+        ACTIVE RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | TIER: <span style="color:#8b4513">${tier.toUpperCase()}</span>
+      </div>
+
       <div style="text-align:center; margin-top:25px">
-        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none;">RESET DOSSIER</button>
+        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RETURN</button>
       </div>
     </div>
   `;
@@ -199,7 +226,7 @@ export function copyRef(link) {
 }
 
 export function tweetRef(link) {
-  const text = encodeURIComponent(`I've joined the @MechRangersNFT resistance on @Base. Enroll now: `);
+  const text = encodeURIComponent(`I've joined the @MechRangersNFT NFT WhiteList on @Base. Enroll now to secure your Mech Position: `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 

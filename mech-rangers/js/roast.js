@@ -200,3 +200,4 @@ export function getRoast(type, tier, data) {
                            .replace(/{count}/g, data.count)
                            .replace(/{last_ref}/g, data.lastRef || "some random");
 }
+window.getRoast = getRoast;
