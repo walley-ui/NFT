@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Mech Rangers ERC-721 — Production Contract (Optimized)
+// Mech Rangers ERC-721 — Production Contract v2.3 (Tiered Allowance Upgrade)
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -32,7 +32,7 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
 
     // ── Reveal System ─────────────────────────────────────────
     string  private _baseTokenURI;
-    string public hiddenURI;
+    string  public  hiddenURI;
     bool    public  revealed  = false;
 
     // ── Events ────────────────────────────────────────────────
@@ -46,9 +46,7 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
         ERC721("MechRangers", "MECHR")
         Ownable(msg.sender)
     {
-        _baseTokenURI = ""; // Will be set later when you call the reveal() function.
-        
-        // UPGRADE: Using standard ERC2981 internal setter
+        _baseTokenURI = ""; 
         _setDefaultRoyalty(msg.sender, 500); // 5%
 
         rarityCap["mythic"]    = 20;
@@ -59,18 +57,22 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
         rarityCap["common"]    = 3980;
     }
 
-    // ── Public Mint ───────────────────────────────────────────
+    // ── Public Mint (UPGRADED for Tiered Allowances) ──────────
     function mint(
         uint256 quantity,
+        uint256 maxAllowance,
         bytes32[] calldata merkleProof
     ) external payable whenNotPaused {
         require(totalSupply + quantity <= MAX_SUPPLY, "Collection Sold Out");
-        require(walletMinted[msg.sender] + quantity <= MAX_PER_WALLET, "Exceeds Wallet Limit");
         require(msg.value >= mintPrice * quantity, "Insufficient Payment");
 
         if (whitelistOnly) {
-            bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-            require(MerkleProof.verify(merkleProof, merkleRoot, leaf), "Not on Whitelist");
+            // UPGRADE: Matches points.js encoding: keccak256(address, uint256)
+            bytes32 leaf = keccak256(abi.encodePacked(msg.sender, maxAllowance));
+            require(MerkleProof.verify(merkleProof, merkleRoot, leaf), "Not on Whitelist or Tier Mismatch");
+            require(walletMinted[msg.sender] + quantity <= maxAllowance, "Exceeds Tier Allowance");
+        } else {
+            require(walletMinted[msg.sender] + quantity <= MAX_PER_WALLET, "Exceeds Wallet Limit");
         }
 
         for (uint256 i = 0; i < quantity; i++) {
@@ -105,11 +107,7 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     // ── Token URI ─────────────────────────────────────────────
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        
-        if (!revealed) {
-            return hiddenURI;
-        }
-
+        if (!revealed) return hiddenURI;
         return string(abi.encodePacked(_baseTokenURI, tokenId.toString(), ".json"));
     }
 
@@ -119,7 +117,6 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     function setWhitelistOnly(bool state)     external onlyOwner { whitelistOnly = state; }
     function setHiddenURI(string memory uri)  external onlyOwner { hiddenURI = uri; }
     
-    // UPGRADE: Simplified royalty setter using ERC2981 standard
     function setRoyaltyInfo(address receiver, uint96 fee) external onlyOwner {
         require(fee <= 1000, "Fee too high"); 
         _setDefaultRoyalty(receiver, fee);
@@ -141,7 +138,6 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     }
 
     // ── Interface Support ─────────────────────────────────────
-    // UPGRADE: Fixed conflict with OpenZeppelin v5 supportsInterface
     function supportsInterface(bytes4 interfaceId)
         public view override(ERC721, ERC2981)
         returns (bool)

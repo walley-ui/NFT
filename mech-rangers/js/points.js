@@ -37,13 +37,14 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // 2. TIER & ALLOWANCE LOGIC (Aligned with Contract & Level 0 Generator)
+// UPGRADE: Mythic restricted to 1, common/uncommon increased to 5
 const TIER_THRESHOLDS = [
-    { tier: 'mythic',    minPoints: 500, allowance: 5 },  
-    { tier: 'legendary', minPoints: 250, allowance: 3 }, 
-    { tier: 'epic',      minPoints: 100, allowance: 2 },  
-    { tier: 'rare',      minPoints: 50,  allowance: 1 },  
-    { tier: 'uncommon',  minPoints: 10,  allowance: 1 },  
-    { tier: 'common',    minPoints: 1,   allowance: 1 }
+    { tier: 'mythic',    minPoints: 500, allowance: 1 },  
+    { tier: 'legendary', minPoints: 250, allowance: 2 }, 
+    { tier: 'epic',      minPoints: 100, allowance: 3 },  
+    { tier: 'rare',      minPoints: 50,  allowance: 4 },  
+    { tier: 'uncommon',  minPoints: 10,  allowance: 5 },  
+    { tier: 'common',    minPoints: 1,   allowance: 5 }
 ];
 
 function getTierData(points) {

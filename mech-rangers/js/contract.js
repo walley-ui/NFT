@@ -16,8 +16,8 @@ function getContractConfig() {
     maxWallet: document.getElementById('cMaxWallet')?.value || '5',
     royalty:   parseFloat(document.getElementById('cRoyalty')?.value)   || 5,
     baseURI:   document.getElementById('cBaseURI')?.value   || 'ipfs://YOUR_METADATA_CID/',
-    // UPGRADE: Pulling the actual generated Merkle Root if it exists in state
-    merkleRoot: typeof _snapshot !== 'undefined' && _snapshot?.merkleRoot 
+    // UPGRADE: Dynamic Merkle Root check from terminal output/state
+    merkleRoot: (typeof _snapshot !== 'undefined' && _snapshot?.merkleRoot) 
                 ? _snapshot.merkleRoot 
                 : (document.getElementById('cMerkleRoot')?.value || '0x0000000000000000000000000000000000000000000000000000000000000000')
   };
@@ -27,11 +27,10 @@ function getContractConfig() {
    SOLIDITY CONTRACT — (BASE COMPATIBLE)
 ───────────────────────────────────────────── */
 function buildSolidityHTML(cfg) {
-  // Upgrade: Improved Wei conversion for the contract display
   const priceInWei = (cfg.price * 1e18).toString();
   
   return `<span class="cm">// SPDX-License-Identifier: MIT</span>
-<span class="cm">// Mech Rangers ERC-721 — Production Contract v2.1 (Base Mainnet)</span>
+<span class="cm">// Mech Rangers ERC-721 — Production Contract v2.2 (Base Mainnet)</span>
 <span class="kw">pragma solidity</span> ^<span class="num">0.8.20</span>;
 
 <span class="kw">import</span> <span class="str">"@openzeppelin/contracts/token/ERC721/ERC721.sol"</span>;
@@ -42,32 +41,26 @@ function buildSolidityHTML(cfg) {
 
 <span class="kw">contract</span> <span class="type">${cfg.name}</span> <span class="kw">is</span> <span class="type">ERC721</span>, <span class="type">Ownable</span>, <span class="type">IERC2981</span>, <span class="type">Pausable</span> {
 
-    <span class="cm">// ── Supply &amp; Pricing ──────────────────────────────</span>
     <span class="type">uint256</span> <span class="kw">public</span> totalSupply;
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_SUPPLY   = <span class="num">${cfg.maxSupply}</span>;
     <span class="type">uint256</span> <span class="kw">public</span> mintPrice             = <span class="num">${cfg.price} ether</span>;
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_PER_WALLET = <span class="num">${cfg.maxWallet}</span>;
     <span class="type">uint256</span> <span class="kw">public</span> teamReserve           = <span class="num">100</span>;
 
-    <span class="cm">// ── Rarity Hard Caps (Synced with Level 0 Math) ──</span>
     <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityCap;
     <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityMinted;
 
-    <span class="cm">// ── Whitelist (Merkle Root from Admin Snapshot) ──</span>
-    <span class="type">bytes32</span> <span class="kw">public</span> merkleRoot = <span class="type">${cfg.merkleRoot}</span>;
+    <span class="type">bytes32</span> <span class="kw">public</span> merkleRoot = <span class="num">${cfg.merkleRoot}</span>;
     <span class="type">bool</span>    <span class="kw">public</span> whitelistOnly = <span class="kw">true</span>;
     <span class="type">mapping</span>(<span class="type">address</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> walletMinted;
 
-    <span class="cm">// ── Reveal System ─────────────────────────────────</span>
     <span class="type">string</span> <span class="kw">private</span> _baseTokenURI;
     <span class="type">string</span> <span class="kw">public</span>  hiddenURI = <span class="str">"ipfs://HIDDEN_CID/hidden.json"</span>;
     <span class="type">bool</span>   <span class="kw">public</span>  revealed  = <span class="kw">false</span>;
 
-    <span class="cm">// ── Royalties (EIP-2981) ──────────────────────────</span>
-    <span class="type">uint96</span>  <span class="kw">private</span> _royaltyFee      = <span class="num">${cfg.royalty * 100}</span>; <span class="cm">// ${cfg.royalty}%</span>
+    <span class="type">uint96</span>  <span class="kw">private</span> _royaltyFee      = <span class="num">${cfg.royalty * 100}</span>;
     <span class="type">address</span> <span class="kw">private</span> _royaltyReceiver;
 
-    <span class="cm">// ── Events ────────────────────────────────────────</span>
     <span class="ev">event</span> <span class="fn">Minted</span>(<span class="type">address indexed</span> to, <span class="type">uint256 indexed</span> tokenId);
     <span class="ev">event</span> <span class="fn">Revealed</span>();
     <span class="ev">event</span> <span class="fn">BaseURISet</span>(<span class="type">string</span> newURI);
@@ -79,7 +72,7 @@ function buildSolidityHTML(cfg) {
         _baseTokenURI    = baseURI_;
         _royaltyReceiver = msg.sender;
         
-        <span class="cm">// UPGRADE: Caps auto-synced from Level 0 Generator Settings</span>
+        <span class="cm">// SYNCED CAPS: Based on 10k collection distribution</span>
         rarityCap[<span class="str">"mythic"</span>]    = <span class="num">20</span>;
         rarityCap[<span class="str">"legendary"</span>] = <span class="num">100</span>;
         rarityCap[<span class="str">"epic"</span>]      = <span class="num">900</span>;
@@ -88,7 +81,6 @@ function buildSolidityHTML(cfg) {
         rarityCap[<span class="str">"common"</span>]    = <span class="num">3980</span>;
     }
 
-    <span class="cm">// ── Public Mint (With Proof-based Allowance for Survivors) ───────────────────</span>
     <span class="kw">function</span> <span class="fn">mint</span>(
         <span class="type">uint256</span> quantity,
         <span class="type">uint256</span> maxAllowance,
@@ -98,6 +90,7 @@ function buildSolidityHTML(cfg) {
         <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity,             <span class="str">"Insufficient ETH"</span>);
         
         <span class="kw">if</span> (whitelistOnly) {
+            <span class="cm">// Validates address + dynamic allowance (e.g. Mythic 1, Common 5)</span>
             <span class="type">bytes32</span> leaf = <span class="fn">keccak256</span>(<span class="fn">abi.encodePacked</span>(msg.sender, maxAllowance));
             <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(merkleProof, merkleRoot, leaf), <span class="str">"Invalid proof"</span>);
             <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= maxAllowance, <span class="str">"Exceeds tier allowance"</span>);
@@ -113,7 +106,6 @@ function buildSolidityHTML(cfg) {
         }
     }
 
-    <span class="cm">// ── Team Operations ───────────────────────────────</span>
     <span class="kw">function</span> <span class="fn">ownerMint</span>(<span class="type">address</span> to, <span class="type">uint256</span> quantity) <span class="kw">external onlyOwner</span> {
         <span class="kw">require</span>(quantity &lt;= teamReserve,                        <span class="str">"Exceeds team reserve"</span>);
         <span class="kw">require</span>(totalSupply + quantity &lt;= MAX_SUPPLY,           <span class="str">"Max supply reached"</span>);
@@ -207,7 +199,7 @@ function updateContract() {
 }
 
 /* ─────────────────────────────────────────────
-   MINT SIMULATOR
+   MINT SIMULATOR (SYNCED WITH POINTS.JS)
 ───────────────────────────────────────────── */
 function updateMintSim() {
   const wrap = document.getElementById('mintSimRows');
@@ -218,23 +210,22 @@ function updateMintSim() {
   const royalty = parseFloat(document.getElementById('cRoyalty')?.value)   || 5;
 
   const TIERS = [
-    { key:'mythic',    label:'MYTHIC',    col:'#ff0055' },
-    { key:'legendary', label:'LEGENDARY', col:'#ffc400' },
-    { key:'epic',      label:'EPIC',      col:'#b44fff' },
-    { key:'rare',      label:'RARE',      col:'#00e5ff' },
-    { key:'uncommon',  label:'UNCOMMON',  col:'#00e676' },
-    { key:'common',    label:'COMMON',    col:'#4a4a72' },
+    { key:'mythic',    label:'MYTHIC',    col:'#ff0055', allowance: 1 },
+    { key:'legendary', label:'LEGENDARY', col:'#ffc400', allowance: 2 },
+    { key:'epic',      label:'EPIC',      col:'#b44fff', allowance: 3 },
+    { key:'rare',      label:'RARE',      col:'#00e5ff', allowance: 4 },
+    { key:'uncommon',  label:'UNCOMMON',  col:'#00e676', allowance: 5 },
+    { key:'common',    label:'COMMON',    col:'#4a4a72', allowance: 5 },
   ];
 
   const estRevenue = total * price;
 
   wrap.innerHTML = TIERS.map(t => {
-    // SYNC: Manual fallback to Level 0 caps if SUPPLY_CAPS is missing
     const cap = (typeof SUPPLY_CAPS !== 'undefined' ? SUPPLY_CAPS[t.key] : (t.key === 'mythic' ? 20 : t.key === 'legendary' ? 100 : t.key === 'epic' ? 900 : t.key === 'rare' ? 2000 : t.key === 'uncommon' ? 3000 : 3980));
     const count = (typeof mintedCount !== 'undefined' ? mintedCount[t.key] : 0);
     return `
     <div class="mint-tier-row">
-      <div class="mt-label" style="color:${t.col}">${t.label}</div>
+      <div class="mt-label" style="color:${t.col}">${t.label} (Max: ${t.allowance})</div>
       <div class="mt-bar-bg">
         <div class="mt-bar-fill" style="width:${((count / cap) * 100).toFixed(1)}%;background:${t.col}"></div>
       </div>
