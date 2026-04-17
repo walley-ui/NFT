@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "Mech Rangers NFT Production Pipeline — Production Ready",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "compile": "hardhat compile",
     "deploy:ignition": "hardhat ignition deploy ./ignition/modules/MechRangers.ts",
     "test": "hardhat test",
@@ -17,7 +21,6 @@
   ],
   "author": "Ix",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "@ipld/car": "^5.4.3",
     "@lighthouse-web3/sdk": "^0.4.5",

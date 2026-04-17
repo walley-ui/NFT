@@ -173,7 +173,8 @@ const STINGERS = [
     " Logged and evaluated."
 ];
 
-function getRoast(type, tier, data) {
+// Exported for use in recruitment and bridge modules
+export function getRoast(type, tier, data) {
     const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
     
     if (Math.random() > 0.25) {

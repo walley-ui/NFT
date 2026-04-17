@@ -7,7 +7,7 @@
 /* ── CONFIG ─────────────────────────────────────────── */
 const BRIDGE_CONFIG = {
   contractAddress: 'UPDATE_TO_MY_ACTUAL_CONTRACT_ADDRESS', 
-  mintPriceEth: '0.005', // SYNCED: Matches MechRangers.sol
+  mintPriceEth: '0.005', 
   chainId: 8453, 
   chainName: 'Base',
   rpcUrl: 'https://mainnet.base.org',
@@ -22,7 +22,8 @@ let _assignedNFT = null;
 let _snapshot = null;
 
 /* ── INIT (HITS THE BRIDGE ROOT) ───────────────────── */
-async function initBridge() {
+// Exported for the Phase Switcher in index.html
+export async function initBridge() {
   const root = document.getElementById('bridge-content');
   if (root) root.innerHTML = `<div id="bridgeRoot" class="wrap" style="margin-top:100px; max-width:500px"></div>`;
   
@@ -38,7 +39,7 @@ async function initBridge() {
 }
 
 /* ── VERIFY ADDRESS (THE SEARCH) ────────────────────── */
-async function bridgeVerifyAddress() {
+export async function bridgeVerifyAddress() {
   const input = document.getElementById('bridgeWalletInput');
   const address = input?.value.trim().toLowerCase();
 
@@ -53,24 +54,23 @@ async function bridgeVerifyAddress() {
   if (assignment) {
     _assignedNFT = (typeof allNFTs !== 'undefined') ? allNFTs.find(n => n.id === assignment.id) : null;
     renderWalletStatus(assignment);
-    toast("Assignment Verified!", "success");
+    if (typeof toast === 'function') toast("Assignment Verified!", "success");
   } else {
     renderWalletStatus(null);
-    // Trigger the Roast logic if the address is a civilian (not whitelisted)
     if (typeof triggerRoast === 'function') triggerRoast('rejected');
   }
 }
 
 /* ── X (TWITTER) REFERRAL LOGIC ─────────────────────── */
-function shareToX() {
+export function shareToX() {
   const text = encodeURIComponent(`Checking my clearance for the @${BRIDGE_CONFIG.xAccount} drop on @Base. \n\nForge your destiny here: `);
-  const url = encodeURIComponent(window.location.href);
+  const url = encodeURIComponent(window.location.origin);
   window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-  toast("Signal sent to the grid!", "info");
+  if (typeof toast === 'function') toast("Signal sent to the grid!", "info");
 }
 
 /* ── CONNECT WALLET ─────────────────────────────────── */
-async function bridgeConnect() {
+export async function bridgeConnect() {
   if (typeof window.ethereum === 'undefined') {
     bridgeShowStatus('warn', '🦊 Wallet not detected.');
     return;
@@ -116,7 +116,7 @@ async function renderWalletStatus(assignment) {
       <div class="bridge-status not-listed" style="text-align:center; padding:20px; border:1px solid var(--red)">
         <div class="bridge-title" style="color:var(--red); font-family:'Bebas Neue'; font-size:1.5rem">ACCESS DENIED</div>
         <div class="bridge-msg" style="margin:10px 0; font-size:0.8rem; color:var(--muted)">
-          Address <code>${_userWallet.slice(0,8)}...</code> isn't in the snapshot. You're a civilian in a war zone.
+          Address <code>${_userWallet.slice(0,8)}...</code> isn't in the snapshot.
         </div>
         <button class="btn btn-outline" onclick="shareToX()" style="width:100%; margin-bottom:10px">
           𝕏 REQUEST REINFORCEMENTS
@@ -141,7 +141,7 @@ async function renderWalletStatus(assignment) {
       </div>
 
       <div class="bridge-trust-box" style="margin-top:15px; border: 1px solid ${tierColor}44; padding: 10px; font-size: 0.75rem;">
-        <p>Deployment: <strong>Base Mainnet</strong><br>Status: <strong>Ready to Claim Soon</strong></p>
+        <p>Deployment: <strong>Base Mainnet</strong></p>
       </div>
       
       <button class="btn btn-outline" onclick="shareToX()" style="width:100%; margin-top:10px">
@@ -153,12 +153,12 @@ async function renderWalletStatus(assignment) {
 }
 
 /* ── VIEW ASSIGNED RANGER ───────────────────────────── */
-function viewMyRanger(id) {
+export function viewMyRanger(id) {
   const nft = (typeof allNFTs !== 'undefined') ? allNFTs.find(n => n.id === id) : null;
   if (nft && typeof openModal === 'function') {
     openModal(nft);
   } else {
-    toast("Ranger data not loaded. Please wait...", "warn");
+    if (typeof toast === 'function') toast("Ranger data not loaded.", "warn");
   }
 }
 
@@ -173,7 +173,7 @@ function bridgeShowStatus(type, msg) {
 }
 
 /* ── RENDER BRIDGE UI ───────────────────────────────── */
-function renderBridgeUI() {
+export function renderBridgeUI() {
   const root = document.getElementById('bridgeRoot');
   if (!root) return;
   root.innerHTML = `
@@ -191,17 +191,24 @@ function renderBridgeUI() {
             CHECK WL
           </button>
         </div>
-        
         <div class="divider" style="margin:20px 0; text-align:center; color:var(--muted2); font-size:0.7rem">OR</div>
-        
         <button class="btn btn-outline" style="width:100%; font-size:0.9rem; border-style:dashed" onclick="bridgeConnect()">
-          🦊 CONNECT WITH METAMASK
+          🦊 CONNECT WALLET
         </button>
       </div>
     </div>`;
 }
 
-/* ── COMPATIBILITY ── */
-async function bridgeInit() { await initBridge(); }
+// Global Mappings for HTML Compatibility
+window.bridgeVerifyAddress = bridgeVerifyAddress;
+window.shareToX = shareToX;
+window.bridgeConnect = bridgeConnect;
+window.viewMyRanger = viewMyRanger;
+window.renderBridgeUI = renderBridgeUI;
 
-window.addEventListener('DOMContentLoaded', initBridge);
+// Auto-init only if not handled by external phase logic
+window.addEventListener('DOMContentLoaded', () => {
+  if (!document.body.classList.contains('phase-bridge')) {
+     // If not in bridge phase, we wait for the switcher to call initBridge()
+  }
+});
