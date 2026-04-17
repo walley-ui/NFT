@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" shape-rendering="geometricPrecision"><defs>
+
+  <!-- Scene gradients -->
+  <radialGradient id="bgr1x297" cx="50%" cy="42%" r="72%">
+    <stop offset="0%"   stop-color="#1a2814"/>
+    <stop offset="100%" stop-color="#0d1520"/>
+  </radialGradient>
+  <linearGradient id="suitr1x297" x1="8%" y1="0%" x2="92%" y2="100%">
+    <stop offset="0%"   stop-color="#ff44aa" stop-opacity=".95"/>
+    <stop offset="45%"  stop-color="#880050"/>
+    <stop offset="100%" stop-color="#0d1520"/>
+  </linearGradient>
+  <linearGradient id="suitHir1x297" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="60%"  stop-color="rgba(255,255,255,.04)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </linearGradient>
+  <!-- Bevel: bright top, dark bottom for armour panels -->
+  <linearGradient id="bevelr1x297" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.55)"/>
+    <stop offset="30%"  stop-color="#ff44aa"/>
+    <stop offset="70%"  stop-color="#880050"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,.5)"/>
+  </linearGradient>
+
+  <!-- Weapon: cold steel blade sweep -->
+  <linearGradient id="blader1x297" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#0e0e20"/>
+    <stop offset="16%"  stop-color="#3e3e58"/>
+    <stop offset="34%"  stop-color="#c8c8e0"/>
+    <stop offset="50%"  stop-color="#f5f5ff"/>
+    <stop offset="66%"  stop-color="#b8b8d0"/>
+    <stop offset="84%"  stop-color="#2e2e48"/>
+    <stop offset="100%" stop-color="#08080e"/>
+  </linearGradient>
+  <!-- Blade tip brightening -->
+  <linearGradient id="bladeTipr1x297" x1="0%" y1="100%" x2="0%" y2="0%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,0)"/>
+    <stop offset="55%"  stop-color="rgba(255,255,255,.1)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,.55)"/>
+  </linearGradient>
+  <!-- Gunmetal anodised — blaster body -->
+  <linearGradient id="gunmetalr1x297" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#46465e"/>
+    <stop offset="18%"  stop-color="#828296"/>
+    <stop offset="42%"  stop-color="#26263a"/>
+    <stop offset="72%"  stop-color="#16162a"/>
+    <stop offset="100%" stop-color="#0c0c18"/>
+  </linearGradient>
+  <!-- Brushed steel tube — barrel/rod -->
+  <linearGradient id="barrelr1x297" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#0a0a14"/>
+    <stop offset="24%"  stop-color="#585875"/>
+    <stop offset="50%"  stop-color="#a8a8c8"/>
+    <stop offset="76%"  stop-color="#383852"/>
+    <stop offset="100%" stop-color="#0a0a14"/>
+  </linearGradient>
+  <!-- Chrome rod — lance shaft -->
+  <linearGradient id="chromer1x297" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#0c0c18"/>
+    <stop offset="20%"  stop-color="#686888"/>
+    <stop offset="44%"  stop-color="#e0e0f0"/>
+    <stop offset="56%"  stop-color="#c0c0d8"/>
+    <stop offset="80%"  stop-color="#28283e"/>
+    <stop offset="100%" stop-color="#0c0c18"/>
+  </linearGradient>
+  <!-- Titanium plate — shield face -->
+  <linearGradient id="titaniumr1x297" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#585878"/>
+    <stop offset="28%"  stop-color="#ff44aa" stop-opacity=".88"/>
+    <stop offset="55%"  stop-color="#880050"/>
+    <stop offset="80%"  stop-color="#181828"/>
+    <stop offset="100%" stop-color="#0a0a18"/>
+  </linearGradient>
+  <!-- Artillery black-chrome — cannon body -->
+  <linearGradient id="artilleryr1x297" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#383850"/>
+    <stop offset="14%"  stop-color="#78789a"/>
+    <stop offset="36%"  stop-color="#202034"/>
+    <stop offset="65%"  stop-color="#14141e"/>
+    <stop offset="100%" stop-color="#0a0a12"/>
+  </linearGradient>
+  <!-- Energy orb — staff -->
+  <radialGradient id="orbr1x297" cx="35%" cy="35%" r="65%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
+    <stop offset="30%"  stop-color="#ff44aa"/>
+    <stop offset="68%"  stop-color="#880050"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,.6)"/>
+  </radialGradient>
+  <!-- Knuckle plate chrome -->
+  <linearGradient id="knuckler1x297" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#888aaa"/>
+    <stop offset="32%"  stop-color="#ff44aa" stop-opacity=".8"/>
+    <stop offset="62%"  stop-color="#1a1a2c"/>
+    <stop offset="100%" stop-color="#0a0a14"/>
+  </linearGradient>
+
+  <!-- Carbon fibre weave texture overlay -->
+  <pattern id="carbonr1x297" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="rgba(0,0,0,.08)"/>
+    <rect x="0" y="0" width="3" height="3" fill="rgba(255,255,255,.022)"/>
+    <rect x="3" y="3" width="3" height="3" fill="rgba(255,255,255,.022)"/>
+    <line x1="0" y1="0" x2="3" y2="3" stroke="rgba(255,255,255,.038)" stroke-width=".5"/>
+    <line x1="3" y1="0" x2="6" y2="3" stroke="rgba(0,0,0,.055)"       stroke-width=".5"/>
+    <line x1="0" y1="3" x2="3" y2="6" stroke="rgba(0,0,0,.055)"       stroke-width=".5"/>
+    <line x1="3" y1="3" x2="6" y2="6" stroke="rgba(255,255,255,.038)" stroke-width=".5"/>
+  </pattern>
+
+  <!-- Specular metal sheen on armour panels -->
+  <filter id="metalr1x297" x="-5%" y="-5%" width="110%" height="110%">
+    <feSpecularLighting surfaceScale="4" specularConstant="1.8"
+        specularExponent="42" lighting-color="#ffffff" result="spec">
+      <feDistantLight elevation="52" azimuth="38"/>
+    </feSpecularLighting>
+    <feComposite in="spec" in2="SourceGraphic" operator="in" result="sm"/>
+    <feComposite in="SourceGraphic" in2="sm" operator="arithmetic" k1="0" k2="1" k3="0.55" k4="0"/>
+  </filter>
+
+  <!-- Sharper specular for weapons — heavier glare -->
+  <filter id="wmr1x297" x="-8%" y="-8%" width="116%" height="116%">
+    <feSpecularLighting surfaceScale="6" specularConstant="2.4"
+        specularExponent="65" lighting-color="#ffffff" result="spec">
+      <feDistantLight elevation="44" azimuth="28"/>
+    </feSpecularLighting>
+    <feComposite in="spec" in2="SourceGraphic" operator="in" result="sm"/>
+    <feComposite in="SourceGraphic" in2="sm" operator="arithmetic" k1="0" k2="1" k3="0.78" k4="0"/>
+  </filter>
+
+  <!-- Sketch wobble -->
+  <filter id="skr1x297" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.038"
+        numOctaves="3" seed="34" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.6"
+        xChannelSelector="R" yChannelSelector="G" result="w"/>
+    <feComposite in="w" in2="SourceGraphic" operator="atop"/>
+  </filter>
+
+  <!-- Glow: sharp accent -->
+  <filter id="glowr1x297" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="3.5" result="b"/>
+    <feColorMatrix in="b" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.8 0" result="boost"/>
+    <feMerge><feMergeNode in="boost"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Bloom: wide soft -->
+  <filter id="bloomr1x297" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="11" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  </defs><rect width="1000" height="1000" fill="url(#bgr1x297)"/><ellipse cx="500.0" cy="892.0" rx="350.0" ry="65.0" fill="rgba(0,0,0,.7)" filter="url(#bloomr1x297)"/><ellipse cx="500.0" cy="889.0" rx="220.0" ry="34.0" fill="rgba(0,0,0,.45)"/><ellipse cx="500.0" cy="520.0" rx="320.0" ry="480.0" fill="#ff00ff" fill-opacity=".042" filter="url(#bloomr1x297)"/><circle cx="515.0" cy="544.9" r="2.7" fill="#ff00ff" fill-opacity="0.41" filter="url(#glowr1x297)"/><circle cx="555.9" cy="590.7" r="2.7" fill="#ff00ff" fill-opacity="0.65" filter="url(#glowr1x297)"/><circle cx="460.7" cy="317.8" r="4.2" fill="#ff00ff" fill-opacity="0.40" filter="url(#glowr1x297)"/><circle cx="414.5" cy="383.5" r="2.7" fill="#ff00ff" fill-opacity="0.43" filter="url(#glowr1x297)"/><circle cx="438.6" cy="750.1" r="4.2" fill="#ff00ff" fill-opacity="0.57" filter="url(#glowr1x297)"/><circle cx="731.8" cy="209.4" r="2.7" fill="#ff00ff" fill-opacity="0.63" filter="url(#glowr1x297)"/><circle cx="604.8" cy="200.7" r="3.4" fill="#ff00ff" fill-opacity="0.83" filter="url(#glowr1x297)"/><circle cx="587.7" cy="581.9" r="4.0" fill="#ff00ff" fill-opacity="0.56" filter="url(#glowr1x297)"/><circle cx="714.2" cy="348.3" r="3.7" fill="#ff00ff" fill-opacity="0.68" filter="url(#glowr1x297)"/><circle cx="463.1" cy="189.8" r="4.0" fill="#ff00ff" fill-opacity="0.89" filter="url(#glowr1x297)"/><circle cx="634.2" cy="448.6" r="3.9" fill="#ff00ff" fill-opacity="0.51" filter="url(#glowr1x297)"/><circle cx="565.9" cy="433.5" r="2.8" fill="#ff00ff" fill-opacity="0.53" filter="url(#glowr1x297)"/><circle cx="554.1" cy="750.5" r="2.9" fill="#ff00ff" fill-opacity="0.66" filter="url(#glowr1x297)"/><circle cx="345.3" cy="318.6" r="1.0" fill="#ff00ff" fill-opacity="0.84" filter="url(#glowr1x297)"/><path d="M363.4,300.5 Q322.3,580.1 509.4,895.5" stroke="#ff00ff" stroke-opacity="0.52" stroke-width="1.0" fill="none" filter="url(#glowr1x297)"/><path d="M562.6,218.9 Q532.2,524.1 459.8,853.0" stroke="#ff00ff" stroke-opacity="0.42" stroke-width="1.3" fill="none" filter="url(#glowr1x297)"/><path d="M395.6,349.4 Q426.2,589.1 709.2,826.1" stroke="#ff00ff" stroke-opacity="0.69" stroke-width="1.0" fill="none" filter="url(#glowr1x297)"/><path d="M692.9,293.3 Q704.7,491.3 345.9,682.8" stroke="#ff00ff" stroke-opacity="0.67" stroke-width="2.2" fill="none" filter="url(#glowr1x297)"/><path d="M331.5,293.7 Q301.8,510.1 379.2,771.4" stroke="#ff00ff" stroke-opacity="0.70" stroke-width="1.8" fill="none" filter="url(#glowr1x297)"/><polygon points="397.7,663.7 487.8,661.9 481.3,878.2 388.5,877.3" fill="url(#suitr1x297)" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297) url(#metalr1x297)"/><polygon points="397.4,663.0 490.5,661.9 479.4,875.9 389.1,878.6" fill="url(#carbonr1x297)"/><polygon points="393.2,722.9 493.1,723.3 482.4,786.5 383.5,787.0" fill="url(#bevelr1x297)" fill-opacity=".5" stroke="#ff44aa" stroke-width="1.4" filter="url(#skr1x297)"/><polygon points="509.0,663.9 601.3,663.3 613.1,878.7 518.3,878.3" fill="url(#suitr1x297)" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297) url(#metalr1x297)"/><polygon points="511.0,660.8 602.3,661.2 614.0,876.2 517.7,875.9" fill="url(#carbonr1x297)"/><polygon points="506.6,722.6 605.8,722.7 616.6,789.4 516.2,787.6" fill="url(#bevelr1x297)" fill-opacity=".5" stroke="#ff44aa" stroke-width="1.4" filter="url(#skr1x297)"/><rect x="391.4" y="837.1" width="100.3" height="24.7" fill="url(#bevelr1x297)" stroke="#ff44aa" stroke-width="1" filter="url(#skr1x297)"/><rect x="508.0"  y="838.3" width="100.3" height="24.7" fill="url(#bevelr1x297)" stroke="#ff44aa" stroke-width="1" filter="url(#skr1x297)"/><polygon points="369.8,877.2 494.8,875.9 504.7,920.1 361.8,921.5" fill="#880050" stroke="#ff44aa" stroke-width="2" filter="url(#skr1x297)"/><polygon points="505.1,878.4 629.1,876.5 636.2,920.4 496.1,921.8" fill="#880050" stroke="#ff44aa" stroke-width="2" filter="url(#skr1x297)"/><polygon points="302.6,631.7 696.7,632.9 637.3,680.7 362.2,683.1" fill="#ff44aa" fill-opacity=".52" stroke="#ff44aa" stroke-width="2" filter="url(#skr1x297)"/><rect x="464.3" y="636.3" width="72.0" height="42.0" fill="url(#bevelr1x297)" stroke="#ff44aa" stroke-width="1.4" filter="url(#glowr1x297)"/><rect x="487.7" y="641.2" width="28.0" height="22.0" rx="1" fill="rgba(255,255,255,.48)"/><polygon points="153.6,465.2 235.9,465.7 258.1,734.9 128.0,733.8" fill="url(#suitr1x297)" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297) url(#metalr1x297)"/><polygon points="171.7,433.2 254.5,433.9 241.5,511.5 161.0,510.3" fill="url(#bevelr1x297)" fill-opacity=".72" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297)"/><polygon points="161.0,620.6 242.8,621.3 239.8,662.3 166.7,661.0" fill="#ff44aa" fill-opacity=".42" stroke="#ff44aa" stroke-width="1" filter="url(#skr1x297)"/><polygon points="764.2,466.9 846.0,464.8 870.4,734.4 741.3,735.2" fill="url(#suitr1x297)" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297) url(#metalr1x297)"/><polygon points="745.4,432.4 827.7,432.4 839.7,511.9 756.0,510.6" fill="url(#bevelr1x297)" fill-opacity=".72" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297)"/><polygon points="755.8,620.6 837.2,621.8 834.9,662.1 760.6,659.8" fill="#ff44aa" fill-opacity=".42" stroke="#ff44aa" stroke-width="1" filter="url(#skr1x297)"/><rect x="119.0"  y="700.1" width="135.3" height="85.0" rx="4" fill="url(#bevelr1x297)" stroke="#ff44aa" stroke-width="1.8" filter="url(#skr1x297)"/><rect x="749.4"   y="699.8" width="135.3" height="85.0" rx="4" fill="url(#bevelr1x297)" stroke="#ff44aa" stroke-width="1.8" filter="url(#skr1x297)"/><line x1="148.4" y1="701.1" x2="151.2" y2="784.8" stroke="#ff44aa" stroke-opacity=".38" stroke-width="1"/><line x1="779.4" y1="702.5" x2="779.4" y2="783.8" stroke="#ff44aa" stroke-opacity=".38" stroke-width="1"/><line x1="182.4" y1="703.5" x2="183.9" y2="784.0" stroke="#ff44aa" stroke-opacity=".38" stroke-width="1"/><line x1="809.5" y1="703.5" x2="810.9" y2="783.3" stroke="#ff44aa" stroke-opacity=".38" stroke-width="1"/><line x1="214.1" y1="703.1" x2="216.5" y2="784.3" stroke="#ff44aa" stroke-opacity=".38" stroke-width="1"/><line x1="844.2" y1="701.4" x2="843.5" y2="784.7" stroke="#ff44aa" stroke-opacity=".38" stroke-width="1"/><polygon points="236.6,416.5 766.6,418.1 721.3,661.7 278.0,661.2" fill="url(#suitr1x297)" stroke="#ff44aa" stroke-width="2.6" filter="url(#skr1x297) url(#metalr1x297)"/><polygon points="233.3,419.0 766.6,416.0 724.3,662.1 278.8,662.9" fill="url(#carbonr1x297)"/><polygon points="367.9,418.4 630.8,417.5 611.5,516.1 387.2,516.5" fill="url(#suitHir1x297)"/><line x1="361.4" y1="472.3" x2="636.7" y2="472.8" stroke="#ff44aa" stroke-opacity=".52" stroke-width="1.3" filter="url(#skr1x297)"/><line x1="398.9" y1="550.2" x2="599.2" y2="549.7" stroke="#ff44aa" stroke-opacity=".52" stroke-width="1.3" filter="url(#skr1x297)"/><line x1="265.1" y1="492.2" x2="320.6" y2="492.2" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><line x1="678.5" y1="490.1" x2="734.7" y2="491.1" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><line x1="265.6" y1="524.4" x2="319.5" y2="522.9" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><line x1="681.0" y1="521.7" x2="734.8" y2="521.7" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><line x1="266.2" y1="556.3" x2="319.6" y2="554.4" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><line x1="681.5" y1="553.3" x2="731.6" y2="554.8" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><line x1="267.2" y1="585.3" x2="319.9" y2="587.7" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><line x1="679.0" y1="585.9" x2="732.7" y2="585.1" stroke="#ff44aa" stroke-opacity=".62" stroke-width="1.8"/><g filter="url(#glowr1x297)"><polygon points="463.4,529.8 460.6,497.8 481.8,468.3 500.5,499.6 519.7,466.8 539.5,498.6 536.4,528.6" fill="#ff44aa" stroke="#0d1520" stroke-width="1.4" filter="url(#skr1x297)"/><polygon points="461.4,530.5 461.6,498.1 482.9,467.3 498.7,498.6 519.0,467.9 539.5,497.4 538.9,527.4" fill="url(#suitHir1x297)" opacity=".38"/></g><g><rect x="32.3829832757264" y="422.9469111226499" width="148.0" height="82.0" rx="5" fill="url(#gunmetalr1x297)" stroke="#ff44aa" stroke-width="2" filter="url(#wmr1x297)"/><rect x="34.53259756075215" y="422.0976784032769" width="148.0" height="82.0" rx="5" fill="url(#carbonr1x297)"/><rect x="42.12055376706642" y="403.3298174932599" width="90.0" height="22.0" rx="3" fill="url(#barrelr1x297)" stroke="#ff44aa" stroke-width="1" filter="url(#wmr1x297)"/><circle cx="80.91815783552822" cy="413.0375017810613" r="15.0" fill="#ff44aa" opacity=".8" filter="url(#glowr1x297)"/><circle cx="82.54712845323604" cy="415.53432945804667" r="6.0" fill="rgba(255,255,255,.9)"/><rect x="54.70733387744051" y="455.91324292207133" width="78.0" height="36.0" rx="5" fill="url(#barrelr1x297)" stroke="#ff44aa" stroke-width="1.2" filter="url(#wmr1x297)"/><circle cx="-18.15633265540007" cy="472.040323836077" r="18.0" fill="#ff44aa" filter="url(#glowr1x297)" opacity=".88"/><circle cx="-18.06434634752575" cy="471.52404684443025" r="7.0" fill="#ffffff"/><rect x="76.42822168454525" y="500.9714928266592" width="44.0" height="42.0" rx="3" fill="url(#gunmetalr1x297)" stroke="#ff44aa" stroke-width="1" filter="url(#wmr1x297)"/><rect x="37.9232619055919" y="424.0748482506722" width="90.0" height="10.0" rx="2" fill="rgba(255,255,255,.22)"/><line x1="60.42963427495208" y1="486.21189897842703" x2="61.04255811631676" y2="518.7087050588801" stroke="#ff44aa" stroke-opacity=".5" stroke-width="1.2"/><line x1="76.5842914073169" y1="488.0348661759868" x2="76.64844895763319" y2="520.5687097969465" stroke="#ff44aa" stroke-opacity=".5" stroke-width="1.2"/><line x1="92.79646374940869" y1="486.83120217733085" x2="93.67993107236919" y2="517.7024225115775" stroke="#ff44aa" stroke-opacity=".5" stroke-width="1.2"/></g><rect x="451.14129133187237" y="557.4929676623084" width="100.0"  height="56.0" fill="#880050" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297)"/><rect x="422.84210291178897" y="574.4125950714573" width="152.0" height="26.0" fill="url(#bevelr1x297)" fill-opacity=".65" stroke="#ff44aa" stroke-width="1.2" filter="url(#skr1x297)"/><polygon points="306.9,381.8 349.1,293.9 501.2,278.7 650.8,294.6 691.7,381.5 667.7,502.7 500.5,564.8 329.9,502.8" fill="url(#suitr1x297)" stroke="#ff44aa" stroke-width="2.8" filter="url(#skr1x297) url(#metalr1x297)"/><polygon points="309.0,381.5 351.0,294.6 500.6,277.3 648.7,294.1 691.7,381.9 670.2,502.9 498.9,566.0 330.6,504.7" fill="url(#carbonr1x297)"/><polygon points="380.4,302.0 500.7,284.9 620.8,303.1 608.7,379.3 391.1,379.4" fill="url(#suitHir1x297)"/><polygon points="381.5,380.3 365.8,426.7 434.1,504.3 499.2,529.2 566.0,504.6 634.4,426.8 617.8,379.5" fill="#0d1520" fill-opacity=".88" stroke="#ff44aa" stroke-width="1.8" filter="url(#skr1x297)"/><polygon points="379.4,411.0 477.9,410.3 483.6,440.9 387.4,441.0" fill="#ff44aa" filter="url(#glowr1x297)"/><polygon points="522.9,411.9 620.8,413.0 612.9,441.6 516.8,441.7" fill="#ff44aa" filter="url(#glowr1x297)"/><ellipse cx="430.9" cy="425.7" rx="38.4"  ry="8.2" fill="#ffffff" opacity=".88"/><ellipse cx="569.1" cy="425.7" rx="38.4"  ry="8.2" fill="#ffffff" opacity=".88"/><line x1="484.9385066832043" y1="414.76622078893706" x2="513.6431604530104" y2="411.763243026752" stroke="#ff44aa" stroke-opacity=".52" stroke-width="2"/><line x1="486.23670225102455" y1="439.5450003320351" x2="515.5870998897032" y2="438.83553123045715" stroke="#ff44aa" stroke-opacity=".52" stroke-width="2"/><line x1="498.60905340639874" y1="453.289615021646" x2="499.6951787153259" y2="484.6169053761289" stroke="#ff44aa" stroke-opacity=".58" stroke-width="2.2" filter="url(#skr1x297)"/><line x1="455.5058075513505" y1="491.3678831361234" x2="453.90594840653245" y2="519.3537432701327" stroke="#ff44aa" stroke-opacity=".52" stroke-width="1.5" filter="url(#skr1x297)"/><line x1="476.93450944641603" y1="491.5372875548899" x2="477.8254436838813" y2="521.7753237558529" stroke="#ff44aa" stroke-opacity=".52" stroke-width="1.5" filter="url(#skr1x297)"/><line x1="500.9223235461861" y1="492.005010454636" x2="501.67865987410767" y2="520.77172979787" stroke="#ff44aa" stroke-opacity=".52" stroke-width="1.5" filter="url(#skr1x297)"/><line x1="524.1918994182348" y1="489.8842025848105" x2="524.6204767807945" y2="519.1702380527743" stroke="#ff44aa" stroke-opacity=".52" stroke-width="1.5" filter="url(#skr1x297)"/><line x1="546.469872466214" y1="490.90914574638003" x2="546.6552180159092" y2="519.5198358162306" stroke="#ff44aa" stroke-opacity=".52" stroke-width="1.5" filter="url(#skr1x297)"/><polygon points="431.8,504.0 567.1,504.5 553.7,557.6 444.8,555.8" fill="#880050" fill-opacity=".72" stroke="#ff44aa" stroke-width="1.3" filter="url(#skr1x297)"/><path d="M473.6805702101253 311.76529363775626 C305.17394894188266 145.1771282697096 419.01769890621307 242.61623426154256 500.9339138926938 309.71580805005505" fill="#ff44aa" fill-opacity=".92" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297)"/><path d="M474.3947737936676 310.6482320737093 C303.8534842130169 147.33154971618202 418.3274865339883 240.19240821702405 499.9930357515812 310.13598767854273" fill="url(#suitHir1x297)" opacity=".28"/><path d="M526.3787029076553 309.92605178495864 C696.1541509514302 146.06404393529516 581.9903419782967 242.11433343328534 500.9962593954057 310.7282719332725" fill="#ff44aa" fill-opacity=".92" stroke="#ff44aa" stroke-width="2.2" filter="url(#skr1x297)"/><path d="M525.4035963161103 309.93422577083106 C695.6885868259334 147.98250779854132 581.7962160572969 241.3250954037532 498.51359683135524 309.66346347378567" fill="url(#suitHir1x297)" opacity=".28"/><text x="30.0"  y="975.0" font-family="monospace" font-weight="bold" font-size="22.0" fill="rgba(255,255,255,.22)">#0001</text><text x="500.0"   y="975.0" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="22.0" fill="#ff44aa" fill-opacity=".48">SAKURA RANGER</text><text x="970.0" y="975.0" text-anchor="end"    font-family="monospace" font-weight="bold" font-size="22.0" fill="#ff44aa" fill-opacity=".32">MECH RANGERS</text></svg>

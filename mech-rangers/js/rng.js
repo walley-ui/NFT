@@ -69,3 +69,43 @@ function shuffle(arr, rng) {
 function randInt(min, max, rng) {
   return Math.floor(rng() * (max - min + 1)) + min;
 }
+
+/**
+ * ─── UPGRADE: DNA TO SEED ───
+ * Converts string-based identifiers (Wallet, Hash) into a numeric seed.
+ */
+function dnaToSeed(dna) {
+  return dna.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+}
+
+/**
+ * ─── UPGRADE: MECH ASSEMBLY ───
+ * Generates a complete Mech attribute set from a single DNA source.
+ */
+function generateMechData(dna, config) {
+  const seed = dnaToSeed(dna);
+  const roll = rng32(seed);
+  
+  // Resolve Rarity
+  const tier = weightedPick(config.tiers, roll);
+  
+  return {
+    dna: dna,
+    tier: tier.name,
+    multiplier: tier.multiplier,
+    stats: {
+      atk: Math.floor(randInt(config.minAtk, config.maxAtk, roll) * tier.multiplier),
+      def: Math.floor(randInt(config.minDef, config.maxDef, roll) * tier.multiplier),
+      spd: randInt(1, 100, roll)
+    },
+    colors: shuffle(config.themeColors, roll).slice(0, 3)
+  };
+}
+
+/* ── NODE/BROWSER ALIGNMENT EXPORT ── */
+if (typeof module !== 'undefined') {
+    module.exports = { rng32, weightedPick, shuffle, randInt, dnaToSeed, generateMechData };
+}

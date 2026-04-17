@@ -6,8 +6,8 @@
 
 /* ── CONFIG ─────────────────────────────────────────── */
 const BRIDGE_CONFIG = {
-  contractAddress: 'UPDATE TO MY ACTUAL CONTRACT ADDRESS', 
-  mintPriceEth: '0.05',
+  contractAddress: 'UPDATE_TO_MY_ACTUAL_CONTRACT_ADDRESS', 
+  mintPriceEth: '0.005', // SYNCED: Matches MechRangers.sol
   chainId: 8453, 
   chainName: 'Base',
   rpcUrl: 'https://mainnet.base.org',
@@ -32,7 +32,7 @@ async function initBridge() {
     _snapshot = await res.json();
     console.log("Survivor Snapshot Loaded. Total Units:", _snapshot.generatedCount);
   } catch (err) {
-    console.warn("⛔ No snapshot found. Admin must forge collection first.");
+    console.warn("⛔ No snapshot found. ix_prinx: You must generate Mechs and Export Mint Snapshot first.");
   }
   renderBridgeUI();
 }

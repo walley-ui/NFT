@@ -4,11 +4,23 @@
    Depends on: traits.js, rng.js, admin.js
    ═══════════════════════════════════════════════════════ */
 
+/* ── NODE COMPATIBILITY LAYER ── */
+if (typeof document === 'undefined') {
+    global.document = {
+        getElementById: (id) => ({
+            value: {
+                'cMaxMythic': 20, 'cMaxLegendary': 100, 'cMaxEpic': 900, 
+                'cMaxRare': 2000, 'cMaxUncommon': 3000, 'cMaxCommon': 3980,
+                'tLegendary': 18, 'tEpic': 13, 'tRare': 9, 'tUncommon': 5
+            }[id] || 0
+        })
+    };
+}
+
 /* ── ADMIN AUTH GATE ── */
 const AdminAuth = {
     isAuthorized: false, // Default locked
     verify() {
-        
         this.isAuthorized = true;
         console.log("Master Forge Authorization Granted.");
     }
@@ -16,21 +28,21 @@ const AdminAuth = {
 
 /* ── DYNAMIC RARITY SYSTEM (UPGRADED) ── */
 const SUPPLY_CAPS = {
-  legendary: parseInt(document.getElementById('capLegendary')?.value) || 100,
-  epic:      parseInt(document.getElementById('capEpic')?.value)      || 900,
-  rare:      parseInt(document.getElementById('capRare')?.value)      || 2000,
-  uncommon:  parseInt(document.getElementById('capUncommon')?.value)  || 3000,
-  common:    parseInt(document.getElementById('capCommon')?.value)    || 3890,
-  mythic:    parseInt(document.getElementById('capMythic')?.value)    || 20
+  mythic:    parseInt(document.getElementById('cMaxMythic')?.value)    || 20,
+  legendary: parseInt(document.getElementById('cMaxLegendary')?.value) || 100,
+  epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
+  rare:      parseInt(document.getElementById('cMaxRare')?.value)      || 2000,
+  uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value)  || 3000,
+  common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 3980
 };
 
 const mintedCount = {
+  mythic:    0,
   legendary: 0,
   epic:      0,
   rare:      0,
   uncommon:  0,
   common:    0,
-  mythic:    0,
 };
 
 /* ── GLOBAL STATE ── */
@@ -41,11 +53,12 @@ let isGenerating = false;
 
 /* ── RARITY SCORING (DYNAMIC ENGINE) ── */
 function calcRarity(traits) {
-  const bgScore = { void:1, urban:1, plasma:2, volcanic:2, cyber:3, arctic:3, dimension:4, golden:5 };
-  const helmScore = { standard:1, horned:2, visor:2, crown:3, dragon:3, angular:3, ancient:4, legendary:5, oni:5 };
+  // ALIGNED WITH TRAITS.JS
+  const bgScore = { void:1, urban:1, plasma:2, volcanic:2, cyber:3, arctic:3, dimension:4, golden:5, cosmic:6 };
+  const helmScore = { standard:1, horned:2, visor:2, crown:3, dragon:3, angular:3, ancient:4, legendary:5, oni:6 };
   const wpnScore = { sword:1, blaster:1, lance:2, shield:2, gauntlets:2, twin:3, cannon:3, staff:4, none:1 };
   const auraScore = { none:0, electric:2, fire:2, shadow:3, holy:4, plasma:4, cosmic:5 };
-  const suitBonus = { ranger_cosmic:5, ranger_void:5, ranger_gold:4, ranger_silver:3, ranger_white:3 };
+  const suitBonus = { ranger_cosmic:6, ranger_void:5, ranger_gold:5, ranger_silver:3, ranger_white:3, ranger_pink:2, ranger_yellow:2 };
 
   const score =
     (bgScore[traits.background.val]  || 1) +
@@ -54,9 +67,7 @@ function calcRarity(traits) {
     (auraScore[traits.aura.val]      || 0) +
     (suitBonus[traits.suit.val]      || 1);
 
-  // Dynamic Thresholds pulled from Admin Inputs
   const thresh = {
-
     legendary: parseInt(document.getElementById('tLegendary')?.value) || 18,
     epic:      parseInt(document.getElementById('tEpic')?.value)      || 13,
     rare:      parseInt(document.getElementById('tRare')?.value)      || 9,
@@ -82,20 +93,20 @@ function massForge10k() {
     isGenerating = true;
     if (typeof toast === 'function') toast("Forging 10,000 Mech Rangers on Base...", "info");
 
-    // Upgrade: Increased counter limit to ensure uniqueness check finds enough samples
-    while (allNFTs.length < 10000 && tokenCounter < 25000) {
+    while (allNFTs.length < 10000 && tokenCounter < 40000) {
         const nft = generateNFT();
         if (nft) allNFTs.push(nft);
+        else break; 
     }
     
     isGenerating = false;
-    if (typeof renderGallery === 'function') renderGallery(); // Only displays for Admin
+    if (typeof renderGallery === 'function') renderGallery(); 
     if (typeof toast === 'function') toast("Generation Complete. Ready for Snapshot.", "success");
 }
 
 /* ── CORE GENERATOR ── */
 function generateNFT(attempt = 0) {
-  if (attempt > 300) return null; 
+  if (attempt > 500) return null; 
 
   tokenCounter++;
   const seed = ((Math.random() * 2147483647) | 0) ^ (tokenCounter * 31337);
@@ -110,27 +121,21 @@ function generateNFT(attempt = 0) {
     badge:      weightedPick(TRAITS.badge.options,      rng),
   };
 
-  // Upgrade: Changed to 'let' to allow rarity reassignment if a tier is capped
   let rarity = calcRarity(traits);
 
-  // Pulling caps dynamically from Admin UI
   const currentCaps = {
-    mythic:    parseInt(document.getElementById('cMaxMythic')?.value)    || 20,
-    legendary: parseInt(document.getElementById('cMaxLegendary')?.value) || 100,
-    epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
-    rare:      parseInt(document.getElementById('cMaxRare')?.value)      || 2000,
-    uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value)  || 3000,
-    common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 3980,
+    mythic:    parseInt(document.getElementById('cMaxMythic')?.value || document.getElementById('capMythic')?.value)    || 20,
+    legendary: parseInt(document.getElementById('cMaxLegendary')?.value || document.getElementById('capLegendary')?.value) || 100,
+    epic:      parseInt(document.getElementById('cMaxEpic')?.value || document.getElementById('capEpic')?.value)      || 900,
+    rare:      parseInt(document.getElementById('cMaxRare')?.value || document.getElementById('capRare')?.value)      || 2000,
+    uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value || document.getElementById('capUncommon')?.value)  || 3000,
+    common:    parseInt(document.getElementById('cMaxCommon')?.value || document.getElementById('capCommon')?.value)    || 3980,
   };
 
-  // Speed Fix: If the rolled rarity is full, force it to 'common'
   if (mintedCount[rarity] >= (currentCaps[rarity] || 0)) {
-    rarity = "common";
-  }
-
-  // final Safety: If 'common' is also full, find ANY tier with space left
-  if (mintedCount[rarity] >= (currentCaps[rarity] || 0)) {
-    rarity = Object.keys(currentCaps).find(t => mintedCount[t] < currentCaps[t]);
+    const sequence = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+    rarity = sequence.find(t => mintedCount[t] < currentCaps[t]);
+    
     if (!rarity) {
       tokenCounter--;
       return null; 
@@ -138,7 +143,7 @@ function generateNFT(attempt = 0) {
   }
   
   const hash = Object.values(traits).map(t => t.val).join('-');
-  if (hashSet.has(hash) && hashSet.size < 9950) {
+  if (hashSet.has(hash) && hashSet.size < 9995) {
     tokenCounter--;
     return generateNFT(attempt + 1);
   }
@@ -151,7 +156,7 @@ function generateNFT(attempt = 0) {
   const basePower = Math.floor(rng2() * 24) + 76;
 
   return {
-    id:     tokenCounter,
+    id:     allNFTs.length + 1, 
     name,
     seed,
     rarity,
@@ -169,4 +174,8 @@ function resetGeneratorState() {
   tokenCounter = 0;
   Object.keys(mintedCount).forEach(k => mintedCount[k] = 0);
   console.log("Admin: Factory Cleaned. Ready for New Epoch.");
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = { AdminAuth, massForge10k, generateNFT, resetGeneratorState, allNFTs, mintedCount };
 }

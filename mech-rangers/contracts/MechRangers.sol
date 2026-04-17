@@ -32,7 +32,7 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
 
     // ── Reveal System ─────────────────────────────────────────
     string  private _baseTokenURI;
-    string public hiddenURI = "ipfs://QmYourActualHiddenJSONCidHere/hidden.json";
+    string public hiddenURI;
     bool    public  revealed  = false;
 
     // ── Events ────────────────────────────────────────────────
@@ -46,7 +46,7 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
         ERC721("MechRangers", "MECHR")
         Ownable(msg.sender)
     {
-        _baseTokenURI = initialBaseURI;
+        _baseTokenURI = ""; // Will be set later when you call the reveal() function.
         
         // UPGRADE: Using standard ERC2981 internal setter
         _setDefaultRoyalty(msg.sender, 500); // 5%

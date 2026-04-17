@@ -12,7 +12,7 @@ function getContractConfig() {
     name:      document.getElementById('cName')?.value      || 'MechRangers',
     sym:       document.getElementById('cSymbol')?.value    || 'MECHR',
     maxSupply: document.getElementById('cMaxSupply')?.value || '10000',
-    price:     parseFloat(document.getElementById('cPrice')?.value)     || 0.05,
+    price:     parseFloat(document.getElementById('cPrice')?.value)     || 0.005,
     maxWallet: document.getElementById('cMaxWallet')?.value || '5',
     royalty:   parseFloat(document.getElementById('cRoyalty')?.value)   || 5,
     baseURI:   document.getElementById('cBaseURI')?.value   || 'ipfs://YOUR_METADATA_CID/',
@@ -49,7 +49,7 @@ function buildSolidityHTML(cfg) {
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_PER_WALLET = <span class="num">${cfg.maxWallet}</span>;
     <span class="type">uint256</span> <span class="kw">public</span> teamReserve           = <span class="num">100</span>;
 
-    <span class="cm">// ── Rarity Hard Caps (Synced with generator.js) ──</span>
+    <span class="cm">// ── Rarity Hard Caps (Synced with Level 0 Math) ──</span>
     <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityCap;
     <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityMinted;
 
@@ -79,13 +79,13 @@ function buildSolidityHTML(cfg) {
         _baseTokenURI    = baseURI_;
         _royaltyReceiver = msg.sender;
         
-        <span class="cm">// UPGRADE: Caps auto-synced from generator.js SUPPLY_CAPS</span>
-        rarityCap[<span class="str">"legendary"</span>] = <span class="num">${SUPPLY_CAPS.legendary}</span>;
-        rarityCap[<span class="str">"epic"</span>]      = <span class="num">${SUPPLY_CAPS.epic}</span>;
-        rarityCap[<span class="str">"rare"</span>]      = <span class="num">${SUPPLY_CAPS.rare}</span>;
-        rarityCap[<span class="str">"uncommon"</span>]  = <span class="num">${SUPPLY_CAPS.uncommon}</span>;
-        rarityCap[<span class="str">"common"</span>]    = <span class="num">${SUPPLY_CAPS.common}</span>;
-        rarityCap[<span class="str">"mythic"</span>]    = <span class="num">${SUPPLY_CAPS.mythic}</span>;
+        <span class="cm">// UPGRADE: Caps auto-synced from Level 0 Generator Settings</span>
+        rarityCap[<span class="str">"mythic"</span>]    = <span class="num">20</span>;
+        rarityCap[<span class="str">"legendary"</span>] = <span class="num">100</span>;
+        rarityCap[<span class="str">"epic"</span>]      = <span class="num">900</span>;
+        rarityCap[<span class="str">"rare"</span>]      = <span class="num">2000</span>;
+        rarityCap[<span class="str">"uncommon"</span>]  = <span class="num">3000</span>;
+        rarityCap[<span class="str">"common"</span>]    = <span class="num">3980</span>;
     }
 
     <span class="cm">// ── Public Mint (With Proof-based Allowance for Survivors) ───────────────────</span>
@@ -140,27 +140,27 @@ function buildSolidityHTML(cfg) {
     }
 
     <span class="kw">function</span> <span class="fn">withdraw</span>() <span class="kw">external onlyOwner</span> {
-        (<span class="type">bool</span> ok,) = msg.sender.<span class="fn">call</span>{value: <span class="fn">address</span>(<span class="kw) {balance: address(this).balance}("");
-        require(ok, "Withdraw failed");
+        (<span class="type">bool</span> ok,) = msg.sender.<span class="fn">call</span>{value: <span class="fn">address</span>(<span class="kw">this</span>).balance}(<span class="str">""</span>);
+        <span class="kw">require</span>(ok, <span class="str">"Withdraw failed"</span>);
     }
 
-    function supportsInterface(bytes4 id)
-        public view override(ERC721, IERC165) returns (bool)
+    <span class="kw">function</span> <span class="fn">supportsInterface</span>(<span class="type">bytes4</span> id)
+        <span class="kw">public view override</span>(<span class="type">ERC721</span>, <span class="type">IERC165</span>) <span class="kw">returns</span> (<span class="type">bool</span>)
     {
-        return id == type(IERC2981).interfaceId || super.supportsInterface(id);
+        <span class="kw">return</span> id == <span class="kw">type</span>(<span class="type">IERC2981</span>).interfaceId || <span class="kw">super</span>.<span class="fn">supportsInterface</span>(id);
     }
 
-    function _toString(uint256 value) internal pure returns (string memory) {
-        if (value == 0) return "0";
-        uint256 temp = value; uint256 digits;
-        while (temp != 0) { digits++; temp /= 10; }
-        bytes memory buffer = new bytes(digits);
-        while (value != 0) {
+    <span class="kw">function</span> <span class="fn">_toString</span>(<span class="type">uint256</span> value) <span class="kw">internal pure returns</span> (<span class="type">string memory</span>) {
+        <span class="kw">if</span> (value == <span class="num">0</span>) <span class="kw">return</span> <span class="str">"0"</span>;
+        <span class="type">uint256</span> temp = value; <span class="type">uint256</span> digits;
+        <span class="kw">while</span> (temp != <span class="num">0</span>) { digits++; temp /= <span class="num">10</span>; }
+        <span class="type">bytes memory</span> buffer = <span class="kw">new bytes</span>(digits);
+        <span class="kw">while</span> (value != <span class="num">0</span>) {
             digits--;
-            buffer[digits] = bytes1(uint8(48 + value % 10));
-            value /= 10;
+            buffer[digits] = <span class="type">bytes1</span>(<span class="type">uint8</span>(<span class="num">48</span> + value % <span class="num">10</span>));
+            value /= <span class="num">10</span>;
         }
-        return string(buffer);
+        <span class="kw">return</span> <span class="type">string</span>(buffer);
     }
 }`;
 }
@@ -213,7 +213,7 @@ function updateMintSim() {
   const wrap = document.getElementById('mintSimRows');
   if (!wrap) return;
 
-  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.05;
+  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.005;
   const total   = parseInt(document.getElementById('cMaxSupply')?.value)   || 10000;
   const royalty = parseFloat(document.getElementById('cRoyalty')?.value)   || 5;
 
@@ -229,7 +229,8 @@ function updateMintSim() {
   const estRevenue = total * price;
 
   wrap.innerHTML = TIERS.map(t => {
-    const cap = (typeof SUPPLY_CAPS !== 'undefined' ? SUPPLY_CAPS[t.key] : 1);
+    // SYNC: Manual fallback to Level 0 caps if SUPPLY_CAPS is missing
+    const cap = (typeof SUPPLY_CAPS !== 'undefined' ? SUPPLY_CAPS[t.key] : (t.key === 'mythic' ? 20 : t.key === 'legendary' ? 100 : t.key === 'epic' ? 900 : t.key === 'rare' ? 2000 : t.key === 'uncommon' ? 3000 : 3980));
     const count = (typeof mintedCount !== 'undefined' ? mintedCount[t.key] : 0);
     return `
     <div class="mint-tier-row">

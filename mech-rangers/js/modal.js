@@ -26,11 +26,11 @@ function openModal(nft) {
 
   const rarCol = {
     mythic:    '#ff0055',
-    legendary: 'var(--gold)',
-    epic:      'var(--purple)',
-    rare:      'var(--cyan)',
-    uncommon:  'var(--green)',
-    common:    'var(--muted2)',
+    legendary: '#ffc400',
+    epic:      '#b44fff',
+    rare:      '#00e5ff',
+    uncommon:  '#00e676',
+    common:    '#6a6a9a',
   };
 
   // UPGRADE: Aligned with Base Mainnet Metadata standards

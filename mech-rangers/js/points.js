@@ -3,8 +3,7 @@
  * points.js — Secure Snapshot & Merkle Engine
  * Purpose: Run this to lock the whitelist and generate the root.
  * Integrates: Supabase Leaderboard + Solidity-Matched Merkle Tree
- * ═══════════════════════════════════════════════════════
- */
+ * ═══════════════════════════════════════════════════════ */
 
 const { createClient } = require('@supabase/supabase-js');
 const { MerkleTree }   = require('merkletreejs');
@@ -25,14 +24,15 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 2. TIER & ALLOWANCE LOGIC (Aligned with Contract & Generator)
+// 2. TIER & ALLOWANCE LOGIC (Aligned with Contract & Level 0 Generator)
+// Adjusted allowances to protect the 10k supply distribution
 const TIER_THRESHOLDS = [
-    { tier: 'mythic',    minPoints: 350, allowance: 20 },
-    { tier: 'legendary', minPoints: 100, allowance: 10 },
-    { tier: 'epic',      minPoints: 50,  allowance: 5  },
-    { tier: 'rare',      minPoints: 20,  allowance: 3  },
-    { tier: 'uncommon',  minPoints: 5,   allowance: 2  },
-    { tier: 'common',    minPoints: 1,   allowance: 1  }
+    { tier: 'mythic',    minPoints: 500, allowance: 5 },  // Top tier, high points, exclusive mint
+    { tier: 'legendary', minPoints: 250, allowance: 3 }, 
+    { tier: 'epic',      minPoints: 100, allowance: 2 },  
+    { tier: 'rare',      minPoints: 50,  allowance: 1 },  
+    { tier: 'uncommon',  minPoints: 10,  allowance: 1 },  
+    { tier: 'common',    minPoints: 1,   allowance: 1 }
 ];
 
 function getTierData(points) {

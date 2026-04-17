@@ -1,12 +1,12 @@
-/* ═══════════════════════════════════════════════════════
+/* ═══════════
    export.js — All Export · Download · IPFS Preview Logic
    Upgraded for Base Mainnet + OpenSea Tier Alignment
-   Depends on: traits.js, generator.js, renderer.js
-   ═══════════════════════════════════════════════════════ */
+   Depends on: traits.js, generator.js, renderer.js, JSZip
+  ═══════════ */
 
-/* ─────────────────────────────────────────────
+/* ─────────
    SHARED DOWNLOAD HELPER
-───────────────────────────────────────────── */
+────────── */
 function dlBlob(blob, filename) {
   const a = document.createElement('a');
   a.href     = URL.createObjectURL(blob);
@@ -20,10 +20,13 @@ function dlBlob(blob, filename) {
    IPFS CID HELPER
 ───────────────────────────────────────────── */
 function getImageCID() {
-  // Dynamically pulls the CID from your IPFS panel
-  // Upgrade: Trim whitespace to prevent broken metadata URLs
-  const rawCID = document.getElementById('imageCID')?.value || 'Qm_BASE_MECH_COLLECTION_CID';
-  return rawCID.trim();
+  // LEVEL 0 RESET: Pulls only from the UI. No old CIDs allowed.
+  // This ensures your metadata is always born with fresh, verified links.
+  const inputEl = document.getElementById('imageCID');
+  const rawCID = inputEl ? inputEl.value.trim() : "";
+  
+  // Safety fallback to prevent exporting "bafyundefined"
+  return rawCID || "REPLACE_WITH_ACTUAL_IMAGE_CID";
 }
 
 /* ─────────────────────────────────────────────
@@ -36,7 +39,7 @@ function buildMetaObj(nft) {
     description: "A unique Mech Ranger warrior from the 10,000-piece collection. Tier: " + 
       nft.rarity.toUpperCase() + ". Optimized for Base Mainnet.",
     // OpenSea standard for Base IPFS assets
-    image: "ipfs://" + cid + "/" + nft.id + ".png",
+    image: "ipfs://" + cid + "/" + nft.id + ".svg", // Refactored to .svg to match renderer
     external_url:  "https://mechrangers.io/token/" + nft.id,
     background_color: "050508",
     attributes: [
@@ -52,6 +55,43 @@ function buildMetaObj(nft) {
 }
 
 /* ─────────────────────────────────────────────
+   PINATA MASTER BUNDLER (ROBUST BATCH)
+   Upgrade: Packs 10k items into ONE ZIP to prevent 10k popups
+───────────────────────────────────────────── */
+async function exportPinataBundle() {
+  if (!allNFTs.length) { toast('Generate Rangers first!', 'warn'); return; }
+  
+  // LEVEL 0 SAFETY CHECK
+  const cid = getImageCID();
+  if (cid === "REPLACE_WITH_ACTUAL_IMAGE_CID") {
+    toast('STOP: Please upload your images to Pinata first and paste the CID in the dashboard.', 'error');
+    return;
+  }
+
+  if (typeof JSZip === 'undefined') {
+    toast('JSZip library missing! Add script tag to HTML.', 'error');
+    return;
+  }
+
+  const zip = new JSZip();
+  const metaFolder = zip.folder("metadata");
+  const svgFolder = zip.folder("images");
+
+  toast('Packing 10,000 Mechs... This may take a moment.', 'info');
+
+  allNFTs.forEach(nft => {
+    // Add JSON
+    metaFolder.file(`${nft.id}.json`, JSON.stringify(buildMetaObj(nft), null, 2));
+    // Add SVG
+    svgFolder.file(`${nft.id}.svg`, renderSVG(nft, 1000));
+  });
+
+  const content = await zip.generateAsync({type:"blob", compression: "DEFLATE"});
+  dlBlob(content, "mech_rangers_complete_bundle.zip");
+  toast('Collection Bundle Ready!', 'success');
+}
+
+/* ─────────────────────────────────────────────
    MERKLE TREE EXPORT (UPGRADED)
    Aligns local results with bridge.js for Phase 2
 ───────────────────────────────────────────── */
@@ -61,13 +101,11 @@ function exportMerkleTreeData() {
     return; 
   }
   
-  // UPGRADE: Now creates a full address-to-ID mapping for the Bridge
   const treeData = {
     generatedCount: allNFTs.length,
     exportDate: new Date().toISOString(),
     network: "Base",
     contract: document.getElementById('cContract')?.value || 'TBD',
-    // Maps each generated Ranger to its holder/tier for verification
     rangers: allNFTs.map(n => ({ 
       id: n.id, 
       tier: n.rarity, 
@@ -84,13 +122,12 @@ function exportMerkleTreeData() {
 ───────────────────────────────────────────── */
 function exportSVGsIndividually() {
   if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate NFTs first!', 'warn'); return; }
-  if (typeof toast === 'function') toast('Exporting ' + allNFTs.length + ' SVGs to local disk...', 'info');
+  if (typeof toast === 'function') toast('Exporting ' + allNFTs.length + ' SVGs...', 'info');
   let i = 0;
   const next = () => {
     if (i >= allNFTs.length) return;
     const nft = allNFTs[i++];
     dlBlob(new Blob([renderSVG(nft, 1000)], { type: 'image/svg+xml' }), nft.id + '.svg');
-    // Upgrade: Increased timeout for large 10k batches to prevent browser stall
     setTimeout(next, 100); 
   };
   next();
@@ -101,7 +138,7 @@ function exportSVGsIndividually() {
 ───────────────────────────────────────────── */
 function exportMetadataIndividually() {
   if (!allNFTs.length) { if (typeof toast === 'function') toast('Generate NFTs first!', 'warn'); return; }
-  if (typeof toast === 'function') toast('Exporting ' + allNFTs.length + ' JSON files for IPFS upload...', 'info');
+  if (typeof toast === 'function') toast('Exporting ' + allNFTs.length + ' JSON files...', 'info');
   let i = 0;
   const next = () => {
     if (i >= allNFTs.length) return;
@@ -156,7 +193,6 @@ function updateSVGPreview() {
   const el = document.getElementById('svgPreview');
   if (!el || !allNFTs[0]) return;
   const n = allNFTs[0];
-  // Upgrade: Dynamically show the actual SVG code for the first unit
   const actualSVG = renderSVG(n, 100);
   el.textContent = actualSVG.substring(0, 500) + "...";
 }

@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    traits.js — All trait definitions + name pools
    No logic here — pure data only.
+   Standardized for Level 0 Base Mainnet Launch
    ═══════════════════════════════════════════════════════ */
 
 const TRAITS = {
@@ -15,7 +16,7 @@ const TRAITS = {
       { val:"arctic",    label:"Arctic",         color:["#050d14","#0a1420"], weight:10, tier: "Rare" },
       { val:"dimension", label:"Dimension Rift", color:["#0e001e","#001e1e"], weight:8,  tier: "Epic" },
       { val:"golden",    label:"Golden Age",     color:["#140900","#1e0d00"], weight:5,  tier: "Legendary" },
-      { val:"cosmic",    label:"Cosmic Void",    color:["#08001e","#1e0032"], weight:2,  tier: "mythic" },
+      { val:"cosmic",    label:"Cosmic Void",    color:["#08001e","#1e0032"], weight:2,  tier: "Mythic" },
     ]
   },
 
@@ -32,7 +33,7 @@ const TRAITS = {
       { val:"ranger_silver", label:"Chrome Ranger",   primary:"#2c2c3c", accent:"#c0c0d0", weight:6,  tier: "Epic" },
       { val:"ranger_gold",   label:"Imperial Ranger", primary:"#503400", accent:"#ffd700", weight:4,  tier: "Legendary" },
       { val:"ranger_void",   label:"Void Ranger",     primary:"#050508", accent:"#ff00ff", weight:3,  tier: "Legendary" },
-      { val:"ranger_cosmic", label:"Cosmic Ranger",   primary:"#08001e", accent:"#00ffff", weight:2,  tier: "mythic" },
+      { val:"ranger_cosmic", label:"Cosmic Ranger",   primary:"#08001e", accent:"#00ffff", weight:2,  tier: "Mythic" },
     ]
   },
 
@@ -47,7 +48,7 @@ const TRAITS = {
       { val:"angular",   label:"Angular Blade",  weight:8,  tier: "Epic" },
       { val:"ancient",   label:"Ancient Mask",   weight:7,  tier: "Epic" },
       { val:"legendary", label:"Legendary Halo", weight:5,  tier: "Legendary" },
-      { val:"oni",       label:"Oni Mask",       weight:3,  tier: "mythic" },
+      { val:"oni",       label:"Oni Mask",       weight:3,  tier: "Mythic" },
     ]
   },
 
@@ -75,7 +76,7 @@ const TRAITS = {
       { val:"shadow",   label:"Shadow",   color:"#6600ff", weight:12, glow: 0.5, tier: "Rare" },
       { val:"holy",     label:"Holy",     color:"#ffffff", weight:8,  glow: 0.9, tier: "Epic" },
       { val:"plasma",   label:"Plasma",   color:"#ff00ff", weight:7,  glow: 0.8, tier: "Legendary" },
-      { val:"cosmic",   label:"Cosmic",   color:"#00ffcc", weight:3,  glow: 1.0, tier: "mythic" },
+      { val:"cosmic",   label:"Cosmic",   color:"#00ffcc", weight:3,  glow: 1.0, tier: "Mythic" },
     ]
   },
 
@@ -90,7 +91,7 @@ const TRAITS = {
       { val:"wings",     label:"Wings",     weight:8,  tier: "Epic" },
       { val:"eye",       label:"Eye",       weight:7,  tier: "Epic" },
       { val:"crown",     label:"Crown",     weight:6,  tier: "Legendary" },
-      { val:"zord",      label:"Zord",      weight:4,  tier: "mythic" },
+      { val:"zord",      label:"Zord",      weight:4,  tier: "Mythic" },
     ]
   }
 };

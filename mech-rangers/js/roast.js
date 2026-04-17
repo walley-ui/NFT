@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    roast.js — The Global Toxic Brain of Mech Rangers
-   BRUTAL INFINITE EDITION -Savage Combinations
+   BRUTAL INFINITE EDITION - Savage Combinations
    ═══════════════════════════════════════════════════════ */
 
 const ROASTS = {
@@ -13,7 +13,8 @@ const ROASTS = {
             "Internal Error:", "Analysis complete:", "Breaking news from the void:", "Hey `{last_ref}`'s liability,",
             "I'm not a bot, but even I can see", "Your file is a mess:", "Listen carefully,", "Stop everything:",
             "To be perfectly honest,", "I’d call this a tragedy, but", "Is this a joke?", "Metadata suggests",
-            "Emergency Broadcast:", "Uncomfortable truth:", "Your statistics just sighed:", "Look at this mess:"
+            "Emergency Broadcast:", "Uncomfortable truth:", "Your statistics just sighed:", "Look at this mess:",
+            "Scanning for signs of life...", "Database alert:", "Under further investigation,", "The audit is in:"
         ],
         subjects: {
             parasite: [
@@ -22,7 +23,8 @@ const ROASTS = {
                 "your portfolio", "your 'alpha' calls", "your gas fee history", "your paper hands", "your smooth brain",
                 "your exit liquidity potential", "your invitation strategy", "your digital footprint", "your zero-tier energy",
                 "your tragic network", "your dusty assets", "your invitation link", "your lack of impact",
-                "your struggle for relevance", "your bottom-feeding tactics", "your ghost-town wallet"
+                "your struggle for relevance", "your bottom-feeding tactics", "your ghost-town wallet",
+                "your bottom-tier participation", "your attempt at existence"
             ],
             mid: [
                 "your mediocre strategy", "those {count} invites", "your slow progress", "your mid-tier rank", 
@@ -30,24 +32,26 @@ const ROASTS = {
                 "your glass hands", "your roadmap to nowhere", "your FOMO habits", "your entry price", 
                 "your desperate shilling", "your obsession with `{last_ref}`", "your boring profile",
                 "your average-at-best performance", "your temporary relevance", "your struggle for attention",
-                "your plateauing stats", "your participation trophy energy", "your lack of momentum"
+                "your plateauing stats", "your participation trophy energy", "your lack of momentum",
+                "your lukewarm presence", "your placeholder energy"
             ],
             threat: [
                 "your temporary growth", "your dominance", "your target on your back", "your massive ego", "your climb", 
                 "your potential", "your 5% royalty tax", "your upcoming liquidation", "your lucky streak", 
                 "your threat level", "your inevitable fall", "your fragile success", "your suspicious stats",
                 "your over-inflated reputation", "your aggressive networking", "your unstable power",
-                "your looming disaster", "your temporary seat at the table"
+                "your looming disaster", "your temporary seat at the table", "your rising infamy"
             ],
             mythic: [
                 "your god-tier luck", "your reality-bending wallet", "your temporary immortality", 
-                "your glitch-in-the-matrix stats", "your cosmic-level ego"
+                "your glitch-in-the-matrix stats", "your cosmic-level ego", "your absolute server dominance"
                  ],
             legendary: [
                 "your empire", "your throne", "your highness", "your superiority complex", "your luck multiplier", 
                 "your 1% status", "your legendary stench", "your whale status", "your god-complex", "your crown",
                 "your immunity to reality", "your inflated ego", "your top-tier arrogance", "your excessive dominance",
-                "your hoarding of the floor price", "your absolute lack of humility", "your toxic throne"
+                "your hoarding of the floor price", "your absolute lack of humility", "your toxic throne",
+                "your unbearable presence at the top", "your ego's gravity well"
             ]
         },
         verbs: [
@@ -60,7 +64,8 @@ const ROASTS = {
             "is flatter than a crashed stablecoin.", "is more volatile than a shitcoin.", "is basically vaporware.",
             "is hurting the community's eyes.", "is nothing more than a glitch.", "is decaying in real-time.",
             "is slower than a blockchain with 1 Gwei gas.", "is statistically insignificant.", "is a total disaster.",
-            "is offensive to the concept of intelligence.", "is the visual equivalent of a headache."
+            "is offensive to the concept of intelligence.", "is the visual equivalent of a headache.",
+            "is currently underperforming my expectations by 200%.", "is a stain on the ledger."
         ],
         finishers: [
             "I've seen smarter decisions made by a Magic 8-Ball.",
@@ -90,7 +95,9 @@ const ROASTS = {
             "You're proof that practice doesn't always make perfect.",
             "I've seen better recovery from a liquidating whale than from your ego.",
             "Your potential is currently on airplane mode.",
-            "You’re the type of person who buys the peak and sells the bottom of a heart monitor."
+            "You’re the type of person who buys the peak and sells the bottom of a heart monitor.",
+            "I wouldn't trust you to guard a dead wallet.",
+            "The system is literally laughing at you in binary."
         ]
     },
 
@@ -163,7 +170,8 @@ const STINGERS = [
     " Yikes.", " Big yikes.", " Cringe.", " Keep dreaming.", " You’re done.", " Goodbye.",
     " Stop typing.", " Go outside.", " Seek help.", " Take the L.", " Mid at best.",
     " Not looking good.", " Clown behavior.", " Empathy not found.", " Cry about it.",
-    " Embarrassing for you.", " Absolute zero.", " Bottom of the barrel."
+    " Embarrassing for you.", " Absolute zero.", " Bottom of the barrel.", " Get audited.",
+    " Logged and laughed at."
 ];
 
 function getRoast(type, tier, data) {
@@ -178,7 +186,10 @@ function getRoast(type, tier, data) {
         const f = pick(ROASTS.fragments.finishers);
         const st = pick(STINGERS);
         
-        return `${h} ${s} ${v} ${f} ${st}`.replace(/`\$user`/g, data.user)
+        // ─── UPGRADE: COMBUSTION MODE (10% chance for extra finisher) ───
+        const doubleBurn = (Math.random() > 0.9) ? ` ${pick(ROASTS.fragments.finishers)}` : "";
+        
+        return `${h} ${s} ${v} ${f}${doubleBurn} ${st}`.replace(/`\$user`/g, data.user)
                                           .replace(/{count}/g, data.count)
                                           .replace(/{last_ref}/g, data.lastRef || "some random");
     }

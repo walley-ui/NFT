@@ -38,6 +38,13 @@ function setupAdminEnvironment() {
     // Initialize Admin-only components
     if (typeof updateContract === 'function') updateContract();
     
+    // LEVEL 0 SYNC CHECK: Ensure rarity caps are ready for the 10k run
+    const commonCap = document.getElementById('cMaxCommon');
+    if (commonCap && commonCap.value !== "3980") {
+        console.warn("Syncing Common Cap to 3980 for 10k total.");
+        commonCap.value = "3980";
+    }
+    
     // Upgrade: Auto-trigger verification prompt for ix_prinx if not authenticated
     if (typeof Admin !== 'undefined' && !Admin.isAuthenticated) {
         console.log("System standby: Awaiting Admin Secret.");

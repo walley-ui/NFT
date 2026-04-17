@@ -1,16 +1,29 @@
 /* ═══════════════════════════════════════════════════════
    renderer.js — SVG Mech Warrior Art Engine
+   Premium Metal Edition
+   ─────────────────────────────────────────────────────
+   What's upgraded over the previous version:
+   • Full specular metallic lighting on every weapon surface
+   • Per-weapon dedicated gradient: blade steel, gunmetal,
+     chrome rod, titanium plate, artillery black, orb crystal
+   • Bevel/edge highlight on every piece of armour
+   • Carbon fibre weave texture overlay on main panels
+   • Real dragon badge — cranium + snout + slit pupils + horns
+   • Unique uid salt per render call → no gradient bleed
+     when 240 cards share the same document
+   • 50/50 left-hand weapon flip (deterministic per seed)
+   • Knuckle grooves on fists
+   • Two-pass ground shadow for depth
+   ─────────────────────────────────────────────────────
    Depends on: rng.js
-   Returns an SVG string. Zero DOM access.
+   Pure string output — zero DOM access.
    ═══════════════════════════════════════════════════════ */
 
-/**
- * Renders one NFT as an SVG string at the given pixel size.
- * @param {Object} nft  - NFT data object from generator.js
- * @param {number} sz   - Output size in px (square)
- * @returns {string}    - Complete SVG markup
- */
-function renderSVG(nft, sz = 1000) {
+/* Per-call counter so gradient IDs are globally unique
+   even when hundreds of cards share one HTML page. */
+let _rcc = 0;
+
+function renderSVG(nft, sz = 500) {
   const rng  = rng32(nft.seed + 7777);
   const suit = nft.traits.suit;
   const P    = suit.primary;
@@ -20,381 +33,508 @@ function renderSVG(nft, sz = 1000) {
   const c1   = bg.color[0];
   const c2   = bg.color[1];
   const w = sz, h = sz;
-  const uid  = 'm' + nft.id;
-  const out  = [];
 
-  /* Sketch jitter — adds hand-drawn wobble to any coordinate */
+  /* Unique ID namespace — token id + per-call counter */
+  const uid = `r${nft.id}x${++_rcc}`;
+
+  const out = [];
+
+  /* Sketch wobble — hand-drawn feel */
   const jit = (v, mag = 1.8) => v + (rng() - 0.5) * mag * 2;
 
-  /* ─── OPEN SVG ─────────────────────────────────────── */
+  /* Left-hand weapon flip — 50/50, deterministic per seed */
+  const isLeft = rng32(nft.seed + 1234)() > 0.5;
+
+  /* ── OPEN ── */
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" shape-rendering="geometricPrecision">`);
 
-  /* ─── DEFS ─────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────
+     DEFS
+  ──────────────────────────────────────────────────── */
   out.push(`<defs>
-  <radialGradient id="bg${uid}" cx="50%" cy="45%" r="70%">
-    <stop offset="0%" stop-color="${c2}"/>
+
+  <!-- Scene gradients -->
+  <radialGradient id="bg${uid}" cx="50%" cy="42%" r="72%">
+    <stop offset="0%"   stop-color="${c2}"/>
     <stop offset="100%" stop-color="${c1}"/>
   </radialGradient>
-  <linearGradient id="suit${uid}" x1="10%" y1="0%" x2="90%" y2="100%">
-    <stop offset="0%"   stop-color="${A}" stop-opacity=".9"/>
-    <stop offset="50%"  stop-color="${P}"/>
+  <linearGradient id="suit${uid}" x1="8%" y1="0%" x2="92%" y2="100%">
+    <stop offset="0%"   stop-color="${A}" stop-opacity=".95"/>
+    <stop offset="45%"  stop-color="${P}"/>
     <stop offset="100%" stop-color="${c1}"/>
   </linearGradient>
   <linearGradient id="suitHi${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.25)"/>
+    <stop offset="0%"   stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="60%"  stop-color="rgba(255,255,255,.04)"/>
     <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
   </linearGradient>
-  <filter id="sk${uid}" x="-10%" y="-10%" width="120%" height="120%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" seed="${nft.seed % 99}" result="noise"/>
-    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.8" xChannelSelector="R" yChannelSelector="G" result="wobble"/>
-    <feComposite in="wobble" in2="SourceGraphic" operator="atop"/>
-  </filter>
-  <filter id="metal${uid}">
-    <feSpecularLighting surfaceScale="2" specularConstant="1.2" specularExponent="25" lighting-color="#ffffff" result="spec">
-      <feDistantLight elevation="45" azimuth="45"/>
+  <!-- Bevel: bright top, dark bottom for armour panels -->
+  <linearGradient id="bevel${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.55)"/>
+    <stop offset="30%"  stop-color="${A}"/>
+    <stop offset="70%"  stop-color="${P}"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,.5)"/>
+  </linearGradient>
+
+  <!-- Weapon: cold steel blade sweep -->
+  <linearGradient id="blade${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#0e0e20"/>
+    <stop offset="16%"  stop-color="#3e3e58"/>
+    <stop offset="34%"  stop-color="#c8c8e0"/>
+    <stop offset="50%"  stop-color="#f5f5ff"/>
+    <stop offset="66%"  stop-color="#b8b8d0"/>
+    <stop offset="84%"  stop-color="#2e2e48"/>
+    <stop offset="100%" stop-color="#08080e"/>
+  </linearGradient>
+  <!-- Blade tip brightening -->
+  <linearGradient id="bladeTip${uid}" x1="0%" y1="100%" x2="0%" y2="0%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,0)"/>
+    <stop offset="55%"  stop-color="rgba(255,255,255,.1)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,.55)"/>
+  </linearGradient>
+  <!-- Gunmetal anodised — blaster body -->
+  <linearGradient id="gunmetal${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#46465e"/>
+    <stop offset="18%"  stop-color="#828296"/>
+    <stop offset="42%"  stop-color="#26263a"/>
+    <stop offset="72%"  stop-color="#16162a"/>
+    <stop offset="100%" stop-color="#0c0c18"/>
+  </linearGradient>
+  <!-- Brushed steel tube — barrel/rod -->
+  <linearGradient id="barrel${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#0a0a14"/>
+    <stop offset="24%"  stop-color="#585875"/>
+    <stop offset="50%"  stop-color="#a8a8c8"/>
+    <stop offset="76%"  stop-color="#383852"/>
+    <stop offset="100%" stop-color="#0a0a14"/>
+  </linearGradient>
+  <!-- Chrome rod — lance shaft -->
+  <linearGradient id="chrome${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#0c0c18"/>
+    <stop offset="20%"  stop-color="#686888"/>
+    <stop offset="44%"  stop-color="#e0e0f0"/>
+    <stop offset="56%"  stop-color="#c0c0d8"/>
+    <stop offset="80%"  stop-color="#28283e"/>
+    <stop offset="100%" stop-color="#0c0c18"/>
+  </linearGradient>
+  <!-- Titanium plate — shield face -->
+  <linearGradient id="titanium${uid}" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#585878"/>
+    <stop offset="28%"  stop-color="${A}" stop-opacity=".88"/>
+    <stop offset="55%"  stop-color="${P}"/>
+    <stop offset="80%"  stop-color="#181828"/>
+    <stop offset="100%" stop-color="#0a0a18"/>
+  </linearGradient>
+  <!-- Artillery black-chrome — cannon body -->
+  <linearGradient id="artillery${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#383850"/>
+    <stop offset="14%"  stop-color="#78789a"/>
+    <stop offset="36%"  stop-color="#202034"/>
+    <stop offset="65%"  stop-color="#14141e"/>
+    <stop offset="100%" stop-color="#0a0a12"/>
+  </linearGradient>
+  <!-- Energy orb — staff -->
+  <radialGradient id="orb${uid}" cx="35%" cy="35%" r="65%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
+    <stop offset="30%"  stop-color="${A}"/>
+    <stop offset="68%"  stop-color="${P}"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,.6)"/>
+  </radialGradient>
+  <!-- Knuckle plate chrome -->
+  <linearGradient id="knuckle${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#888aaa"/>
+    <stop offset="32%"  stop-color="${A}" stop-opacity=".8"/>
+    <stop offset="62%"  stop-color="#1a1a2c"/>
+    <stop offset="100%" stop-color="#0a0a14"/>
+  </linearGradient>
+
+  <!-- Carbon fibre weave texture overlay -->
+  <pattern id="carbon${uid}" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="rgba(0,0,0,.08)"/>
+    <rect x="0" y="0" width="3" height="3" fill="rgba(255,255,255,.022)"/>
+    <rect x="3" y="3" width="3" height="3" fill="rgba(255,255,255,.022)"/>
+    <line x1="0" y1="0" x2="3" y2="3" stroke="rgba(255,255,255,.038)" stroke-width=".5"/>
+    <line x1="3" y1="0" x2="6" y2="3" stroke="rgba(0,0,0,.055)"       stroke-width=".5"/>
+    <line x1="0" y1="3" x2="3" y2="6" stroke="rgba(0,0,0,.055)"       stroke-width=".5"/>
+    <line x1="3" y1="3" x2="6" y2="6" stroke="rgba(255,255,255,.038)" stroke-width=".5"/>
+  </pattern>
+
+  <!-- Specular metal sheen on armour panels -->
+  <filter id="metal${uid}" x="-5%" y="-5%" width="110%" height="110%">
+    <feSpecularLighting surfaceScale="4" specularConstant="1.8"
+        specularExponent="42" lighting-color="#ffffff" result="spec">
+      <feDistantLight elevation="52" azimuth="38"/>
     </feSpecularLighting>
-    <feComposite in="spec" in2="SourceGraphic" operator="in" result="specOut"/>
-    <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    <feComposite in="spec" in2="SourceGraphic" operator="in" result="sm"/>
+    <feComposite in="SourceGraphic" in2="sm" operator="arithmetic" k1="0" k2="1" k3="0.55" k4="0"/>
   </filter>
+
+  <!-- Sharper specular for weapons — heavier glare -->
+  <filter id="wm${uid}" x="-8%" y="-8%" width="116%" height="116%">
+    <feSpecularLighting surfaceScale="6" specularConstant="2.4"
+        specularExponent="65" lighting-color="#ffffff" result="spec">
+      <feDistantLight elevation="44" azimuth="28"/>
+    </feSpecularLighting>
+    <feComposite in="spec" in2="SourceGraphic" operator="in" result="sm"/>
+    <feComposite in="SourceGraphic" in2="sm" operator="arithmetic" k1="0" k2="1" k3="0.78" k4="0"/>
+  </filter>
+
+  <!-- Sketch wobble -->
+  <filter id="sk${uid}" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.038"
+        numOctaves="3" seed="${nft.seed % 99}" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.6"
+        xChannelSelector="R" yChannelSelector="G" result="w"/>
+    <feComposite in="w" in2="SourceGraphic" operator="atop"/>
+  </filter>
+
+  <!-- Glow: sharp accent -->
   <filter id="glow${uid}" x="-20%" y="-20%" width="140%" height="140%">
     <feGaussianBlur stdDeviation="3.5" result="b"/>
-    <feColorMatrix in="b" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.5 0" result="boost"/>
+    <feColorMatrix in="b" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.8 0" result="boost"/>
     <feMerge><feMergeNode in="boost"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
-  <filter id="glowSoft${uid}" x="-40%" y="-40%" width="180%" height="180%">
-    <feGaussianBlur stdDeviation="12" result="b"/>
+
+  <!-- Bloom: wide soft -->
+  <filter id="bloom${uid}" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="11" result="b"/>
     <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
+
   </defs>`);
 
-  /* ─── BACKGROUND ────────────────────────────────────── */
+  /* ── BACKGROUND ── */
   out.push(`<rect width="${w}" height="${h}" fill="url(#bg${uid})"/>`);
-
   if (bg.val === 'cyber') {
-    for (let i = 0; i < 9; i++) {
-      out.push(`<line x1="0" y1="${(h/9*i+jit(0,3)).toFixed(1)}" x2="${w}" y2="${(h/9*i+jit(0,3)).toFixed(1)}" stroke="${A}" stroke-opacity=".06" stroke-width="1.5"/>`);
-      out.push(`<line x1="${(w/9*i+jit(0,3)).toFixed(1)}" y1="0" x2="${(w/9*i+jit(0,3)).toFixed(1)}" y2="${h}" stroke="${A}" stroke-opacity=".06" stroke-width="1.5"/>`);
+    for (let i = 0; i < 10; i++) {
+      out.push(`<line x1="0" y1="${(h/10*i+jit(0,3)).toFixed(1)}" x2="${w}" y2="${(h/10*i+jit(0,3)).toFixed(1)}" stroke="${A}" stroke-opacity=".055" stroke-width="1.2"/>`);
+      out.push(`<line x1="${(w/10*i+jit(0,3)).toFixed(1)}" y1="0" x2="${(w/10*i+jit(0,3)).toFixed(1)}" y2="${h}" stroke="${A}" stroke-opacity=".055" stroke-width="1.2"/>`);
     }
-    const b = w * .08;
-    out.push(`<path d="M${b},${w*.03} L${w*.03},${w*.03} L${w*.03},${b}" stroke="${A}" stroke-opacity=".4" stroke-width="2" fill="none" filter="url(#glow${uid})"/>`);
-    out.push(`<path d="M${w-b},${w*.03} L${w-w*.03},${w*.03} L${w-w*.03},${b}" stroke="${A}" stroke-opacity=".4" stroke-width="2" fill="none" filter="url(#glow${uid})"/>`);
-    out.push(`<path d="M${w*.03},${h-b} L${w*.03},${h-w*.03} L${b},${h-w*.03}" stroke="${A}" stroke-opacity=".4" stroke-width="2" fill="none" filter="url(#glow${uid})"/>`);
-    out.push(`<path d="M${w-w*.03},${h-b} L${w-w*.03},${h-w*.03} L${w-b},${h-w*.03}" stroke="${A}" stroke-opacity=".4" stroke-width="2" fill="none" filter="url(#glow${uid})"/>`);
+    const b = w*.08;
+    [`M${b},${w*.03} L${w*.03},${w*.03} L${w*.03},${b}`,
+     `M${w-b},${w*.03} L${w-w*.03},${w*.03} L${w-w*.03},${b}`,
+     `M${w*.03},${h-b} L${w*.03},${h-w*.03} L${b},${h-w*.03}`,
+     `M${w-w*.03},${h-b} L${w-w*.03},${h-w*.03} L${w-b},${h-w*.03}`
+    ].forEach(d => out.push(`<path d="${d}" stroke="${A}" stroke-opacity=".45" stroke-width="2" fill="none" filter="url(#glow${uid})"/>`));
   }
   if (bg.val === 'dimension') {
-    out.push(`<circle cx="${w/2}" cy="${h/2}" r="${(w*.42).toFixed(1)}" fill="none" stroke="${A}" stroke-opacity=".12" stroke-width="45" stroke-dasharray="10,5"/>`);
-    out.push(`<circle cx="${w/2}" cy="${h/2}" r="${(w*.25).toFixed(1)}" fill="none" stroke="${P}" stroke-opacity=".1" stroke-width="20"/>`);
-    for (let i = 0; i < 12; i++) {
-      const a = (i/12)*Math.PI*2;
-      out.push(`<line x1="${w/2}" y1="${h/2}" x2="${(w/2+Math.cos(a)*w).toFixed(1)}" y2="${(h/2+Math.sin(a)*h).toFixed(1)}" stroke="${A}" stroke-opacity=".04" stroke-width="1.5"/>`);
-    }
+    out.push(`<circle cx="${w/2}" cy="${h/2}" r="${(w*.42).toFixed(1)}" fill="none" stroke="${A}" stroke-opacity=".11" stroke-width="42" stroke-dasharray="8,5"/>`);
+    out.push(`<circle cx="${w/2}" cy="${h/2}" r="${(w*.24).toFixed(1)}" fill="none" stroke="${P}" stroke-opacity=".09" stroke-width="18"/>`);
+    for (let i=0;i<12;i++){const a=(i/12)*Math.PI*2;out.push(`<line x1="${w/2}" y1="${h/2}" x2="${(w/2+Math.cos(a)*w).toFixed(1)}" y2="${(h/2+Math.sin(a)*h).toFixed(1)}" stroke="${A}" stroke-opacity=".035" stroke-width="1.2"/>`);}
   }
   if (bg.val === 'golden') {
-    for (let i = 0; i < 30; i++) {
-      const a = (i/30)*Math.PI*2;
-      out.push(`<line x1="${w/2}" y1="${h/2}" x2="${(w/2+Math.cos(a)*w).toFixed(1)}" y2="${(h/2+Math.sin(a)*h).toFixed(1)}" stroke="${A}" stroke-opacity=".05" stroke-width="4"/>`);
-    }
+    for (let i=0;i<28;i++){const a=(i/28)*Math.PI*2;out.push(`<line x1="${w/2}" y1="${h/2}" x2="${(w/2+Math.cos(a)*w).toFixed(1)}" y2="${(h/2+Math.sin(a)*h).toFixed(1)}" stroke="${A}" stroke-opacity=".048" stroke-width="5"/>`);}
   }
-  if (bg.val === 'volcanic') {
-    out.push(`<ellipse cx="${(w/2).toFixed(1)}" cy="${h}" rx="${(w*.85).toFixed(1)}" ry="${(h*.35).toFixed(1)}" fill="#ff4500" fill-opacity=".12" filter="url(#glowSoft${uid})"/>`);
-  }
+  if (bg.val === 'volcanic') out.push(`<ellipse cx="${(w/2).toFixed(1)}" cy="${h}" rx="${(w*.85).toFixed(1)}" ry="${(h*.35).toFixed(1)}" fill="#ff4500" fill-opacity=".11" filter="url(#bloom${uid})"/>`);
   if (bg.val === 'arctic') {
-    for (let i = 0; i < 8; i++) {
-      const bx = rng()*w, by = rng()*h*.5;
-      out.push(`<polygon points="${jit(bx,12)},${jit(by,12)} ${jit(bx+25,12)},${jit(by-40,12)} ${jit(bx+45,12)},${jit(by,12)}" fill="${A}" fill-opacity=".06" stroke="${A}" stroke-opacity=".1" stroke-width="1"/>`);
-    }
+    for(let i=0;i<8;i++){const ix=rng()*w,iy=rng()*h*.5;out.push(`<polygon points="${jit(ix,10)},${jit(iy,10)} ${jit(ix+22,10)},${jit(iy-38,10)} ${jit(ix+42,10)},${jit(iy,10)}" fill="${A}" fill-opacity=".055" stroke="${A}" stroke-opacity=".1" stroke-width="1"/>`);}
   }
+  /* two-pass ground shadow */
+  out.push(`<ellipse cx="${(w/2).toFixed(1)}" cy="${(h*.892).toFixed(1)}" rx="${(w*.35).toFixed(1)}" ry="${(h*.065).toFixed(1)}" fill="rgba(0,0,0,.7)" filter="url(#bloom${uid})"/>`);
+  out.push(`<ellipse cx="${(w/2).toFixed(1)}" cy="${(h*.889).toFixed(1)}" rx="${(w*.22).toFixed(1)}" ry="${(h*.034).toFixed(1)}" fill="rgba(0,0,0,.45)"/>`);
 
-  // Ground shadow - with extra depth
-  out.push(`<ellipse cx="${(w/2).toFixed(1)}" cy="${(h*.885).toFixed(1)}" rx="${(w*.32).toFixed(1)}" ry="${(h*.06).toFixed(1)}" fill="rgba(0,0,0,.65)" filter="blur(4px)"/>`);
-
-  /* ─── AURA ──────────────────────────────────────────── */
+  /* ── AURA ── */
   if (aura.val !== 'none') {
     const aC = aura.color;
-    out.push(`<ellipse cx="${(w/2).toFixed(1)}" cy="${(h*.52).toFixed(1)}" rx="${(w*.32).toFixed(1)}" ry="${(h*.48).toFixed(1)}" fill="${aC}" fill-opacity=".045" filter="url(#glowSoft${uid})"/>`);
-    for (let i = 0; i < 15; i++) {
-      const px = w/2 + (rng()-.5)*w*.5;
-      const py = h*.2 + rng()*h*.6;
-      const r  = .5 + rng()*3.5;
-      out.push(`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r.toFixed(1)}" fill="${aC}" fill-opacity="${(.4+rng()*.5).toFixed(2)}" filter="url(#glow${uid})"/>`);
-    }
-    if (['electric','plasma','cosmic'].includes(aura.val)) {
-      for (let i = 0; i < 5; i++) {
-        const x1=w/2+(rng()-.5)*w*.4, y1=h*.15+rng()*h*.25;
-        const x2=w/2+(rng()-.5)*w*.4, y2=h*.6+rng()*h*.3;
-        const cx=(x1+(rng()-.5)*100).toFixed(1), cy=((y1+y2)/2+(rng()-.5)*60).toFixed(1);
-        out.push(`<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cx},${cy} ${x2.toFixed(1)},${y2.toFixed(1)}" stroke="${aC}" stroke-opacity="${(.4+rng()*.4).toFixed(2)}" stroke-width="${(.8+rng()*2).toFixed(1)}" fill="none" filter="url(#glow${uid})"/>`);
-      }
+    out.push(`<ellipse cx="${(w/2).toFixed(1)}" cy="${(h*.52).toFixed(1)}" rx="${(w*.32).toFixed(1)}" ry="${(h*.48).toFixed(1)}" fill="${aC}" fill-opacity=".042" filter="url(#bloom${uid})"/>`);
+    for(let i=0;i<14;i++){const px=w/2+(rng()-.5)*w*.5,py=h*.18+rng()*h*.62,r=.5+rng()*3.8;out.push(`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r.toFixed(1)}" fill="${aC}" fill-opacity="${(.38+rng()*.52).toFixed(2)}" filter="url(#glow${uid})"/>`);}
+    if(['electric','plasma','cosmic'].includes(aura.val)){
+      for(let i=0;i<5;i++){
+        const x1=w/2+(rng()-.5)*w*.42,y1=h*.14+rng()*h*.26,x2=w/2+(rng()-.5)*w*.42,y2=h*.6+rng()*h*.3;
+        const cx=(x1+(rng()-.5)*90).toFixed(1),cy=((y1+y2)/2+(rng()-.5)*55).toFixed(1);
+        out.push(`<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${cx},${cy} ${x2.toFixed(1)},${y2.toFixed(1)}" stroke="${aC}" stroke-opacity="${(.38+rng()*.42).toFixed(2)}" stroke-width="${(.7+rng()*2.2).toFixed(1)}" fill="none" filter="url(#glow${uid})"/>`);}
     }
   }
 
-  /* ─── LAYOUT ANCHORS ────────────────────────────────── */
-  const bx   = w/2, by  = h*.54;
-  const tW   = w*.265, tH = h*.245;
-  const armW = w*.082, armH = h*.195;
-  const legW = w*.088, legH = h*.215;
+  /* ── BODY LAYOUT ── */
+  const bx=w/2,by=h*.54,tW=w*.265,tH=h*.245,armW=w*.082,armH=h*.195,legW=w*.088,legH=h*.215;
+  const wp=(pts,attr)=>{const ps=pts.map(p=>`${jit(p[0]).toFixed(1)},${jit(p[1]).toFixed(1)}`).join(' ');return`<polygon points="${ps}" ${attr}/>`};
 
-  // Wobbly polygon helper
-  const wp = (pts, attr) => {
-    const ps = pts.map(p => `${jit(p[0]).toFixed(1)},${jit(p[1]).toFixed(1)}`).join(' ');
-    return `<polygon points="${ps}" ${attr}/>`;
-  };
+  /* LEGS */
+  const lA=`fill="url(#suit${uid})" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid}) url(#metal${uid})"`;
+  out.push(wp([[bx-legW*1.15,by+tH*.5],[bx-legW*.12,by+tH*.5],[bx-legW*.22,by+tH*.5+legH],[bx-legW*1.28,by+tH*.5+legH]],lA));
+  out.push(wp([[bx-legW*1.15,by+tH*.5],[bx-legW*.12,by+tH*.5],[bx-legW*.22,by+tH*.5+legH],[bx-legW*1.28,by+tH*.5+legH]],`fill="url(#carbon${uid})"`));
+  out.push(wp([[bx-legW*1.22,by+tH*.75],[bx-legW*.08,by+tH*.75],[bx-legW*.18,by+tH*.75+legH*.3],[bx-legW*1.32,by+tH*.75+legH*.3]],`fill="url(#bevel${uid})" fill-opacity=".5" stroke="${A}" stroke-width="1.4" filter="url(#sk${uid})"`));
+  out.push(wp([[bx+legW*.12,by+tH*.5],[bx+legW*1.15,by+tH*.5],[bx+legW*1.28,by+tH*.5+legH],[bx+legW*.22,by+tH*.5+legH]],lA));
+  out.push(wp([[bx+legW*.12,by+tH*.5],[bx+legW*1.15,by+tH*.5],[bx+legW*1.28,by+tH*.5+legH],[bx+legW*.22,by+tH*.5+legH]],`fill="url(#carbon${uid})"`));
+  out.push(wp([[bx+legW*.08,by+tH*.75],[bx+legW*1.22,by+tH*.75],[bx+legW*1.32,by+tH*.75+legH*.3],[bx+legW*.18,by+tH*.75+legH*.3]],`fill="url(#bevel${uid})" fill-opacity=".5" stroke="${A}" stroke-width="1.4" filter="url(#sk${uid})"`));
+  const ankY=by+tH*.5+legH*.82;
+  out.push(`<rect x="${jit(bx-legW*1.22).toFixed(1)}" y="${jit(ankY).toFixed(1)}" width="${(legW*1.14).toFixed(1)}" height="${(legH*.115).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1" filter="url(#sk${uid})"/>`);
+  out.push(`<rect x="${jit(bx+legW*.08).toFixed(1)}"  y="${jit(ankY).toFixed(1)}" width="${(legW*1.14).toFixed(1)}" height="${(legH*.115).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1" filter="url(#sk${uid})"/>`);
+  const fy=by+tH*.5+legH,fh=h*.044;
+  out.push(wp([[bx-legW*1.48,fy],[bx-legW*.04,fy],[bx+legW*.04,fy+fh],[bx-legW*1.56,fy+fh]],`fill="${P}" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`));
+  out.push(wp([[bx+legW*.04,fy],[bx+legW*1.48,fy],[bx+legW*1.56,fy+fh],[bx-legW*.04,fy+fh]],`fill="${P}" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`));
 
-  /* ─── LEGS ──────────────────────────────────────────── */
-  // Left leg
-  out.push(wp([[bx-legW*1.15,by+tH*.5],[bx-legW*.12,by+tH*.5],[bx-legW*.22,by+tH*.5+legH],[bx-legW*1.28,by+tH*.5+legH]],
-    `fill="url(#suit${uid})" stroke="${A}" stroke-width="2" filter="url(#sk${uid}) url(#metal${uid})"`));
-  // Left knee guard
-  out.push(wp([[bx-legW*1.22,by+tH*.75],[bx-legW*.08,by+tH*.75],[bx-legW*.18,by+tH*.75+legH*.3],[bx-legW*1.32,by+tH*.75+legH*.3]],
-    `fill="${A}" fill-opacity=".45" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"`));
-  // Right leg
-  out.push(wp([[bx+legW*.12,by+tH*.5],[bx+legW*1.15,by+tH*.5],[bx+legW*1.28,by+tH*.5+legH],[bx+legW*.22,by+tH*.5+legH]],
-    `fill="url(#suit${uid})" stroke="${A}" stroke-width="2" filter="url(#sk${uid}) url(#metal${uid})"`));
-  // Right knee guard
-  out.push(wp([[bx+legW*.08,by+tH*.75],[bx+legW*1.22,by+tH*.75],[bx+legW*1.32,by+tH*.75+legH*.3],[bx+legW*.18,by+tH*.75+legH*.3]],
-    `fill="${A}" fill-opacity=".45" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"`));
-  // Ankle strips
-  const ankY = by + tH*.5 + legH*.82;
-  out.push(`<rect x="${jit(bx-legW*1.22).toFixed(1)}" y="${jit(ankY).toFixed(1)}" width="${(legW*1.15).toFixed(1)}" height="${(legH*.12).toFixed(1)}" fill="${P}" stroke="${A}" stroke-width="1" filter="url(#sk${uid})"/>`);
-  out.push(`<rect x="${jit(bx+legW*.08).toFixed(1)}"  y="${jit(ankY).toFixed(1)}" width="${(legW*1.15).toFixed(1)}" height="${(legH*.12).toFixed(1)}" fill="${P}" stroke="${A}" stroke-width="1" filter="url(#sk${uid})"/>`);
-  // Feet
-  const fy = by+tH*.5+legH, fh = h*.045;
-  out.push(wp([[bx-legW*1.48,fy],[bx-legW*.04,fy],[bx+legW*.04,fy+fh],[bx-legW*1.56,fy+fh]],
-    `fill="${P}" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"`));
-  out.push(wp([[bx+legW*.04,fy],[bx+legW*1.48,fy],[bx+legW*1.56,fy+fh],[bx-legW*.04,fy+fh]],
-    `fill="${P}" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"`));
+  /* WAIST */
+  out.push(wp([[bx-tW*.74,by+tH*.38],[bx+tW*.74,by+tH*.38],[bx+tW*.52,by+tH*.58],[bx-tW*.52,by+tH*.58]],`fill="${A}" fill-opacity=".52" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`));
+  out.push(`<rect x="${jit(bx-w*.036).toFixed(1)}" y="${jit(by+tH*.4).toFixed(1)}" width="${(w*.072).toFixed(1)}" height="${(h*.042).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.4" filter="url(#glow${uid})"/>`);
+  out.push(`<rect x="${jit(bx-w*.014).toFixed(1)}" y="${jit(by+tH*.41).toFixed(1)}" width="${(w*.028).toFixed(1)}" height="${(h*.022).toFixed(1)}" rx="1" fill="rgba(255,255,255,.48)"/>`);
 
-  /* ─── WAIST / BELT ──────────────────────────────────── */
-  out.push(wp([[bx-tW*.74,by+tH*.38],[bx+tW*.74,by+tH*.38],[bx+tW*.52,by+tH*.58],[bx-tW*.52,by+tH*.58]],
-    `fill="${A}" fill-opacity=".5" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`));
-  out.push(`<rect x="${jit(bx-w*.035).toFixed(1)}" y="${jit(by+tH*.4).toFixed(1)}" width="${(w*.07).toFixed(1)}" height="${(h*.04).toFixed(1)}" fill="${A}" fill-opacity=".8" stroke="${A}" stroke-width="1.2" filter="url(#glow${uid})"/>`);
-
-  /* ─── ARMS ──────────────────────────────────────────── */
-  // Left arm + shoulder pad + elbow guard
-  out.push(wp([[bx-tW-armW,by-tH*.3],[bx-tW,by-tH*.3],[bx-tW+armW*.28,by+armH],[bx-tW-armW*1.3,by+armH]],
-    `fill="url(#suit${uid})" stroke="${A}" stroke-width="2" filter="url(#sk${uid}) url(#metal${uid})"`));
-  out.push(wp([[bx-tW-armW*.75,by-tH*.44],[bx-tW+armW*.22,by-tH*.44],[bx-tW+armW*.1,by-tH*.12],[bx-tW-armW*.92,by-tH*.12]],
-    `fill="${A}" fill-opacity=".75" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`));
-  out.push(wp([[bx-tW-armW*.9,by+armH*.42],[bx-tW+armW*.1,by+armH*.42],[bx-tW+armW*.05,by+armH*.62],[bx-tW-armW*.85,by+armH*.62]],
-    `fill="${A}" fill-opacity=".4" stroke="${A}" stroke-width="1" filter="url(#sk${uid})"`));
-  // Right arm + shoulder pad + elbow guard
-  out.push(wp([[bx+tW,by-tH*.3],[bx+tW+armW,by-tH*.3],[bx+tW+armW*1.3,by+armH],[bx+tW-armW*.28,by+armH]],
-    `fill="url(#suit${uid})" stroke="${A}" stroke-width="2" filter="url(#sk${uid}) url(#metal${uid})"`));
-  out.push(wp([[bx+tW-armW*.22,by-tH*.44],[bx+tW+armW*.75,by-tH*.44],[bx+tW+armW*.92,by-tH*.12],[bx+tW-armW*.1,by-tH*.12]],
-    `fill="${A}" fill-opacity=".75" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`));
-  out.push(wp([[bx+tW-armW*.1,by+armH*.42],[bx+tW+armW*.9,by+armH*.42],[bx+tW+armW*.85,by+armH*.62],[bx+tW-armW*.05,by+armH*.62]],
-    `fill="${A}" fill-opacity=".4" stroke="${A}" stroke-width="1" filter="url(#sk${uid})"`));
-  // Fists
-  out.push(`<rect x="${jit(bx-tW-armW*1.4).toFixed(1)}"  y="${jit(by+armH*.82).toFixed(1)}" width="${(armW*1.65).toFixed(1)}" height="${(h*.085).toFixed(1)}" rx="4" fill="${P}" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"/>`);
-  out.push(`<rect x="${jit(bx+tW-armW*.2).toFixed(1)}"   y="${jit(by+armH*.82).toFixed(1)}" width="${(armW*1.65).toFixed(1)}" height="${(h*.085).toFixed(1)}" rx="4" fill="${P}" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"/>`);
-
-  /* ─── TORSO ─────────────────────────────────────────── */
-  out.push(wp([[bx-tW,by-tH*.5],[bx+tW,by-tH*.5],[bx+tW*.84,by+tH*.5],[bx-tW*.84,by+tH*.5]],
-    `fill="url(#suit${uid})" stroke="${A}" stroke-width="2.5" filter="url(#sk${uid}) url(#metal${uid})"`));
-  out.push(wp([[bx-tW*.5,by-tH*.5],[bx+tW*.5,by-tH*.5],[bx+tW*.42,by-tH*.1],[bx-tW*.42,by-tH*.1]],
-    `fill="url(#suitHi${uid})"`));
-  out.push(`<line x1="${jit(bx-tW*.52).toFixed(1)}" y1="${jit(by-tH*.26).toFixed(1)}" x2="${jit(bx+tW*.52).toFixed(1)}" y2="${jit(by-tH*.26).toFixed(1)}" stroke="${A}" stroke-opacity=".5" stroke-width="1.2" filter="url(#sk${uid})"/>`);
-  out.push(`<line x1="${jit(bx-tW*.38).toFixed(1)}" y1="${jit(by+tH*.04).toFixed(1)}" x2="${jit(bx+tW*.38).toFixed(1)}" y2="${jit(by+tH*.04).toFixed(1)}" stroke="${A}" stroke-opacity=".5" stroke-width="1.2" filter="url(#sk${uid})"/>`);
-  for (let i = 0; i < 4; i++) {
-    const vy = by - tH*.22 + i*(tH*.12);
-    out.push(`<line x1="${jit(bx-tW*.88).toFixed(1)}" y1="${jit(vy).toFixed(1)}" x2="${jit(bx-tW*.68).toFixed(1)}" y2="${jit(vy).toFixed(1)}" stroke="${A}" stroke-opacity=".6" stroke-width="1.8"/>`);
-    out.push(`<line x1="${jit(bx+tW*.68).toFixed(1)}" y1="${jit(vy).toFixed(1)}" x2="${jit(bx+tW*.88).toFixed(1)}" y2="${jit(vy).toFixed(1)}" stroke="${A}" stroke-opacity=".6" stroke-width="1.8"/>`);
+  /* ARMS */
+  const aA=`fill="url(#suit${uid})" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid}) url(#metal${uid})"`;
+  const pA=`fill="url(#bevel${uid})" fill-opacity=".72" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid})"`;
+  const eA=`fill="${A}" fill-opacity=".42" stroke="${A}" stroke-width="1" filter="url(#sk${uid})"`;
+  out.push(wp([[bx-tW-armW,by-tH*.3],[bx-tW,by-tH*.3],[bx-tW+armW*.28,by+armH],[bx-tW-armW*1.3,by+armH]],aA));
+  out.push(wp([[bx-tW-armW*.75,by-tH*.44],[bx-tW+armW*.22,by-tH*.44],[bx-tW+armW*.1,by-tH*.12],[bx-tW-armW*.92,by-tH*.12]],pA));
+  out.push(wp([[bx-tW-armW*.9,by+armH*.42],[bx-tW+armW*.1,by+armH*.42],[bx-tW+armW*.05,by+armH*.62],[bx-tW-armW*.85,by+armH*.62]],eA));
+  out.push(wp([[bx+tW,by-tH*.3],[bx+tW+armW,by-tH*.3],[bx+tW+armW*1.3,by+armH],[bx+tW-armW*.28,by+armH]],aA));
+  out.push(wp([[bx+tW-armW*.22,by-tH*.44],[bx+tW+armW*.75,by-tH*.44],[bx+tW+armW*.92,by-tH*.12],[bx+tW-armW*.1,by-tH*.12]],pA));
+  out.push(wp([[bx+tW-armW*.1,by+armH*.42],[bx+tW+armW*.9,by+armH*.42],[bx+tW+armW*.85,by+armH*.62],[bx+tW-armW*.05,by+armH*.62]],eA));
+  /* fists */
+  out.push(`<rect x="${jit(bx-tW-armW*1.4).toFixed(1)}"  y="${jit(by+armH*.82).toFixed(1)}" width="${(armW*1.65).toFixed(1)}" height="${(h*.085).toFixed(1)}" rx="4" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"/>`);
+  out.push(`<rect x="${jit(bx+tW-armW*.2).toFixed(1)}"   y="${jit(by+armH*.82).toFixed(1)}" width="${(armW*1.65).toFixed(1)}" height="${(h*.085).toFixed(1)}" rx="4" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"/>`);
+  for(let k=0;k<3;k++){
+    out.push(`<line x1="${jit(bx-tW-armW*1.04+k*armW*.4).toFixed(1)}" y1="${jit(by+armH*.83).toFixed(1)}" x2="${jit(bx-tW-armW*1.04+k*armW*.4).toFixed(1)}" y2="${jit(by+armH*.83+h*.082).toFixed(1)}" stroke="${A}" stroke-opacity=".38" stroke-width="1"/>`);
+    out.push(`<line x1="${jit(bx+tW+armW*.16+k*armW*.4).toFixed(1)}" y1="${jit(by+armH*.83).toFixed(1)}" x2="${jit(bx+tW+armW*.16+k*armW*.4).toFixed(1)}" y2="${jit(by+armH*.83+h*.082).toFixed(1)}" stroke="${A}" stroke-opacity=".38" stroke-width="1"/>`);
   }
 
-  /* ─── CHEST BADGE ───────────────────────────────────── */
-  const bsx = bx, bsy = by - tH*.12, bs = w*.058;
-  const badge = nft.traits.badge.val;
+  /* TORSO */
+  const tPts=[[bx-tW,by-tH*.5],[bx+tW,by-tH*.5],[bx+tW*.84,by+tH*.5],[bx-tW*.84,by+tH*.5]];
+  out.push(wp(tPts,`fill="url(#suit${uid})" stroke="${A}" stroke-width="2.6" filter="url(#sk${uid}) url(#metal${uid})"`));
+  out.push(wp(tPts,`fill="url(#carbon${uid})"`));
+  out.push(wp([[bx-tW*.5,by-tH*.5],[bx+tW*.5,by-tH*.5],[bx+tW*.42,by-tH*.1],[bx-tW*.42,by-tH*.1]],`fill="url(#suitHi${uid})"`));
+  out.push(`<line x1="${jit(bx-tW*.52).toFixed(1)}" y1="${jit(by-tH*.28).toFixed(1)}" x2="${jit(bx+tW*.52).toFixed(1)}" y2="${jit(by-tH*.28).toFixed(1)}" stroke="${A}" stroke-opacity=".52" stroke-width="1.3" filter="url(#sk${uid})"/>`);
+  out.push(`<line x1="${jit(bx-tW*.38).toFixed(1)}" y1="${jit(by+tH*.04).toFixed(1)}" x2="${jit(bx+tW*.38).toFixed(1)}" y2="${jit(by+tH*.04).toFixed(1)}" stroke="${A}" stroke-opacity=".52" stroke-width="1.3" filter="url(#sk${uid})"/>`);
+  for(let i=0;i<4;i++){const vy=by-tH*.2+i*(tH*.13);out.push(`<line x1="${jit(bx-tW*.88).toFixed(1)}" y1="${jit(vy).toFixed(1)}" x2="${jit(bx-tW*.68).toFixed(1)}" y2="${jit(vy).toFixed(1)}" stroke="${A}" stroke-opacity=".62" stroke-width="1.8"/>`);out.push(`<line x1="${jit(bx+tW*.68).toFixed(1)}" y1="${jit(vy).toFixed(1)}" x2="${jit(bx+tW*.88).toFixed(1)}" y2="${jit(vy).toFixed(1)}" stroke="${A}" stroke-opacity=".62" stroke-width="1.8"/>`);}
+  /* ── CHEST BADGE ── */
+  const bsx=bx,bsy=by-tH*.12,bs=w*.058,badge=nft.traits.badge.val;
   out.push(`<g filter="url(#glow${uid})">`);
-  switch (badge) {
-    case 'star': case 'zord': {
-      let sp = '';
-      for (let i = 0; i < 10; i++) {
-        const a = i*Math.PI/5 - Math.PI/2, r2 = i%2===0 ? bs : bs*.44;
-        sp += `${jit(bsx+Math.cos(a)*r2).toFixed(1)},${jit(bsy+Math.sin(a)*r2).toFixed(1)} `;
-      }
-      out.push(`<polygon points="${sp}" fill="${A}" stroke="${c1}" stroke-width="1.2" filter="url(#sk${uid})"/>`);
+  switch(badge){
+    case 'star':case 'zord':{let sp='';for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r2=i%2===0?bs:bs*.44;sp+=`${jit(bsx+Math.cos(a)*r2).toFixed(1)},${jit(bsy+Math.sin(a)*r2).toFixed(1)} `;}out.push(`<polygon points="${sp}" fill="${A}" stroke="${c1}" stroke-width="1.4" filter="url(#sk${uid})"/>`);out.push(`<polygon points="${sp}" fill="url(#suitHi${uid})" opacity=".45"/>`);break;}
+    case 'lightning':out.push(wp([[bsx-bs*.3,bsy-bs],[bsx+bs*.22,bsy-bs*.08],[bsx,bsy-bs*.08],[bsx+bs*.3,bsy+bs],[bsx-bs*.22,bsy+bs*.08],[bsx,bsy+bs*.08]],`fill="${A}" stroke="${c1}" stroke-width="1.4" filter="url(#sk${uid})"`));out.push(wp([[bsx-bs*.3,bsy-bs],[bsx+bs*.22,bsy-bs*.08],[bsx,bsy-bs*.08],[bsx+bs*.3,bsy+bs],[bsx-bs*.22,bsy+bs*.08],[bsx,bsy+bs*.08]],`fill="url(#suitHi${uid})" opacity=".4"`));break;
+    case 'diamond':out.push(wp([[bsx,bsy-bs],[bsx+bs*.72,bsy],[bsx,bsy+bs],[bsx-bs*.72,bsy]],`fill="${A}" stroke="${c1}" stroke-width="1.4" filter="url(#sk${uid})"`));out.push(wp([[bsx,bsy-bs],[bsx+bs*.72,bsy],[bsx,bsy+bs],[bsx-bs*.72,bsy]],`fill="url(#suitHi${uid})" opacity=".45"`));break;
+    case 'skull':out.push(`<circle cx="${jit(bsx).toFixed(1)}" cy="${jit(bsy-bs*.18).toFixed(1)}" r="${(bs*.54).toFixed(1)}" fill="${A}" stroke="${c1}" stroke-width="1.4" filter="url(#sk${uid})"/>`);out.push(`<circle cx="${jit(bsx-bs*.2).toFixed(1)}" cy="${jit(bsy-bs*.22).toFixed(1)}" r="${(bs*.12).toFixed(1)}" fill="${c1}"/>`);out.push(`<circle cx="${jit(bsx+bs*.2).toFixed(1)}" cy="${jit(bsy-bs*.22).toFixed(1)}" r="${(bs*.12).toFixed(1)}" fill="${c1}"/>`);for(let i=-1;i<=1;i++)out.push(`<rect x="${jit(bsx+i*bs*.2-bs*.07).toFixed(1)}" y="${jit(bsy+bs*.2).toFixed(1)}" width="${(bs*.16).toFixed(1)}" height="${(bs*.3).toFixed(1)}" rx="1" fill="${A}" stroke="${c1}" stroke-width=".6"/>`);break;
+    case 'eye':out.push(`<ellipse cx="${jit(bsx).toFixed(1)}" cy="${jit(bsy).toFixed(1)}" rx="${(bs*.74).toFixed(1)}" ry="${(bs*.4).toFixed(1)}" fill="${c1}" stroke="${A}" stroke-width="1.6" filter="url(#sk${uid})"/>`);out.push(`<circle cx="${jit(bsx).toFixed(1)}" cy="${jit(bsy).toFixed(1)}" r="${(bs*.26).toFixed(1)}" fill="${A}"/>`);out.push(`<circle cx="${jit(bsx-bs*.05).toFixed(1)}" cy="${jit(bsy-bs*.06).toFixed(1)}" r="${(bs*.1).toFixed(1)}" fill="${c1}"/>`);out.push(`<ellipse cx="${jit(bsx-bs*.08).toFixed(1)}" cy="${jit(bsy-bs*.1).toFixed(1)}" rx="${(bs*.06).toFixed(1)}" ry="${(bs*.04).toFixed(1)}" fill="rgba(255,255,255,.7)"/>`);break;
+    case 'wings':out.push(`<path d="M${bsx},${bsy} C${jit(bsx-bs*1.85,6)},${jit(bsy-bs*1.05,6)} ${jit(bsx-bs,6)},${jit(bsy+bs*.62,6)} ${bsx},${jit(bsy+bs*.36,4)}" fill="${A}" fill-opacity=".88" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"/>`);out.push(`<path d="M${bsx},${bsy} C${jit(bsx+bs*1.85,6)},${jit(bsy-bs*1.05,6)} ${jit(bsx+bs,6)},${jit(bsy+bs*.62,6)} ${bsx},${jit(bsy+bs*.36,4)}" fill="${A}" fill-opacity=".88" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"/>`);out.push(`<path d="M${bsx},${bsy-bs*.3} C${jit(bsx-bs*.8,3)},${jit(bsy-bs*.8,3)} ${jit(bsx-bs*.4,3)},${jit(bsy+bs*.1,3)} ${bsx},${jit(bsy+bs*.2,2)}" fill="rgba(255,255,255,.14)"/>`);out.push(`<path d="M${bsx},${bsy-bs*.3} C${jit(bsx+bs*.8,3)},${jit(bsy-bs*.8,3)} ${jit(bsx+bs*.4,3)},${jit(bsy+bs*.1,3)} ${bsx},${jit(bsy+bs*.2,2)}" fill="rgba(255,255,255,.14)"/>`);break;
+    case 'crown':out.push(wp([[bsx-bs*.65,bsy+bs*.32],[bsx-bs*.65,bsy-bs*.22],[bsx-bs*.32,bsy-bs*.74],[bsx,bsy-bs*.22],[bsx+bs*.32,bsy-bs*.74],[bsx+bs*.65,bsy-bs*.22],[bsx+bs*.65,bsy+bs*.32]],`fill="${A}" stroke="${c1}" stroke-width="1.4" filter="url(#sk${uid})"`));out.push(wp([[bsx-bs*.65,bsy+bs*.32],[bsx-bs*.65,bsy-bs*.22],[bsx-bs*.32,bsy-bs*.74],[bsx,bsy-bs*.22],[bsx+bs*.32,bsy-bs*.74],[bsx+bs*.65,bsy-bs*.22],[bsx+bs*.65,bsy+bs*.32]],`fill="url(#suitHi${uid})" opacity=".38"`));break;
+    case 'dragon':
+      /* Real dragon head: cranium + snout + slit pupils + horns */
+      out.push(`<path d="M${bsx.toFixed(1)},${(bsy-bs*1.05).toFixed(1)} C${(bsx-bs*.65).toFixed(1)},${(bsy-bs*1.1).toFixed(1)} ${(bsx-bs*1.0).toFixed(1)},${(bsy-bs*.5).toFixed(1)} ${(bsx-bs*.9).toFixed(1)},${(bsy+bs*.05).toFixed(1)} L${(bsx-bs*.7).toFixed(1)},${(bsy+bs*.55).toFixed(1)} C${(bsx-bs*.4).toFixed(1)},${(bsy+bs*.45).toFixed(1)} ${(bsx-bs*.15).toFixed(1)},${(bsy+bs*.7).toFixed(1)} ${bsx.toFixed(1)},${(bsy+bs*.7).toFixed(1)} C${(bsx+bs*.15).toFixed(1)},${(bsy+bs*.7).toFixed(1)} ${(bsx+bs*.4).toFixed(1)},${(bsy+bs*.45).toFixed(1)} ${(bsx+bs*.7).toFixed(1)},${(bsy+bs*.55).toFixed(1)} L${(bsx+bs*.9).toFixed(1)},${(bsy+bs*.05).toFixed(1)} C${(bsx+bs*1.0).toFixed(1)},${(bsy-bs*.5).toFixed(1)} ${(bsx+bs*.65).toFixed(1)},${(bsy-bs*1.1).toFixed(1)} ${bsx.toFixed(1)},${(bsy-bs*1.05).toFixed(1)} Z" fill="${A}" fill-opacity=".92" stroke="${c1}" stroke-width="1.3" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${(bsx-bs*.28).toFixed(1)},${(bsy+bs*.15).toFixed(1)} Q${bsx.toFixed(1)},${(bsy+bs*.4).toFixed(1)} ${(bsx+bs*.28).toFixed(1)},${(bsy+bs*.15).toFixed(1)}" stroke="${c1}" stroke-width="1" fill="none" opacity=".58"/>`);
+      out.push(`<ellipse cx="${(bsx-bs*.32).toFixed(1)}" cy="${(bsy-bs*.22).toFixed(1)}" rx="${(bs*.15).toFixed(1)}" ry="${(bs*.11).toFixed(1)}" fill="${c1}" opacity=".95"/>`);
+      out.push(`<ellipse cx="${(bsx+bs*.32).toFixed(1)}" cy="${(bsy-bs*.22).toFixed(1)}" rx="${(bs*.15).toFixed(1)}" ry="${(bs*.11).toFixed(1)}" fill="${c1}" opacity=".95"/>`);
+      out.push(`<ellipse cx="${(bsx-bs*.32).toFixed(1)}" cy="${(bsy-bs*.22).toFixed(1)}" rx="${(bs*.04).toFixed(1)}" ry="${(bs*.1).toFixed(1)}" fill="${A}"/>`);
+      out.push(`<ellipse cx="${(bsx+bs*.32).toFixed(1)}" cy="${(bsy-bs*.22).toFixed(1)}" rx="${(bs*.04).toFixed(1)}" ry="${(bs*.1).toFixed(1)}" fill="${A}"/>`);
+      out.push(`<path d="M${(bsx-bs*.5).toFixed(1)},${(bsy-bs*.75).toFixed(1)} L${(bsx-bs*.72).toFixed(1)},${(bsy-bs*1.45).toFixed(1)} L${(bsx-bs*.32).toFixed(1)},${(bsy-bs*.82).toFixed(1)}" fill="${A}" stroke="${c1}" stroke-width=".9"/>`);
+      out.push(`<path d="M${(bsx+bs*.5).toFixed(1)},${(bsy-bs*.75).toFixed(1)} L${(bsx+bs*.72).toFixed(1)},${(bsy-bs*1.45).toFixed(1)} L${(bsx+bs*.32).toFixed(1)},${(bsy-bs*.82).toFixed(1)}" fill="${A}" stroke="${c1}" stroke-width=".9"/>`);
+      out.push(`<path d="M${(bsx-bs*.4).toFixed(1)},${(bsy-bs*1.0).toFixed(1)} C${(bsx-bs*.2).toFixed(1)},${(bsy-bs*1.06).toFixed(1)} ${(bsx+bs*.2).toFixed(1)},${(bsy-bs*1.06).toFixed(1)} ${(bsx+bs*.4).toFixed(1)},${(bsy-bs*1.0).toFixed(1)}" fill="rgba(255,255,255,.18)"/>`);
       break;
-    }
-    case 'lightning':
-      out.push(wp([[bsx-bs*.3,bsy-bs],[bsx+bs*.22,bsy-bs*.08],[bsx,bsy-bs*.08],[bsx+bs*.3,bsy+bs],[bsx-bs*.22,bsy+bs*.08],[bsx,bsy+bs*.08]],
-        `fill="${A}" stroke="${c1}" stroke-width="1.2" filter="url(#sk${uid})"`));
-      break;
-    case 'diamond':
-      out.push(wp([[bsx,bsy-bs],[bsx+bs*.72,bsy],[bsx,bsy+bs],[bsx-bs*.72,bsy]],
-        `fill="${A}" stroke="${c1}" stroke-width="1.2" filter="url(#sk${uid})"`));
-      break;
-    case 'skull':
-      out.push(`<circle cx="${jit(bsx).toFixed(1)}" cy="${jit(bsy-bs*.18).toFixed(1)}" r="${(bs*.54).toFixed(1)}" fill="${A}" stroke="${c1}" stroke-width="1.2" filter="url(#sk${uid})"/>`);
-      out.push(`<circle cx="${jit(bsx-bs*.2).toFixed(1)}" cy="${jit(bsy-bs*.22).toFixed(1)}" r="${(bs*.12).toFixed(1)}" fill="${c1}"/>`);
-      out.push(`<circle cx="${jit(bsx+bs*.2).toFixed(1)}" cy="${jit(bsy-bs*.22).toFixed(1)}" r="${(bs*.12).toFixed(1)}" fill="${c1}"/>`);
-      for (let i = -1; i <= 1; i++)
-        out.push(`<rect x="${jit(bsx+i*bs*.2-bs*.07).toFixed(1)}" y="${jit(bsy+bs*.2).toFixed(1)}" width="${(bs*.16).toFixed(1)}" height="${(bs*.3).toFixed(1)}" rx="1" fill="${A}" stroke="${c1}" stroke-width=".5"/>`);
-      break;
-    case 'eye':
-      out.push(`<ellipse cx="${jit(bsx).toFixed(1)}" cy="${jit(bsy).toFixed(1)}" rx="${(bs*.74).toFixed(1)}" ry="${(bs*.4).toFixed(1)}" fill="${c1}" stroke="${A}" stroke-width="1.5" filter="url(#sk${uid})"/>`);
-      out.push(`<circle cx="${jit(bsx).toFixed(1)}" cy="${jit(bsy).toFixed(1)}" r="${(bs*.26).toFixed(1)}" fill="${A}"/>`);
-      out.push(`<circle cx="${jit(bsx).toFixed(1)}" cy="${jit(bsy).toFixed(1)}" r="${(bs*.1).toFixed(1)}"  fill="${c1}"/>`);
-      break;
-    case 'wings':
-      out.push(`<path d="M${bsx},${bsy} C${jit(bsx-bs*1.8,6)},${jit(bsy-bs,6)} ${jit(bsx-bs,6)},${jit(bsy+bs*.6,6)} ${bsx},${jit(bsy+bs*.35,4)}" fill="${A}" fill-opacity=".85" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"/>`);
-      out.push(`<path d="M${bsx},${bsy} C${jit(bsx+bs*1.8,6)},${jit(bsy-bs,6)} ${jit(bsx+bs,6)},${jit(bsy+bs*.6,6)} ${bsx},${jit(bsy+bs*.35,4)}" fill="${A}" fill-opacity=".85" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"/>`);
-      break;
-    case 'crown':
-      out.push(wp([[bsx-bs*.65,bsy+bs*.32],[bsx-bs*.65,bsy-bs*.22],[bsx-bs*.32,bsy-bs*.74],[bsx,bsy-bs*.22],[bsx+bs*.32,bsy-bs*.74],[bsx+bs*.65,bsy-bs*.22],[bsx+bs*.65,bsy+bs*.32]],
-        `fill="${A}" stroke="${c1}" stroke-width="1.2" filter="url(#sk${uid})"`));
-      break;
-    default: // dragon + fallback hex
-      out.push(wp([[bsx,bsy-bs],[bsx+bs*.62,bsy-bs*.32],[bsx+bs*.9,bsy+bs*.4],[bsx,bsy+bs],[bsx-bs*.9,bsy+bs*.4],[bsx-bs*.62,bsy-bs*.32]],
-        `fill="${A}" stroke="${c1}" stroke-width="1.2" filter="url(#sk${uid})"`));
+    default:
+      out.push(wp([[bsx,bsy-bs],[bsx+bs*.62,bsy-bs*.32],[bsx+bs*.9,bsy+bs*.4],[bsx,bsy+bs],[bsx-bs*.9,bsy+bs*.4],[bsx-bs*.62,bsy-bs*.32]],`fill="${A}" stroke="${c1}" stroke-width="1.4" filter="url(#sk${uid})"`));
   }
   out.push(`</g>`);
-  /* ─── WEAPON ──── */
-  const wpn = nft.traits.weapon.val;
-  const wx  = bx + tW + armW*1.6, wy = by - tH*.28;
-  if (wpn !== 'none') {
-    out.push(`<g filter="url(#sk${uid})">`);
-    switch (wpn) {
-      case 'sword':
-        out.push(wp([[wx-w*.024,wy+h*.25],[wx+w*.024,wy+h*.25],[wx+w*.009,wy-h*.22],[wx-w*.009,wy-h*.22]],
-          `fill="${A}" stroke="${A}" stroke-width="2"/>`));
-        out.push(`<line x1="${jit(wx+w*.007)}" y1="${jit(wy+h*.22)}" x2="${jit(wx+w*.007)}" y2="${jit(wy-h*.2)}" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/>`);
-        out.push(`<rect x="${jit(wx-w*.044)}" y="${jit(wy+h*.23)}" width="${(w*.088).toFixed(1)}" height="${(h*.026).toFixed(1)}" rx="2" fill="${P}" stroke="${A}" stroke-width="1.5"/>`);
-        out.push(wp([[wx-w*.009,wy-h*.22],[wx+w*.009,wy-h*.22],[wx,wy-h*.33]],
-          `fill="${A}" stroke="${A}" stroke-width="1.2"/>`));
+
+  /* ── WEAPON — full per-weapon metallic material ── */
+  const wpn=nft.traits.weapon.val,lr=isLeft?-1:1;
+  const wxBase=tW+armW*1.62;
+  const wx=isLeft?bx-wxBase:bx+wxBase,wy=by-tH*.28;
+
+  if(wpn!=='none'){
+    out.push(`<g>`);
+    switch(wpn){
+
+      case 'sword':{
+        const bw=w*.026,bTop=wy-h*.5,bBot=wy+h*.2;
+        /* dark backing for depth */
+        out.push(`<polygon points="${(wx-bw).toFixed(1)},${bBot.toFixed(1)} ${(wx+bw).toFixed(1)},${bBot.toFixed(1)} ${(wx+bw*.4).toFixed(1)},${bTop.toFixed(1)} ${(wx-bw*.4).toFixed(1)},${bTop.toFixed(1)}" fill="url(#blade${uid})" filter="url(#wm${uid})"/>`);
+        /* tip triangle */
+        out.push(`<polygon points="${(wx-bw*.4).toFixed(1)},${bTop.toFixed(1)} ${(wx+bw*.4).toFixed(1)},${bTop.toFixed(1)} ${wx.toFixed(1)},${(bTop-h*.11).toFixed(1)}" fill="url(#blade${uid})" filter="url(#wm${uid})"/>`);
+        /* bright centre spine */
+        out.push(`<polygon points="${(wx-bw*.07).toFixed(1)},${bBot.toFixed(1)} ${(wx+bw*.07).toFixed(1)},${bBot.toFixed(1)} ${(wx+bw*.02).toFixed(1)},${(bTop-h*.1).toFixed(1)} ${(wx-bw*.02).toFixed(1)},${(bTop-h*.1).toFixed(1)}" fill="url(#bladeTip${uid})" opacity=".9"/>`);
+        /* right edge highlight */
+        out.push(`<line x1="${jit(wx+bw*.36)}" y1="${jit(bBot)}" x2="${jit(wx+bw*.04)}" y2="${jit(bTop-h*.1)}" stroke="rgba(255,255,255,.68)" stroke-width="1.5"/>`);
+        /* left edge shadow */
+        out.push(`<line x1="${jit(wx-bw*.36)}" y1="${jit(bBot)}" x2="${jit(wx-bw*.04)}" y2="${jit(bTop-h*.1)}" stroke="${A}" stroke-width="1" stroke-opacity=".45"/>`);
+        /* fullers — recessed grooves */
+        out.push(`<line x1="${(wx+bw*.18).toFixed(1)}" y1="${(bBot-h*.02).toFixed(1)}" x2="${(wx+bw*.07).toFixed(1)}" y2="${(bTop+h*.04).toFixed(1)}" stroke="rgba(0,0,0,.38)" stroke-width="1.6"/>`);
+        out.push(`<line x1="${(wx-bw*.18).toFixed(1)}" y1="${(bBot-h*.02).toFixed(1)}" x2="${(wx-bw*.07).toFixed(1)}" y2="${(bTop+h*.04).toFixed(1)}" stroke="rgba(0,0,0,.38)" stroke-width="1.6"/>`);
+        /* cross-guard — wide metallic bar */
+        out.push(`<rect x="${jit(wx-w*.056)}" y="${jit(bBot-h*.002)}" width="${(w*.112).toFixed(1)}" height="${(h*.028).toFixed(1)}" rx="3" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.6" filter="url(#wm${uid})"/>`);
+        out.push(`<rect x="${jit(wx-w*.032)}" y="${jit(bBot+h*.002)}" width="${(w*.064).toFixed(1)}" height="${(h*.01).toFixed(1)}" rx="1" fill="rgba(255,255,255,.32)"/>`);
+        /* grip wrap */
+        for(let g=0;g<6;g++)out.push(`<rect x="${jit(wx-w*.012)}" y="${jit(bBot+h*.006+g*h*.008)}" width="${(w*.024).toFixed(1)}" height="${(h*.006).toFixed(1)}" rx="1" fill="${A}" fill-opacity=".35"/>`);
+        /* pommel */
+        out.push(`<ellipse cx="${jit(wx)}" cy="${jit(bBot+h*.055)}" rx="${(w*.022).toFixed(1)}" ry="${(h*.016).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.2" filter="url(#wm${uid})"/>`);
         break;
-      case 'blaster':
-        out.push(`<rect x="${jit(wx-w*.064)}" y="${jit(wy-h*.045)}" width="${(w*.134).toFixed(1)}" height="${(h*.075).toFixed(1)}" rx="5" fill="${P}" stroke="${A}" stroke-width="2" filter="url(#metal${uid})"/>`);
-        out.push(`<rect x="${jit(wx+w*.044)}" y="${jit(wy-h*.014)}" width="${(w*.075).toFixed(1)}" height="${(h*.035).toFixed(1)}"  rx="1" fill="${A}" filter="url(#glow${uid})"/>`);
-        out.push(`<circle cx="${jit(wx-w*.028)}" cy="${wy.toFixed(1)}" r="${(w*.028).toFixed(1)}" fill="${A}" fill-opacity=".6" stroke="${A}" stroke-width="1.5" filter="url(#glow${uid})"/>`);
-        out.push(`<rect x="${jit(wx-w*.03)}"  y="${jit(wy-h*.074)}" width="${(w*.06).toFixed(1)}" height="${(h*.03).toFixed(1)}" rx="2" fill="${A}" fill-opacity=".7" stroke="${A}" stroke-width="1"/>`);
-        out.push(`<rect x="${jit(wx-w*.022)}" y="${jit(wy+h*.028)}" width="${(w*.042).toFixed(1)}" height="${(h*.045).toFixed(1)}"  rx="1" fill="${A}" fill-opacity=".5"/>`);
+      }
+
+      case 'blaster':{
+        /* body block */
+        out.push(`<rect x="${jit(wx-w*.068)}" y="${jit(wy-h*.05)}" width="${(w*.148).toFixed(1)}" height="${(h*.082).toFixed(1)}" rx="5" fill="url(#gunmetal${uid})" stroke="${A}" stroke-width="2" filter="url(#wm${uid})"/>`);
+        out.push(`<rect x="${jit(wx-w*.068)}" y="${jit(wy-h*.05)}" width="${(w*.148).toFixed(1)}" height="${(h*.082).toFixed(1)}" rx="5" fill="url(#carbon${uid})"/>`);
+        /* top sight rail */
+        out.push(`<rect x="${jit(wx-w*.06)}" y="${jit(wy-h*.068)}" width="${(w*.09).toFixed(1)}" height="${(h*.022).toFixed(1)}" rx="3" fill="url(#barrel${uid})" stroke="${A}" stroke-width="1" filter="url(#wm${uid})"/>`);
+        /* scope circle */
+        out.push(`<circle cx="${jit(wx-w*.02)}" cy="${jit(wy-h*.057)}" r="${(w*.015).toFixed(1)}" fill="${A}" opacity=".8" filter="url(#glow${uid})"/>`);
+        out.push(`<circle cx="${jit(wx-w*.02)}" cy="${jit(wy-h*.057)}" r="${(w*.006).toFixed(1)}" fill="rgba(255,255,255,.9)"/>`);
+        /* barrel tube */
+        out.push(`<rect x="${jit(wx+w*.048*lr)}" y="${jit(wy-h*.016)}" width="${(w*.078).toFixed(1)}" height="${(h*.036).toFixed(1)}" rx="5" fill="url(#barrel${uid})" stroke="${A}" stroke-width="1.2" filter="url(#wm${uid})"/>`);
+        /* muzzle flash glow */
+        out.push(`<circle cx="${jit(wx+w*.122*lr)}" cy="${jit(wy)}" r="${(w*.018).toFixed(1)}" fill="${A}" filter="url(#glow${uid})" opacity=".88"/>`);
+        out.push(`<circle cx="${jit(wx+w*.122*lr)}" cy="${jit(wy)}" r="${(w*.007).toFixed(1)}" fill="#ffffff"/>`);
+        /* trigger guard */
+        out.push(`<rect x="${jit(wx-w*.024)}" y="${jit(wy+h*.03)}" width="${(w*.044).toFixed(1)}" height="${(h*.042).toFixed(1)}" rx="3" fill="url(#gunmetal${uid})" stroke="${A}" stroke-width="1" filter="url(#wm${uid})"/>`);
+        /* body top highlight */
+        out.push(`<rect x="${jit(wx-w*.065)}" y="${jit(wy-h*.048)}" width="${(w*.09).toFixed(1)}" height="${(h*.01).toFixed(1)}" rx="2" fill="rgba(255,255,255,.22)"/>`);
+        /* vent slits */
+        for(let v=0;v<3;v++)out.push(`<line x1="${jit(wx-w*.04+v*w*.016)}" y1="${jit(wy+h*.015)}" x2="${jit(wx-w*.04+v*w*.016)}" y2="${jit(wy+h*.048)}" stroke="${A}" stroke-opacity=".5" stroke-width="1.2"/>`);
         break;
-      case 'lance':
-        out.push(`<line x1="${jit(wx)}" y1="${jit(wy+h*.3)}" x2="${jit(wx+w*.014)}" y2="${jit(wy-h*.35)}" stroke="${A}" stroke-width="5.5"/>`);
-        out.push(wp([[wx-w*.024,wy-h*.32],[wx+w*.034,wy-h*.32],[wx+w*.014,wy-h*.45]],
-          `fill="${A}" stroke="${A}" stroke-width="2"/>`));
-        for (let i = 0; i < 4; i++) {
-          const ly = wy - h*.08 + i*(h*.08);
-          out.push(`<rect x="${jit(wx-w*.018)}" y="${jit(ly)}" width="${(w*.036).toFixed(1)}" height="${(h*.018).toFixed(1)}" fill="${A}" fill-opacity=".6" stroke="${A}" stroke-width="1"/>`);
+      }
+
+      case 'lance':{
+        /* chrome shaft */
+        out.push(`<line x1="${jit(wx)}" y1="${jit(wy+h*.32)}" x2="${jit(wx+w*.016*lr)}" y2="${jit(wy-h*.36)}" stroke="url(#chrome${uid})" stroke-width="${(w*.028).toFixed(1)}" stroke-linecap="round" filter="url(#wm${uid})"/>`);
+        out.push(`<line x1="${jit(wx+w*.005*lr)}" y1="${jit(wy+h*.3)}" x2="${jit(wx+w*.014*lr)}" y2="${jit(wy-h*.34)}" stroke="rgba(255,255,255,.42)" stroke-width="${(w*.005).toFixed(1)}" stroke-linecap="round"/>`);
+        /* blade head */
+        out.push(wp([[wx-w*.028,wy-h*.32],[wx+w*.038,wy-h*.32],[wx+w*.018*lr,wy-h*.48]],`fill="url(#blade${uid})" stroke="${A}" stroke-width="1.8" filter="url(#wm${uid})"`));
+        out.push(`<line x1="${(wx+w*.038).toFixed(1)}" y1="${(wy-h*.32).toFixed(1)}" x2="${(wx+w*.018*lr).toFixed(1)}" y2="${(wy-h*.48).toFixed(1)}" stroke="rgba(255,255,255,.72)" stroke-width="1.6"/>`);
+        /* shaft rings */
+        for(let i=0;i<4;i++){const ly=wy-h*.05+i*(h*.09);out.push(`<rect x="${jit(wx-w*.019)}" y="${jit(ly)}" width="${(w*.04).toFixed(1)}" height="${(h*.02).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1" filter="url(#wm${uid})"/>`)}
+        /* butt cap */
+        out.push(`<ellipse cx="${jit(wx)}" cy="${jit(wy+h*.32)}" rx="${(w*.022).toFixed(1)}" ry="${(h*.015).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1" filter="url(#wm${uid})"/>`);
+        break;
+      }
+
+      case 'shield':{
+        out.push(wp([[wx-w*.07,wy-h*.178],[wx+w*.07,wy-h*.178],[wx+w*.07,wy+h*.12],[wx,wy+h*.255],[wx-w*.07,wy+h*.12]],`fill="url(#titanium${uid})" stroke="${A}" stroke-width="2.6" filter="url(#wm${uid})"`));
+        out.push(wp([[wx-w*.07,wy-h*.178],[wx+w*.07,wy-h*.178],[wx+w*.07,wy+h*.12],[wx,wy+h*.255],[wx-w*.07,wy+h*.12]],`fill="url(#carbon${uid})"`));
+        out.push(wp([[wx-w*.038,wy-h*.11],[wx+w*.038,wy-h*.11],[wx+w*.038,wy+h*.07],[wx,wy+h*.16],[wx-w*.038,wy+h*.07]],`fill="${A}" fill-opacity=".28" stroke="${A}" stroke-width="1.5"`));
+        out.push(`<line x1="${jit(wx-w*.052)}" y1="${jit(wy-h*.04)}" x2="${jit(wx+w*.052)}" y2="${jit(wy-h*.04)}" stroke="${A}" stroke-opacity=".65" stroke-width="1.3"/>`);
+        out.push(`<line x1="${jit(wx)}" y1="${jit(wy-h*.14)}" x2="${jit(wx)}" y2="${jit(wy+h*.12)}" stroke="${A}" stroke-opacity=".4" stroke-width="1"/>`);
+        out.push(`<line x1="${jit(wx-w*.068)}" y1="${jit(wy-h*.175)}" x2="${jit(wx+w*.068)}" y2="${jit(wy-h*.175)}" stroke="rgba(255,255,255,.5)" stroke-width="2"/>`);
+        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.04)}" r="${(w*.018).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.2" filter="url(#wm${uid})"/>`);
+        break;
+      }
+
+      case 'twin':{
+        out.push(wp([[wx-w*.03,wy+h*.22],[wx+w*.002,wy+h*.22],[wx-w*.064,wy-h*.2]],`fill="url(#blade${uid})" stroke="${A}" stroke-width="1.8" filter="url(#wm${uid})"`));
+        out.push(`<line x1="${(wx-w*.005).toFixed(1)}" y1="${(wy+h*.22).toFixed(1)}" x2="${(wx-w*.056).toFixed(1)}" y2="${(wy-h*.2).toFixed(1)}" stroke="rgba(255,255,255,.58)" stroke-width="1.3"/>`);
+        out.push(wp([[wx+w*.014,wy+h*.22],[wx+w*.046,wy+h*.22],[wx+w*.088,wy-h*.2]],`fill="url(#blade${uid})" stroke="${A}" stroke-width="1.8" filter="url(#wm${uid})"`));
+        out.push(`<line x1="${(wx+w*.044).toFixed(1)}" y1="${(wy+h*.22).toFixed(1)}" x2="${(wx+w*.082).toFixed(1)}" y2="${(wy-h*.2).toFixed(1)}" stroke="rgba(255,255,255,.58)" stroke-width="1.3"/>`);
+        out.push(`<rect x="${jit(wx-w*.034)}" y="${jit(wy+h*.21)}" width="${(w*.096).toFixed(1)}" height="${(h*.026).toFixed(1)}" rx="2" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.4" filter="url(#wm${uid})"/>`);
+        break;
+      }
+
+      case 'cannon':{
+        /* heavy body */
+        out.push(`<rect x="${jit(wx-w*.06)}" y="${jit(wy-h*.075)}" width="${(w*.175).toFixed(1)}" height="${(h*.118).toFixed(1)}" rx="7" fill="url(#artillery${uid})" stroke="${A}" stroke-width="2.6" filter="url(#wm${uid})"/>`);
+        out.push(`<rect x="${jit(wx-w*.06)}" y="${jit(wy-h*.075)}" width="${(w*.175).toFixed(1)}" height="${(h*.118).toFixed(1)}" rx="7" fill="url(#carbon${uid})"/>`);
+        /* barrel tube */
+        out.push(`<rect x="${jit(wx+w*.085*lr)}" y="${jit(wy-h*.024)}" width="${(w*.078).toFixed(1)}" height="${(h*.032).toFixed(1)}" rx="6" fill="url(#barrel${uid})" stroke="${A}" stroke-width="1.4" filter="url(#wm${uid})"/>`);
+        /* charge port */
+        out.push(`<circle cx="${jit(wx-w*.016*lr)}" cy="${jit(wy)}" r="${(w*.048).toFixed(1)}" fill="rgba(0,0,0,.55)" stroke="${A}" stroke-width="2" filter="url(#wm${uid})"/>`);
+        out.push(`<circle cx="${jit(wx-w*.016*lr)}" cy="${jit(wy)}" r="${(w*.034).toFixed(1)}" fill="${A}" fill-opacity=".4" filter="url(#bloom${uid})"/>`);
+        out.push(`<circle cx="${jit(wx-w*.016*lr)}" cy="${jit(wy)}" r="${(w*.018).toFixed(1)}" fill="${A}" filter="url(#glow${uid})"/>`);
+        /* top rail */
+        out.push(`<rect x="${jit(wx-w*.055)}" y="${jit(wy-h*.09)}" width="${(w*.1).toFixed(1)}" height="${(h*.018).toFixed(1)}" rx="2" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1" filter="url(#wm${uid})"/>`);
+        /* body highlight */
+        out.push(`<rect x="${jit(wx-w*.058)}" y="${jit(wy-h*.073)}" width="${(w*.12).toFixed(1)}" height="${(h*.012).toFixed(1)}" rx="3" fill="rgba(255,255,255,.2)"/>`);
+        /* heat vents */
+        for(let v=0;v<4;v++)out.push(`<line x1="${jit(wx-w*.05+v*w*.024)}" y1="${jit(wy+h*.048)}" x2="${jit(wx-w*.05+v*w*.024)}" y2="${jit(wy+h*.078)}" stroke="${A}" stroke-opacity=".6" stroke-width="2"/>`);
+        break;
+      }
+
+      case 'gauntlets':{
+        /* left glove + carbon + knuckles */
+        out.push(`<rect x="${jit(bx-tW-armW*1.46).toFixed(1)}" y="${jit(by+armH*.83).toFixed(1)}" width="${(armW*1.68).toFixed(1)}" height="${(h*.088).toFixed(1)}" rx="5" fill="url(#bevel${uid})" stroke="${A}" stroke-width="2" filter="url(#wm${uid})"/>`);
+        out.push(`<rect x="${jit(bx-tW-armW*1.46).toFixed(1)}" y="${jit(by+armH*.83).toFixed(1)}" width="${(armW*1.68).toFixed(1)}" height="${(h*.088).toFixed(1)}" rx="5" fill="url(#carbon${uid})"/>`);
+        out.push(`<rect x="${jit(bx+tW-armW*.2).toFixed(1)}"  y="${jit(by+armH*.83).toFixed(1)}" width="${(armW*1.68).toFixed(1)}" height="${(h*.088).toFixed(1)}" rx="5" fill="url(#bevel${uid})" stroke="${A}" stroke-width="2" filter="url(#wm${uid})"/>`);
+        out.push(`<rect x="${jit(bx+tW-armW*.2).toFixed(1)}"  y="${jit(by+armH*.83).toFixed(1)}" width="${(armW*1.68).toFixed(1)}" height="${(h*.088).toFixed(1)}" rx="5" fill="url(#carbon${uid})"/>`);
+        for(let k=0;k<4;k++){
+          out.push(`<rect x="${jit(bx-tW-armW*1.38+k*armW*.36).toFixed(1)}" y="${jit(by+armH*.82).toFixed(1)}" width="${(armW*.28).toFixed(1)}" height="${(h*.022).toFixed(1)}" rx="2" fill="url(#knuckle${uid})" stroke="${A}" stroke-width=".8" filter="url(#wm${uid})"/>`);
+          out.push(`<rect x="${jit(bx+tW-armW*.12+k*armW*.36).toFixed(1)}" y="${jit(by+armH*.82).toFixed(1)}" width="${(armW*.28).toFixed(1)}" height="${(h*.022).toFixed(1)}" rx="2" fill="url(#knuckle${uid})" stroke="${A}" stroke-width=".8" filter="url(#wm${uid})"/>`);
         }
+        /* palm energy pulse */
+        out.push(`<ellipse cx="${jit(bx-tW-armW*.62)}" cy="${jit(by+armH*.876)}" rx="${(armW*.55).toFixed(1)}" ry="${(h*.03).toFixed(1)}" fill="${A}" fill-opacity=".25" filter="url(#glow${uid})"/>`);
+        out.push(`<ellipse cx="${jit(bx+tW+armW*.64)}" cy="${jit(by+armH*.876)}" rx="${(armW*.55).toFixed(1)}" ry="${(h*.03).toFixed(1)}" fill="${A}" fill-opacity=".25" filter="url(#glow${uid})"/>`);
         break;
-      case 'shield':
-        out.push(wp([[wx-w*.065,wy-h*.16],[wx+w*.065,wy-h*.16],[wx+w*.065,wy+h*.11],[wx,wy+h*.24],[wx-w*.065,wy+h*.11]],
-          `fill="${P}" stroke="${A}" stroke-width="2.5" filter="url(#metal${uid})"`));
-        out.push(wp([[wx-w*.033,wy-h*.1],[wx+w*.033,wy-h*.1],[wx+w*.033,wy+h*.07],[wx,wy+h*.16],[wx-w*.033,wy+h*.07]],
-          `fill="${A}" fill-opacity=".4" stroke="${A}" stroke-width="1.5"/>`));
-        out.push(`<line x1="${jit(wx-w*.045)}" y1="${jit(wy-h*.06)}" x2="${jit(wx+w*.045)}" y2="${jit(wy-h*.06)}" stroke="${A}" stroke-opacity=".6" stroke-width="1"/>`);
+      }
+
+      case 'staff':{
+        /* chrome shaft */
+        out.push(`<line x1="${jit(wx)}" y1="${jit(wy+h*.36)}" x2="${jit(wx)}" y2="${jit(wy-h*.36)}" stroke="url(#chrome${uid})" stroke-width="${(w*.022).toFixed(1)}" stroke-linecap="round" filter="url(#wm${uid})"/>`);
+        out.push(`<line x1="${jit(wx+w*.004*lr)}" y1="${jit(wy+h*.34)}" x2="${jit(wx+w*.004*lr)}" y2="${jit(wy-h*.34)}" stroke="rgba(255,255,255,.35)" stroke-width="${(w*.004).toFixed(1)}" stroke-linecap="round"/>`);
+        /* decorative rings */
+        for(let r2=0;r2<3;r2++){const ry=wy+h*.15-r2*(h*.18);out.push(`<rect x="${jit(wx-w*.016)}" y="${jit(ry)}" width="${(w*.032).toFixed(1)}" height="${(h*.018).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width=".8" filter="url(#wm${uid})"/>`)}
+        /* orb housing */
+        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.058).toFixed(1)}" fill="rgba(0,0,0,.52)" stroke="${A}" stroke-width="2.2" filter="url(#wm${uid})"/>`);
+        /* energy crystal */
+        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.046).toFixed(1)}" fill="url(#orb${uid})" filter="url(#bloom${uid})"/>`);
+        /* orb core */
+        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.02).toFixed(1)}" fill="${aura.val!=='none'?aura.color:A}" filter="url(#glow${uid})"/>`);
+        /* orbit rings */
+        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.066).toFixed(1)}" fill="none" stroke="${A}" stroke-opacity=".4" stroke-width="1.3" stroke-dasharray="4,4"/>`);
+        out.push(`<ellipse cx="${jit(wx)}" cy="${jit(wy-h*.36)}" rx="${(w*.066).toFixed(1)}" ry="${(w*.03).toFixed(1)}" fill="none" stroke="${A}" stroke-opacity=".24" stroke-width="1" stroke-dasharray="3,5" transform="rotate(60,${wx.toFixed(1)},${(wy-h*.36).toFixed(1)})"/>`);
         break;
-      case 'twin':
-        out.push(wp([[wx-w*.024,wy+h*.22],[wx+w*.006,wy+h*.22],[wx-w*.058,wy-h*.2]],  `fill="${A}" stroke="${A}" stroke-width="2"/>`));
-        out.push(wp([[wx+w*.018,wy+h*.22],[wx+w*.048,wy+h*.22],[wx+w*.082,wy-h*.2]],  `fill="${A}" stroke="${A}" stroke-width="2"/>`));
-        break;
-      case 'cannon':
-        out.push(`<rect x="${jit(wx-w*.054)}" y="${jit(wy-h*.068)}" width="${(w*.165).toFixed(1)}" height="${(h*.115).toFixed(1)}" rx="6" fill="${P}" stroke="${A}" stroke-width="2.5" filter="url(#metal${uid})"/>`);
-        out.push(`<circle cx="${jit(wx-w*.012)}" cy="${wy.toFixed(1)}" r="${(w*.045).toFixed(1)}" fill="${A}" fill-opacity=".4" stroke="${A}" stroke-width="2" filter="url(#glowSoft${uid})"/>`);
-        out.push(`<rect x="${jit(wx+w*.084)}" y="${jit(wy-h*.024)}" width="${(w*.065).toFixed(1)}" height="${(h*.025).toFixed(1)}" rx="1" fill="${A}"/>`);
-        for (let i = 0; i < 4; i++)
-          out.push(`<line x1="${jit(wx-w*.045+i*w*.022)}" y1="${jit(wy+h*.045)}" x2="${jit(wx-w*.045+i*w*.022)}" y2="${jit(wy+h*.075)}" stroke="${A}" stroke-opacity=".6" stroke-width="1.8"/>`);
-        break;
-      case 'gauntlets':
-        out.push(`<rect x="${jit(bx-tW-armW*1.44)}" y="${jit(by+armH*.84)}" width="${(armW*1.68).toFixed(1)}" height="${(h*.088).toFixed(1)}" rx="5" fill="${A}" stroke="${A}" stroke-width="2" filter="url(#glowSoft${uid})"/>`);
-        out.push(`<rect x="${jit(bx+tW-armW*.18)}"  y="${jit(by+armH*.84)}" width="${(armW*1.68).toFixed(1)}" height="${(h*.088).toFixed(1)}" rx="5" fill="${A}" stroke="${A}" stroke-width="2" filter="url(#glowSoft${uid})"/>`);
-        break;
-      case 'staff':
-        out.push(`<line x1="${jit(wx)}" y1="${jit(wy+h*.35)}" x2="${jit(wx)}" y2="${jit(wy-h*.35)}" stroke="${A}" stroke-width="4.5"/>`);
-        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.35)}" r="${(w*.05).toFixed(1)}" fill="${A}" fill-opacity=".6" stroke="${A}" stroke-width="2.5" filter="url(#glowSoft${uid})"/>`);
-        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.35)}" r="${(w*.022).toFixed(1)}"  fill="${aura.val!=='none' ? aura.color : A}" filter="url(#glow${uid})"/>`);
-        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.35)}" r="${(w*.065).toFixed(1)}"  fill="none" stroke="${A}" stroke-opacity=".35" stroke-width="1.2" stroke-dasharray="4,4"/>`);
-        break;
+      }
     }
     out.push(`</g>`);
   }
 
-  /* ─── HELMET ────────────────────────────────────────── */
-  const hx = bx, hy = by - tH*.5;
-  const hW = w*.192, hH = h*.205;
-  const helm = nft.traits.helmet.val;
+  /* ── HELMET ── */
+  const hx=bx,hy=by-tH*.5,hW=w*.192,hH=h*.205,helm=nft.traits.helmet.val;
+  out.push(`<rect x="${jit(hx-w*.05)}" y="${jit(hy+hH*.68)}" width="${(w*.1).toFixed(1)}"  height="${(h*.056).toFixed(1)}" fill="${P}" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid})"/>`);
+  out.push(`<rect x="${jit(hx-w*.076)}" y="${jit(hy+hH*.77)}" width="${(w*.152).toFixed(1)}" height="${(h*.026).toFixed(1)}" fill="url(#bevel${uid})" fill-opacity=".65" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"/>`);
+  const hPts=[[hx-hW,hy-hH*.18],[hx-hW*.78,hy-hH*.6],[hx,hy-hH*.68],[hx+hW*.78,hy-hH*.6],[hx+hW,hy-hH*.18],[hx+hW*.88,hy+hH*.42],[hx,hy+hH*.72],[hx-hW*.88,hy+hH*.42]];
+  out.push(wp(hPts,`fill="url(#suit${uid})" stroke="${A}" stroke-width="2.8" filter="url(#sk${uid}) url(#metal${uid})"`));
+  out.push(wp(hPts,`fill="url(#carbon${uid})"`));
+  out.push(wp([[hx-hW*.62,hy-hH*.56],[hx,hy-hH*.64],[hx+hW*.62,hy-hH*.56],[hx+hW*.56,hy-hH*.18],[hx-hW*.56,hy-hH*.18]],`fill="url(#suitHi${uid})"`));
+  out.push(wp([[hx-hW*.62,hy-hH*.18],[hx-hW*.7,hy+hH*.04],[hx-hW*.35,hy+hH*.42],[hx,hy+hH*.54],[hx+hW*.35,hy+hH*.42],[hx+hW*.7,hy+hH*.04],[hx+hW*.62,hy-hH*.18]],`fill="${c1}" fill-opacity=".88" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"`));
+  const ey=hy+hH*.04;
+  out.push(wp([[hx-hW*.62,ey-hH*.07],[hx-hW*.12,ey-hH*.07],[hx-hW*.08,ey+hH*.07],[hx-hW*.58,ey+hH*.07]],`fill="${A}" filter="url(#glow${uid})"`));
+  out.push(wp([[hx+hW*.12,ey-hH*.07],[hx+hW*.62,ey-hH*.07],[hx+hW*.58,ey+hH*.07],[hx+hW*.08,ey+hH*.07]],`fill="${A}" filter="url(#glow${uid})"`));
+  out.push(`<ellipse cx="${(hx-hW*.36).toFixed(1)}" cy="${ey.toFixed(1)}" rx="${(hW*.2).toFixed(1)}"  ry="${(hH*.04).toFixed(1)}" fill="#ffffff" opacity=".88"/>`);
+  out.push(`<ellipse cx="${(hx+hW*.36).toFixed(1)}" cy="${ey.toFixed(1)}" rx="${(hW*.2).toFixed(1)}"  ry="${(hH*.04).toFixed(1)}" fill="#ffffff" opacity=".88"/>`);
+  out.push(`<line x1="${jit(hx-hW*.08)}" y1="${jit(ey-hH*.06)}" x2="${jit(hx+hW*.08)}" y2="${jit(ey-hH*.06)}" stroke="${A}" stroke-opacity=".52" stroke-width="2"/>`);
+  out.push(`<line x1="${jit(hx-hW*.08)}" y1="${jit(ey+hH*.06)}" x2="${jit(hx+hW*.08)}" y2="${jit(ey+hH*.06)}" stroke="${A}" stroke-opacity=".52" stroke-width="2"/>`);
+  out.push(`<line x1="${jit(hx)}" y1="${jit(ey+hH*.14)}" x2="${jit(hx)}" y2="${jit(ey+hH*.28)}" stroke="${A}" stroke-opacity=".58" stroke-width="2.2" filter="url(#sk${uid})"/>`);
+  for(let i=-2;i<=2;i++)out.push(`<line x1="${jit(hx+i*(hW*.12))}" y1="${jit(ey+hH*.32)}" x2="${jit(hx+i*(hW*.12))}" y2="${jit(ey+hH*.46)}" stroke="${A}" stroke-opacity=".52" stroke-width="1.5" filter="url(#sk${uid})"/>`);
+  out.push(wp([[hx-hW*.35,hy+hH*.42],[hx+hW*.35,hy+hH*.42],[hx+hW*.28,hy+hH*.68],[hx-hW*.28,hy+hH*.68]],`fill="${P}" fill-opacity=".72" stroke="${A}" stroke-width="1.3" filter="url(#sk${uid})"`));
 
-  // Neck + collar
-  out.push(`<rect x="${jit(hx-w*.05)}" y="${jit(hy+hH*.68)}" width="${(w*.1).toFixed(1)}"  height="${(h*.055).toFixed(1)}"  fill="${P}" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"/>`);
-  out.push(`<rect x="${jit(hx-w*.075)}" y="${jit(hy+hH*.76)}" width="${(w*.15).toFixed(1)}" height="${(h*.025).toFixed(1)}" fill="${A}" fill-opacity=".6" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"/>`);
-
-  // Helmet base (angular mech shape)
-  out.push(wp([
-    [hx-hW,hy-hH*.18],[hx-hW*.78,hy-hH*.6],[hx,hy-hH*.68],[hx+hW*.78,hy-hH*.6],[hx+hW,hy-hH*.18],
-    [hx+hW*.88,hy+hH*.42],[hx,hy+hH*.72],[hx-hW*.88,hy+hH*.42]
-  ], `fill="url(#suit${uid})" stroke="${A}" stroke-width="2.5" filter="url(#sk${uid}) url(#metal${uid})"`));
-  out.push(wp([[hx-hW*.6,hy-hH*.58],[hx,hy-hH*.66],[hx+hW*.6,hy-hH*.58],[hx+hW*.55,hy-hH*.18],[hx-hW*.55,hy-hH*.18]],
-    `fill="url(#suitHi${uid})"`));
-
-  // Faceplate
-  out.push(wp([[hx-hW*.62,hy-hH*.18],[hx-hW*.7,hy+hH*.04],[hx-hW*.35,hy+hH*.42],[hx,hy+hH*.52],[hx+hW*.35,hy+hH*.42],[hx+hW*.7,hy+hH*.04],[hx+hW*.62,hy-hH*.18]],
-    `fill="${c1}" fill-opacity=".85" stroke="${A}" stroke-width="1.8" filter="url(#sk${uid})"`));
-
-  // Eyes — angular T-visor style
-  const ey = hy + hH*.04;
-  out.push(wp([[hx-hW*.62,ey-hH*.07],[hx-hW*.12,ey-hH*.07],[hx-hW*.08,ey+hH*.07],[hx-hW*.58,ey+hH*.07]], `fill="${A}" filter="url(#glow${uid})"`));
-  out.push(wp([[hx+hW*.12,ey-hH*.07],[hx+hW*.62,ey-hH*.07],[hx+hW*.58,ey+hH*.07],[hx+hW*.08,ey+hH*.07]], `fill="${A}" filter="url(#glow${uid})"`));
-  out.push(`<ellipse cx="${(hx-hW*.36).toFixed(1)}" cy="${ey.toFixed(1)}" rx="${(hW*.2).toFixed(1)}" ry="${(hH*.04).toFixed(1)}" fill="#fff" opacity=".85" filter="blur(1px)"/>`);
-  out.push(`<ellipse cx="${(hx+hW*.36).toFixed(1)}" cy="${ey.toFixed(1)}" rx="${(hW*.2).toFixed(1)}" ry="${(hH*.04).toFixed(1)}" fill="#fff" opacity=".85" filter="blur(1px)"/>`);
-  out.push(`<line x1="${jit(hx-hW*.08)}" y1="${jit(ey-hH*.06)}" x2="${jit(hx+hW*.08)}" y2="${jit(ey-hH*.06)}" stroke="${A}" stroke-opacity=".5" stroke-width="1.8"/>`);
-  out.push(`<line x1="${jit(hx-hW*.08)}" y1="${jit(ey+hH*.06)}" x2="${jit(hx+hW*.08)}" y2="${jit(ey+hH*.06)}" stroke="${A}" stroke-opacity=".5" stroke-width="1.8"/>`);
-  out.push(`<line x1="${jit(hx)}" y1="${jit(ey+hH*.14)}" x2="${jit(hx)}" y2="${jit(ey+hH*.28)}" stroke="${A}" stroke-opacity=".6" stroke-width="2" filter="url(#sk${uid})"/>`);
-  for (let i = -2; i <= 2; i++)
-    out.push(`<line x1="${jit(hx+i*(hW*.12))}" y1="${jit(ey+hH*.3)}" x2="${jit(hx+i*(hW*.12))}" y2="${jit(ey+hH*.45)}" stroke="${A}" stroke-opacity=".55" stroke-width="1.5" filter="url(#sk${uid})"/>`);
-  out.push(wp([[hx-hW*.35,hy+hH*.42],[hx+hW*.35,hy+hH*.42],[hx+hW*.28,hy+hH*.68],[hx-hW*.28,hy+hH*.68]],
-    `fill="${P}" fill-opacity=".7" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"`));
-
-  /* ─── HELMET VARIANT EXTRAS ──────────────────────────── */
-  switch (helm) {
+  /* HELMET VARIANTS */
+  switch(helm){
     case 'horned':
-      out.push(`<path d="M${jit(hx-hW*.58)} ${jit(hy-hH*.42)} Q${jit(hx-hW*.85)} ${jit(hy-hH*.95)} ${jit(hx-hW*.6)} ${jit(hy-hH*1.3)}" stroke="${A}" stroke-width="4.5" fill="none" stroke-linecap="round" filter="url(#sk${uid})"/>`);
-      out.push(`<path d="M${jit(hx+hW*.58)} ${jit(hy-hH*.42)} Q${jit(hx+hW*.85)} ${jit(hy-hH*.95)} ${jit(hx+hW*.6)} ${jit(hy-hH*1.3)}" stroke="${A}" stroke-width="4.5" fill="none" stroke-linecap="round" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx-hW*.58)} ${jit(hy-hH*.44)} Q${jit(hx-hW*.88)} ${jit(hy-hH*.98)} ${jit(hx-hW*.62)} ${jit(hy-hH*1.35)}" stroke="${A}" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx-hW*.58)} ${jit(hy-hH*.44)} Q${jit(hx-hW*.88)} ${jit(hy-hH*.98)} ${jit(hx-hW*.62)} ${jit(hy-hH*1.35)}" stroke="rgba(255,255,255,.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>`);
+      out.push(`<path d="M${jit(hx+hW*.58)} ${jit(hy-hH*.44)} Q${jit(hx+hW*.88)} ${jit(hy-hH*.98)} ${jit(hx+hW*.62)} ${jit(hy-hH*1.35)}" stroke="${A}" stroke-width="5" fill="none" stroke-linecap="round" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx+hW*.58)} ${jit(hy-hH*.44)} Q${jit(hx+hW*.88)} ${jit(hy-hH*.98)} ${jit(hx+hW*.62)} ${jit(hy-hH*1.35)}" stroke="rgba(255,255,255,.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/>`);
       break;
     case 'crown':
-      for (let i = -2; i <= 2; i++) {
-        const cx2 = hx + i*(hW*.42), ch = hH*(.6 + Math.abs(i)*.1);
-        out.push(wp([[cx2-hW*.12,hy-hH*.55],[cx2+hW*.12,hy-hH*.55],[cx2,hy-hH*.55-ch*.65]],
-          `fill="${A}" fill-opacity=".95" stroke="${A}" stroke-width="1.5" filter="url(#sk${uid}) url(#glow${uid})"`));
-      }
+      for(let i=-2;i<=2;i++){const cx2=hx+i*(hW*.42),ch=hH*(.62+Math.abs(i)*.1);out.push(wp([[cx2-hW*.12,hy-hH*.55],[cx2+hW*.12,hy-hH*.55],[cx2,hy-hH*.55-ch*.65]],`fill="url(#bevel${uid})" fill-opacity=".95" stroke="${A}" stroke-width="1.6" filter="url(#sk${uid}) url(#glow${uid})"`));}
       break;
     case 'dragon':
-      out.push(`<path d="M${jit(hx-hW*.12)} ${jit(hy-hH*.52)} C${jit(hx-hW*1.0)} ${jit(hy-hH*1.3)} ${jit(hx-hW*.4)} ${jit(hy-hH*.85)} ${jit(hx)} ${jit(hy-hH*.52)}" fill="${A}" fill-opacity=".9" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"/>`);
-      out.push(`<path d="M${jit(hx+hW*.12)} ${jit(hy-hH*.52)} C${jit(hx+hW*1.0)} ${jit(hy-hH*1.3)} ${jit(hx+hW*.4)} ${jit(hy-hH*.85)} ${jit(hx)} ${jit(hy-hH*.52)}" fill="${A}" fill-opacity=".9" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx-hW*.14)} ${jit(hy-hH*.52)} C${jit(hx-hW*1.02)} ${jit(hy-hH*1.32)} ${jit(hx-hW*.42)} ${jit(hy-hH*.86)} ${jit(hx)} ${jit(hy-hH*.52)}" fill="${A}" fill-opacity=".92" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx-hW*.14)} ${jit(hy-hH*.52)} C${jit(hx-hW*1.02)} ${jit(hy-hH*1.32)} ${jit(hx-hW*.42)} ${jit(hy-hH*.86)} ${jit(hx)} ${jit(hy-hH*.52)}" fill="url(#suitHi${uid})" opacity=".28"/>`);
+      out.push(`<path d="M${jit(hx+hW*.14)} ${jit(hy-hH*.52)} C${jit(hx+hW*1.02)} ${jit(hy-hH*1.32)} ${jit(hx+hW*.42)} ${jit(hy-hH*.86)} ${jit(hx)} ${jit(hy-hH*.52)}" fill="${A}" fill-opacity=".92" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx+hW*.14)} ${jit(hy-hH*.52)} C${jit(hx+hW*1.02)} ${jit(hy-hH*1.32)} ${jit(hx+hW*.42)} ${jit(hy-hH*.86)} ${jit(hx)} ${jit(hy-hH*.52)}" fill="url(#suitHi${uid})" opacity=".28"/>`);
       break;
     case 'oni':
-      out.push(`<path d="M${jit(hx-hW*.52)} ${jit(hy-hH*.32)} C${jit(hx-hW*.8)} ${jit(hy-hH*1.25)} ${jit(hx-hW*.25)} ${jit(hy-hH*.9)} ${jit(hx-hW*.12)} ${jit(hy-hH*.45)}" fill="${A}" stroke="${A}" stroke-width="2.5" filter="url(#sk${uid})"/>`);
-      out.push(`<path d="M${jit(hx+hW*.52)} ${jit(hy-hH*.32)} C${jit(hx+hW*.8)} ${jit(hy-hH*1.25)} ${jit(hx+hW*.25)} ${jit(hy-hH*.9)} ${jit(hx+hW*.12)} ${jit(hy-hH*.45)}" fill="${A}" stroke="${A}" stroke-width="2.5" filter="url(#sk${uid})"/>`);
-      out.push(`<path d="M${jit(hx-hW*.55)} ${jit(hy+hH*.04)} L${jit(hx-hW*.2)} ${jit(hy-hH*.12)} L${jit(hx)} ${jit(hy+hH*.04)} L${jit(hx+hW*.2)} ${jit(hy-hH*.12)} L${jit(hx+hW*.55)} ${jit(hy+hH*.04)}" stroke="${A}" stroke-width="2" fill="none" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx-hW*.54)} ${jit(hy-hH*.34)} C${jit(hx-hW*.82)} ${jit(hy-hH*1.28)} ${jit(hx-hW*.26)} ${jit(hy-hH*.92)} ${jit(hx-hW*.13)} ${jit(hy-hH*.47)}" fill="${A}" stroke="${A}" stroke-width="2.8" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx+hW*.54)} ${jit(hy-hH*.34)} C${jit(hx+hW*.82)} ${jit(hy-hH*1.28)} ${jit(hx+hW*.26)} ${jit(hy-hH*.92)} ${jit(hx+hW*.13)} ${jit(hy-hH*.47)}" fill="${A}" stroke="${A}" stroke-width="2.8" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx-hW*.56)} ${jit(hy+hH*.04)} L${jit(hx-hW*.2)} ${jit(hy-hH*.13)} L${jit(hx)} ${jit(hy+hH*.04)} L${jit(hx+hW*.2)} ${jit(hy-hH*.13)} L${jit(hx+hW*.56)} ${jit(hy+hH*.04)}" stroke="${A}" stroke-width="2.2" fill="none" filter="url(#sk${uid})"/>`);
       break;
     case 'angular':
-      out.push(wp([[hx-hW*.12,hy-hH*.55],[hx+hW*.12,hy-hH*.55],[hx+hW*.06,hy-hH*1.15],[hx-hW*.06,hy-hH*1.15]],
-        `fill="${A}" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`));
-      out.push(wp([[hx-hW*.68,hy-hH*.45],[hx-hW*.2,hy-hH*.45],[hx-hW*.15,hy-hH*.9]],
-        `fill="${A}" fill-opacity=".75" stroke="${A}" stroke-width="1.5" filter="url(#sk${uid})"`));
-      out.push(wp([[hx+hW*.2,hy-hH*.45],[hx+hW*.68,hy-hH*.45],[hx+hW*.15,hy-hH*.9]],
-        `fill="${A}" fill-opacity=".75" stroke="${A}" stroke-width="1.5" filter="url(#sk${uid})"`));
+      out.push(wp([[hx-hW*.12,hy-hH*.56],[hx+hW*.12,hy-hH*.56],[hx+hW*.06,hy-hH*1.18],[hx-hW*.06,hy-hH*1.18]],`fill="url(#bevel${uid})" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid})"`));
+      out.push(wp([[hx-hW*.7,hy-hH*.46],[hx-hW*.22,hy-hH*.46],[hx-hW*.16,hy-hH*.92]],`fill="url(#bevel${uid})" fill-opacity=".78" stroke="${A}" stroke-width="1.5" filter="url(#sk${uid})"`));
+      out.push(wp([[hx+hW*.22,hy-hH*.46],[hx+hW*.7,hy-hH*.46],[hx+hW*.16,hy-hH*.92]],`fill="url(#bevel${uid})" fill-opacity=".78" stroke="${A}" stroke-width="1.5" filter="url(#sk${uid})"`));
       break;
     case 'legendary':
-      out.push(`<circle cx="${hx.toFixed(1)}" cy="${(hy-hH*.5).toFixed(1)}" r="${(hW*1.05).toFixed(1)}" fill="none" stroke="${A}" stroke-width="2.8" stroke-dasharray="6,4" filter="url(#glowSoft${uid})"/>`);
-      out.push(`<circle cx="${hx.toFixed(1)}" cy="${(hy-hH*.5).toFixed(1)}" r="${(hW*.7).toFixed(1)}" fill="none" stroke="${A}" stroke-width="1.2" stroke-opacity=".45"/>`);
-      for (let i = 0; i < 16; i++) {
-        const a = (i/16)*Math.PI*2;
-        out.push(`<circle cx="${(hx+Math.cos(a)*hW*1.05).toFixed(1)}" cy="${(hy-hH*.5+Math.sin(a)*hW*1.05).toFixed(1)}" r="${(1.8+Math.sin(i)*1.0).toFixed(1)}" fill="${A}" filter="url(#glow${uid})"/>`);
-      }
+      out.push(`<circle cx="${hx.toFixed(1)}" cy="${(hy-hH*.5).toFixed(1)}" r="${(hW*1.06).toFixed(1)}" fill="none" stroke="${A}" stroke-width="3" stroke-dasharray="6,4" filter="url(#bloom${uid})"/>`);
+      out.push(`<circle cx="${hx.toFixed(1)}" cy="${(hy-hH*.5).toFixed(1)}" r="${(hW*.7).toFixed(1)}"   fill="none" stroke="${A}" stroke-width="1.2" stroke-opacity=".42"/>`);
+      for(let i=0;i<16;i++){const a=(i/16)*Math.PI*2,r2=hW*1.06;out.push(`<circle cx="${(hx+Math.cos(a)*r2).toFixed(1)}" cy="${(hy-hH*.5+Math.sin(a)*r2).toFixed(1)}" r="${(1.8+Math.sin(i)*1.1).toFixed(1)}" fill="${A}" filter="url(#glow${uid})"/>`);}
       break;
     case 'ancient':
-      out.push(`<path d="M${jit(hx-hW*.8)} ${jit(hy-hH*.2)} Q${jit(hx-hW*.6)} ${jit(hy-hH*.85)} ${jit(hx)} ${jit(hy-hH*.65)}" stroke="${A}" stroke-width="2.5" fill="none" stroke-opacity=".85" filter="url(#sk${uid})"/>`);
-      out.push(`<path d="M${jit(hx+hW*.8)} ${jit(hy-hH*.2)} Q${jit(hx+hW*.6)} ${jit(hy-hH*.85)} ${jit(hx)} ${jit(hy-hH*.65)}" stroke="${A}" stroke-width="2.5" fill="none" stroke-opacity=".85" filter="url(#sk${uid})"/>`);
-      for (let i = 0; i < 4; i++)
-        out.push(`<line x1="${jit(hx-hW*.4+i*hW*.3)}" y1="${jit(hy+hH*.25)}" x2="${jit(hx-hW*.3+i*hW*.3)}" y2="${jit(hy+hH*.4)}" stroke="${A}" stroke-opacity=".5" stroke-width="1.2" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx-hW*.82)} ${jit(hy-hH*.22)} Q${jit(hx-hW*.62)} ${jit(hy-hH*.88)} ${jit(hx)} ${jit(hy-hH*.66)}" stroke="${A}" stroke-width="2.8" fill="none" stroke-opacity=".88" filter="url(#sk${uid})"/>`);
+      out.push(`<path d="M${jit(hx+hW*.82)} ${jit(hy-hH*.22)} Q${jit(hx+hW*.62)} ${jit(hy-hH*.88)} ${jit(hx)} ${jit(hy-hH*.66)}" stroke="${A}" stroke-width="2.8" fill="none" stroke-opacity=".88" filter="url(#sk${uid})"/>`);
+      for(let i=0;i<4;i++)out.push(`<line x1="${jit(hx-hW*.42+i*hW*.3)}" y1="${jit(hy+hH*.26)}" x2="${jit(hx-hW*.32+i*hW*.3)}" y2="${jit(hy+hH*.42)}" stroke="${A}" stroke-opacity=".52" stroke-width="1.3" filter="url(#sk${uid})"/>`);
       break;
   }
 
-  /* ─── WATERMARKS ────────────────────────────────────── */
-  out.push(`<text x="${(w*.03).toFixed(1)}"  y="${(h*.975).toFixed(1)}" font-family="monospace" font-weight="bold" font-size="${(w*.022).toFixed(1)}" fill="rgba(255,255,255,.2)">#${String(nft.id).padStart(4,'0')}</text>`);
-  out.push(`<text x="${(w/2).toFixed(1)}"   y="${(h*.975).toFixed(1)}" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="${(w*.022).toFixed(1)}" fill="${A}" fill-opacity=".45">${suit.label.toUpperCase()}</text>`);
-  out.push(`<text x="${(w*.97).toFixed(1)}" y="${(h*.975).toFixed(1)}" text-anchor="end"    font-family="monospace" font-weight="bold" font-size="${(w*.022).toFixed(1)}" fill="${A}" fill-opacity=".3">MECH RANGERS</text>`);
+  /* ── WATERMARKS ── */
+  out.push(`<text x="${(w*.03).toFixed(1)}"  y="${(h*.975).toFixed(1)}" font-family="monospace" font-weight="bold" font-size="${(w*.022).toFixed(1)}" fill="rgba(255,255,255,.22)">#${String(nft.id).padStart(4,'0')}</text>`);
+  out.push(`<text x="${(w/2).toFixed(1)}"   y="${(h*.975).toFixed(1)}" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="${(w*.022).toFixed(1)}" fill="${A}" fill-opacity=".48">${suit.label.toUpperCase()}</text>`);
+  out.push(`<text x="${(w*.97).toFixed(1)}" y="${(h*.975).toFixed(1)}" text-anchor="end"    font-family="monospace" font-weight="bold" font-size="${(w*.022).toFixed(1)}" fill="${A}" fill-opacity=".32">MECH RANGERS</text>`);
 
   out.push(`</svg>`);
   return out.join('');
