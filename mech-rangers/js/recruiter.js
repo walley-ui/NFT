@@ -143,15 +143,32 @@ function renderRecruitSuccess() {
   const root = document.getElementById('bridge-content');
   if(!root) return;
   const refLink = `${window.location.origin}?ref=${_recruitData.refCode}`;
+
+  // ROAST GENERATION
+  let currentRoast = "SYSTEM ONLINE...";
+  if (typeof getRoast === 'function') {
+      currentRoast = getRoast('welcome', 'parasite', { 
+        user: _recruitData.twitter || "Operative", 
+        count: _recruitData.referrals 
+      });
+  }
   
   root.innerHTML = `
     <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 80px auto; padding: 40px; border: 1px solid #8b4513; background: #0c0807;">
       <div style="text-align:center; color:var(--green); font-family:'Share Tech Mono'; font-size:0.7rem; margin-bottom:10px"> INVITATION</div>
       <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8"> LINK<br><span style="color:#8b4513">CONFIRMED</span></h2>
       
-      <div style="background:rgba(139,69,19,0.05); padding:20px; border:1px dashed #8b4513; margin:20px 0; text-align:center">
-        <div style="font-size:0.6rem; color:#6a6a9a"> YOUR INVITE CODE</div>
-        <div style="font-size:1.8rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:6px">${_recruitData.refCode}</div>
+      <div style="background:rgba(139,69,19,0.08); padding:25px; border:1px solid #8b4513; margin:25px 0; text-align:center; position:relative; overflow:hidden">
+        
+        <div style="margin-bottom:20px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:15px">
+            <div style="font-size:0.55rem; color:#8b4513; letter-spacing:2px; margin-bottom:8px; text-transform:uppercase; font-weight:bold">[ AI_CORE_EVALUATION ]</div>
+            <div style="font-size:1.1rem; font-family:'Share Tech Mono'; color:#ffab91; line-height:1.3; font-style:italic; text-shadow: 0 0 10px rgba(139,69,19,0.4)">
+               "${currentRoast.toUpperCase()}"
+            </div>
+        </div>
+
+        <div style="font-size:0.6rem; color:#6a6a9a; letter-spacing:1px; text-transform:uppercase">Your Invite Code</div>
+        <div style="font-size:2rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:8px; font-weight:bold; margin-top:5px">${_recruitData.refCode}</div>
       </div>
 
       <div style="margin-bottom:20px">
