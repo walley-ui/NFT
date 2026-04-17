@@ -510,7 +510,6 @@
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/traits.js"></script>
 <script src="js/rng.js"></script>
 
@@ -522,13 +521,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="js/export.js"></script>
 <script src="js/contract.js"></script> 
-<script src="js/roast.js"></script>
-<script src="js/recruiter.js"></script>
-<script src="js/bridge.js"></script>
+<script type="module" src="js/roast.js"></script>
+<script type="module" src="js/recruiter.js"></script>
+<script type="module" src="js/bridge.js"></script>
 
-<script>
-window.onload = () => {
-console.log(" Mech Rangers Phase System Activating...");
+
+<script type="module"> 
+window.addEventListener('DOMContentLoaded', () => {
+  console.log("Mech Rangers Phase System Activating...");
+})
 
 // 1. Set the Timeline
 // We use 04-05 so it is definitely in the past (starts the Recruiter now)
