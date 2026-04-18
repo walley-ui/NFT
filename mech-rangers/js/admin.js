@@ -4,6 +4,7 @@
    Connects to: generator.js (AdminAuth)
    ═══════════════════════════════════════════════════════ */
 const sharp = require('sharp'); 
+
 const Admin = {
     isAuthenticated: false,
 
@@ -36,27 +37,33 @@ const Admin = {
         resetGeneratorState();
         isGenerating = true;
         
-        toast("Initiating Master Forge for Base Mainnet...", "info");
+        // ALIGNED: Ethereum Mainnet Deployment Intent
+        toast("Initiating Master Forge for Ethereum Mainnet...", "info");
 
         // We use a loop that allows UI updates so the browser doesn't crash
         for (let i = 0; i < 10000; i++) {
             const nft = generateNFT();
             if (nft) {
                 allNFTs.push(nft);
-               // --- PHOTO MAKER START ---
+                
+                // --- PHOTO MAKER START ---
+                // Render at 1000px for high-fidelity Ethereum marketplace standards
                 const svgMarkup = renderSVG(nft, 1000); 
                 const buffer = Buffer.from(svgMarkup);
-                // Upgrade: Added error handling to ensure one failed image doesn't stop the 10k forge
-                await sharp(buffer).png().toFile(`./output/images/${nft.id}.png`).catch(err => console.error(`Image fail #${nft.id}:`, err)); 
+                
+                await sharp(buffer)
+                    .png()
+                    .toFile(`./output/images/${nft.id}.png`)
+                    .catch(err => console.error(`Image fail #${nft.id}:`, err)); 
                 // --- PHOTO MAKER END ---
                                                                 
                 this.syncToSupabase(nft);
-                           }
+            }
             
             // Log progress every 1000 units
             if (i % 1000 === 0 && i > 0) {
                 console.log(`Forged: ${i}/10000`);
-                toast(`Progress: ${i} Mechs secured to Database`, "info");
+                toast(`Progress: ${i} Mechs secured for Ethereum Snapshot`, "info");
                 // Upgrade: Small delay to let the Node.js event loop breathe
                 await new Promise(resolve => setTimeout(resolve, 10));
             }
@@ -65,28 +72,30 @@ const Admin = {
         isGenerating = false;
         if (typeof renderGallery === 'function') renderGallery(); 
         
-        toast("10,000 Mech Rangers Forged Successfully!", "success");
+        toast("10,000 Mech Rangers Forged for Ethereum!", "success");
     },
 
     // UPGRADE: New Helper to push data to the 'mechs' table
     async syncToSupabase(nft) {
         if (typeof supabase === 'undefined') return;
 
+        // ALIGNED: Enforcing the 3-Tier Rarity in the database
         const { error } = await supabase
             .from('mechs')
             .upsert({
                 id: nft.id,
                 name: `Mech Ranger #${nft.id}`,
-                rarity: nft.rarity,
-                traits: nft.traits || nft.attributes, // Upgrade: fallback logic for trait naming
-                image_url: `ipfs://PENDING_IMAGE_CID/${nft.id}.png`,
-                metadata_url: `ipfs://PENDING_METADATA_CID/${nft.id}.json`
+                rarity: nft.rarity, // Expecting Mythic, Legendary, or Epic
+                traits: nft.traits || nft.attributes, 
+                image_url: `ipfs://SET_IMAGE_CID_HERE/${nft.id}.png`,
+                metadata_url: `ipfs://SET_METADATA_CID_HERE/${nft.id}.json`,
+                network: "Ethereum"
             });
 
         if (error) console.error(`DB Sync Error for #${nft.id}:`, error.message);
     },
 
-    // 3. Export for the Mint Site Bridge
+    // 3. Export for the Mint Site Bridge (Dual Merkle Path)
     exportSystemSnapshot() {
         if (!this.isAuthenticated) {
             toast("Export Locked", "error");
@@ -94,18 +103,24 @@ const Admin = {
         }
         
         if (allNFTs.length < 10000) {
-            if (!confirm("Collection is incomplete. Export anyway?")) return;
+            if (!confirm("Collection is incomplete (below 10k). Export anyway?")) return;
         }
 
-        // Calls the logic in export.js
-        if (typeof exportMerkleTreeData === 'function') {
-            exportMerkleTreeData(); 
-            toast("Snapshot ready for Bridge deployment", "success");
+        // Aligned with the new dual-tree logic in points.js
+        if (typeof generateSnapshot === 'function') {
+            generateSnapshot(); 
+            toast("Dual Roots (WL/GTD) ready for Deployment", "success");
         } else {
-            toast("Export module missing!", "error");
+            // Fallback to legacy if points.js isn't global
+            if (typeof exportMerkleTreeData === 'function') {
+                exportMerkleTreeData();
+                toast("Exporting via legacy bridge logic...", "warn");
+            } else {
+                toast("Export module missing!", "error");
+            }
         }
     }
 };
 
 // Auto-init admin check if needed
-console.log("Admin Module Loaded. System awaiting ix_prinx verification.");
+console.log("Admin Module Loaded. System awaiting ix_prinx verification for Ethereum deployment.");

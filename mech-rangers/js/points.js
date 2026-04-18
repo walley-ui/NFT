@@ -14,55 +14,43 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 // ── UPGRADED ENV LOADER (TARGETED PATH) ────────────────
-// Explicitly pointing to the mech-rangers/.env file
 const envPath = path.resolve(process.cwd(), 'mech-rangers', '.env');
 dotenv.config({ path: envPath });
 
 // 1. SECURE CONFIGURATION
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-
-// Support both standard and VITE-prefixed service keys
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.error("❌ CRITICAL ERROR: Missing .env credentials.");
-    console.log("Diagnostic Info:");
-    console.log(" - Expected Env Path:", envPath);
-    console.log(" - Current Work Dir:", process.cwd());
-    console.log(" - URL Found:", SUPABASE_URL ? "YES" : "NO");
-    console.log(" - KEY Found:", SUPABASE_KEY ? "YES" : "NO");
     process.exit(1);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 2. TIER & ALLOWANCE LOGIC (Aligned with Contract & Level 0 Generator)
-// UPGRADE: Mythic restricted to 1, common/uncommon increased to 5
+// 2. TIER & ALLOWANCE LOGIC (ALIGNED TO 10K / 3-TIER)
+// UPGRADE: All eligible users get a flat allowance of 2 for the ETH mint.
 const TIER_THRESHOLDS = [
-    { tier: 'mythic',    minPoints: 500, allowance: 1 },  
-    { tier: 'legendary', minPoints: 250, allowance: 2 }, 
-    { tier: 'epic',      minPoints: 100, allowance: 3 },  
-    { tier: 'rare',      minPoints: 50,  allowance: 4 },  
-    { tier: 'uncommon',  minPoints: 10,  allowance: 5 },  
-    { tier: 'common',    minPoints: 1,   allowance: 5 }
+    { tier: 'mythic',    minPoints: 0, allowance: 2 },  
+    { tier: 'legendary', minPoints: 0, allowance: 2 }, 
+    { tier: 'epic',      minPoints: 0, allowance: 2 }
 ];
 
 function getTierData(points) {
-    for (const t of TIER_THRESHOLDS) {
-        if (points >= t.minPoints) return t;
-    }
-    return { tier: 'unranked', allowance: 0 };
+    // Referrals are for awareness only; everyone on the list is approved for 2.
+    return { tier: 'verified', allowance: 2 };
 }
 
 /**
  * 3. LEAF ENCODER (STRICT ALIGNMENT)
- * Matches Solidity: keccak256(abi.encodePacked(address, uint256))
+ * Matches Solidity: keccak256(abi.encodePacked(address))
+ * Note: Removed maxAllowance from leaf to match simplified ETH contract.
  */
-function encodeLeaf(wallet, maxAllowance) {
+function encodeLeaf(wallet) {
     return Buffer.from(
         ethers.solidityPackedKeccak256(
-            ['address', 'uint256'],
-            [ethers.getAddress(wallet), maxAllowance]
+            ['address'],
+            [ethers.getAddress(wallet)]
         ).slice(2),
         'hex'
     );
@@ -71,45 +59,27 @@ function encodeLeaf(wallet, maxAllowance) {
 async function generateSnapshot() {
     console.log("\n📡 CONNECTION DIAGNOSTIC");
     console.log(`Target URL: ${SUPABASE_URL.substring(0, 18)}...`);
-    console.log(`Working Directory: ${process.cwd()}`);
     console.log("════════════════════════════════════════");
 
-    console.log("\n📸 MECH RANGERS — SNAPSHOT ENGINE START");
+    console.log("\n📸 MECH RANGERS — DUAL SNAPSHOT ENGINE START");
     console.log("════════════════════════════════════════");
 
-    // Pull from both potential sources to ensure no data loss
-    console.log("[1/4] Querying Supabase Resistance Records...");
+    console.log("[1/4] Querying Operative Database...");
     
-    // UPGRADE: Parallel execution for faster production response
-    const [usersResponse, pointsResponse] = await Promise.all([
-        supabase.from('recruits').select('wallet_address, twitter_handle, referred_by'),
-        supabase.from('referrals').select('referrer_wallet') // Dynamic aggregation logic
-    ]);
-
-    const { data: users, error } = usersResponse;
-    const { data: rawReferrals } = pointsResponse;
+    // Fetching from recruits table
+    const { data: users, error } = await supabase
+        .from('recruits')
+        .select('wallet_address, twitter_handle, referred_by, phase_type'); 
 
     if (error) {
         console.error("❌ Database Error:", error.message);
         return;
     }
 
-    console.log(`[2/4] Processing ${users.length} Operatives...`);
+    console.log(`[2/4] Sorting ${users.length} Operatives into WL and GTD...`);
 
-    // DYNAMIC UPGRADE: Aggregate raw referral rows into a points map
-    const pointsMap = new Map();
-    if (rawReferrals) {
-        rawReferrals.forEach(ref => {
-            if (ref.referrer_wallet) {
-                const cleanAddr = ref.referrer_wallet.toLowerCase();
-                const currentCount = pointsMap.get(cleanAddr) || 0;
-                pointsMap.set(cleanAddr, currentCount + 1);
-            }
-        });
-    }
-
-    const whitelist = [];
-    const tierCounts = { mythic: 0, legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0 };
+    const wlList = [];
+    const gtdList = [];
     const seenWallets = new Set(); 
 
     users.forEach(user => {
@@ -117,92 +87,69 @@ async function generateSnapshot() {
         const addr = user.wallet_address.toLowerCase();
         if (seenWallets.has(addr)) return; 
         
-        // UPGRADE: Instant Map lookup instead of .find() array search
-        const userPoints = pointsMap.get(addr) || 0;
-        
-        // Logic: Even if 0 points, they are 'common' if they registered (base allowance 1)
-        const finalPoints = Math.max(userPoints, 1); 
-        const tierData = getTierData(finalPoints);
-        
-        if (tierData.allowance > 0) {
-            seenWallets.add(addr);
-            whitelist.push({
-                wallet: ethers.getAddress(addr), // Checksummed for safety
-                allowance: tierData.allowance,
-                tier: tierData.tier,
-                points: finalPoints,
-                twitter: user.twitter_handle || 'unknown'
-            });
-            tierCounts[tierData.tier]++;
+        const entry = {
+            wallet: ethers.getAddress(addr),
+            allowance: 2,
+            twitter: user.twitter_handle || 'unknown'
+        };
+
+        // phase_type logic determines which tree they enter
+        if (user.phase_type === 'WL') {
+            wlList.push(entry);
+        } else {
+            gtdList.push(entry); // Default to GTD (4,000 slots)
         }
+        seenWallets.add(addr);
     });
 
-    // 4. GENERATE TREE
-    console.log("[3/4] Building Merkle Tree (Keccak256)...");
-    const leaves = whitelist.map(entry => encodeLeaf(entry.wallet, entry.allowance));
-    const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
-    const root = tree.getHexRoot();
+    // 4. GENERATE TREES
+    console.log("[3/4] Building Dual Merkle Trees (WL & GTD)...");
+    
+    const wlLeaves = wlList.map(e => encodeLeaf(e.wallet));
+    const gtdLeaves = gtdList.map(e => encodeLeaf(e.wallet));
+    
+    const wlTree = new MerkleTree(wlLeaves, keccak256, { sortPairs: true });
+    const gtdTree = new MerkleTree(gtdLeaves, keccak256, { sortPairs: true });
+
+    const wlRoot = wlTree.getHexRoot();
+    const gtdRoot = gtdTree.getHexRoot();
 
     // 5. EXPORT RESULTS
-    console.log("[4/4] Exporting tree.json & root certificate...");
-    const treeOutput = {};
-    whitelist.forEach((entry, index) => {
-        treeOutput[entry.wallet.toLowerCase()] = {
-            checksummed: entry.wallet,
-            tier: entry.tier,
-            allowance: entry.allowance,
-            points: entry.points,
-            twitter: entry.twitter,
-            proof: tree.getHexProof(leaves[index])
-        };
-    });
+    console.log("[4/4] Exporting wl-tree.json & gtd-tree.json...");
+    
+    const exportTree = (list, tree, leaves, filename) => {
+        const output = {};
+        list.forEach((entry, index) => {
+            output[entry.wallet.toLowerCase()] = {
+                checksummed: entry.wallet,
+                allowance: 2,
+                proof: tree.getHexProof(leaves[index])
+            };
+        });
+        
+        const publicDir = path.join(process.cwd(), 'public');
+        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+        fs.writeFileSync(path.join(publicDir, filename), JSON.stringify(output, null, 2));
+    };
 
-    // UPGRADE: Multi-path safety to ensure both local and nested public dirs are updated
-    const rootDir = process.cwd();
-    const pathsToSync = [
-        path.join(rootDir, 'public'),
-        path.join(rootDir, 'mech-rangers', 'public'),
-        path.join(rootDir, 'mech-rangers', 'js', 'public') // Extra fallback for dev
-    ];
+    exportTree(wlList, wlTree, wlLeaves, 'wl-tree.json');
+    exportTree(gtdList, gtdTree, gtdLeaves, 'gtd-tree.json');
 
-    pathsToSync.forEach(publicDir => {
-        try {
-            if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-            
-            // Save the Tree for the Bridge.js to read
-            fs.writeFileSync(path.join(publicDir, 'tree.json'), JSON.stringify(treeOutput, null, 2));
-            
-            // Save detailed logs for ix_prinx
-            fs.writeFileSync(path.join(publicDir, 'snapshot-logs.json'), JSON.stringify(whitelist, null, 2));
-            console.log(`✅ Synced: ${publicDir}/tree.json`);
-        } catch (e) {
-            console.warn(`⚠️ Could not write to ${publicDir}: ${e.message}`);
-        }
-    });
-
-    const certPath = path.join(rootDir, 'merkle-root.txt');
+    const certPath = path.join(process.cwd(), 'merkle-roots.txt');
     const certContent = `
-MECH RANGERS SNAPSHOT CERTIFICATE
+MECH RANGERS ETH MAINNET SNAPSHOT
 Generated: ${new Date().toISOString()}
 ------------------------------------------
-FINAL MERKLE ROOT: ${root}
+PHASE 1 (WL) ROOT:  ${wlRoot} (${wlList.length} wallets)
+PHASE 2 (GTD) ROOT: ${gtdRoot} (${gtdList.length} wallets)
 ------------------------------------------
-TIER BREAKDOWN:
-Mythic:    ${tierCounts.mythic}
-Legendary: ${tierCounts.legendary}
-Epic:      ${tierCounts.epic}
-Rare:      ${tierCounts.rare}
-Uncommon:  ${tierCounts.uncommon}
-Common:    ${tierCounts.common}
-TOTAL:     ${whitelist.length} Wallets
-------------------------------------------
-ACTION: Paste the ROOT into your contract's setMerkleRoot function.
+ACTION: Use setRoots("${wlRoot}", "${gtdRoot}") in MechRangers.sol
 `;
     fs.writeFileSync(certPath, certContent);
 
     console.log("\n SNAPSHOT SUCCESSFUL");
-    console.log(`ROOT: ${root}`);
-    console.log(`Verified Wallets: ${whitelist.length}`);
+    console.log(`WL ROOT: ${wlRoot}`);
+    console.log(`GTD ROOT: ${gtdRoot}`);
     console.log("════════════════════════════════════════\n");
 }
 

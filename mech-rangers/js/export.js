@@ -1,6 +1,6 @@
 /* ═══════════
    export.js — All Export · Download · IPFS Preview Logic
-   Upgraded for Base Mainnet + OpenSea Tier Alignment
+   Upgraded for Ethereum Mainnet + OpenSea Tier Alignment
    Depends on: traits.js, generator.js, renderer.js, JSZip
   ═══════════ */
 
@@ -37,9 +37,9 @@ function buildMetaObj(nft) {
   return {
     name: "Mech Ranger #" + String(nft.id).padStart(4,'0') + " — " + nft.name,
     description: "A unique Mech Ranger warrior from the 10,000-piece collection. Tier: " + 
-      nft.rarity.toUpperCase() + ". Optimized for Base Mainnet.",
-    // OpenSea standard for Base IPFS assets
-    image: "ipfs://" + cid + "/" + nft.id + ".svg", // Refactored to .svg to match renderer
+      nft.rarity.toUpperCase() + ". Optimized for Ethereum Mainnet.",
+    // OpenSea standard for Ethereum IPFS assets
+    image: "ipfs://" + cid + "/" + nft.id + ".png", // Updated to .png for final Ethereum render
     external_url:  "https://mechrangers.io/token/" + nft.id,
     background_color: "050508",
     attributes: [
@@ -49,7 +49,7 @@ function buildMetaObj(nft) {
       })),
       { trait_type: "Rarity Tier", value: nft.rarity.charAt(0).toUpperCase() + nft.rarity.slice(1) },
       { trait_type: "Combat Score",  value: nft.score, display_type: "number" },
-      { trait_type: "Network", value: "Base" }
+      { trait_type: "Network", value: "Ethereum" }
     ],
   };
 }
@@ -82,12 +82,12 @@ async function exportPinataBundle() {
   allNFTs.forEach(nft => {
     // Add JSON
     metaFolder.file(`${nft.id}.json`, JSON.stringify(buildMetaObj(nft), null, 2));
-    // Add SVG
+    // Add SVG/PNG Reference
     svgFolder.file(`${nft.id}.svg`, renderSVG(nft, 1000));
   });
 
   const content = await zip.generateAsync({type:"blob", compression: "DEFLATE"});
-  dlBlob(content, "mech_rangers_complete_bundle.zip");
+  dlBlob(content, "mech_rangers_ethereum_bundle.zip");
   toast('Collection Bundle Ready!', 'success');
 }
 
@@ -104,7 +104,7 @@ function exportMerkleTreeData() {
   const treeData = {
     generatedCount: allNFTs.length,
     exportDate: new Date().toISOString(),
-    network: "Base",
+    network: "Ethereum",
     contract: document.getElementById('cContract')?.value || 'TBD',
     rangers: allNFTs.map(n => ({ 
       id: n.id, 
@@ -114,7 +114,7 @@ function exportMerkleTreeData() {
   };
   
   dlBlob(new Blob([JSON.stringify(treeData, null, 2)], { type: 'application/json' }), 'mint-snapshot.json');
-  if (typeof toast === 'function') toast('Mint snapshot exported for Bridge', 'success');
+  if (typeof toast === 'function') toast('Mint snapshot exported for Ethereum Bridge', 'success');
 }
 
 /* ─────────────────────────────────────────────
@@ -217,5 +217,5 @@ function exportOpenSeaCSV() {
     csv += n.id + ',"' + meta.name + '","' + meta.description + '","' + meta.image + '","' + meta.external_url + '"\n';
   });
   dlBlob(new Blob([csv], { type: 'text/csv' }), 'opensea-listing-helper.csv');
-  if (typeof toast === 'function') toast('CSV list generated for Base deployment', 'success');
+  if (typeof toast === 'function') toast('CSV list generated for Ethereum deployment', 'success');
 }

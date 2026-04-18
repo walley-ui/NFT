@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    roast.js — The Global Recruitment AI of Mech Rangers
-   NETWORK ANALYTICS EDITION - Referral-Based Only
+   NETWORK ANALYTICS EDITION - Ethereum Mainnet Optimized
    ═══════════════════════════════════════════════════════ */
 
 const ROASTS = {
@@ -37,18 +37,18 @@ const ROASTS = {
             ],
             threat: [
                 "your rapid invite growth", "your sector dominance", "your target profile", "your rising influence", "your climb", 
-                "your potential", "your 5% referral bonus", "your upcoming rank", "your lucky streak", 
+                "your potential", "your Ethereum bonus", "your upcoming rank", "your lucky streak", 
                 "your threat level", "your inevitable challenge", "your high-tier success", "your suspicious stats",
                 "your aggressive networking", "your unstable power",
                 "your looming promotion", "your temporary seat at the table", "your rising infamy"
             ],
             mythic: [
-                "your high-tier luck", "your reality-bending wallet", "your temporary immortality", 
-                "your glitch-in-the-matrix stats", "your cosmic-level influence", "your absolute server dominance"
+                "your high-tier luck", "your reality-bending wallet", "your absolute dominance", 
+                "your glitch-in-the-matrix stats", "your cosmic-level influence", "your 20% rarity weight"
                  ],
             legendary: [
                 "your recruitment empire", "your throne", "your highness", "your superiority", "your luck multiplier", 
-                "your 1% status", "your command presence", "your whale status", "your top-tier data", "your crown",
+                "your top-tier status", "your command presence", "your whale status", "your top-tier data", "your crown",
                 "your immunity to reality", "your high-tier metrics", "your excessive dominance",
                 "your hoarding of the floor price", "your absolute lack of humility", "your toxic throne",
                 "your unbearable presence at the top", "your ego's gravity well"
@@ -61,9 +61,9 @@ const ROASTS = {
             "is why the squad is struggling.", "is a 404 error in the strategy.", "is dryer than the wastes.", 
             "is the reason your luck is zero.", "is just... inefficient.", "is purely aesthetic and useless.",
             "is proof that influence can't be taught.", "is the digital equivalent of a white flag.",
-            "is flatter than a crashed stablecoin.", "is more volatile than a shitcoin.", "is basically vaporware.",
+            "is flatter than a crashed stablecoin.", "is more volatile than a gas spike.", "is basically vaporware.",
             "is hurting the project's visibility.", "is nothing more than a glitch.", "is decaying in real-time.",
-            "is slower than a blockchain with 1 Gwei gas.", "is statistically insignificant.", "is a total disaster.",
+            "is slower than a blockchain with high gas fees.", "is statistically insignificant.", "is a total disaster.",
             "is currently underperforming my expectations by 200%.", "is a stain on the ledger."
         ],
         finishers: [
@@ -108,7 +108,7 @@ const ROASTS = {
         "Generated. Go tell your 'alpha group' to join. We need more active users anyway.",
         "A new recruiter in the making. Your link is ready, `$user`.",
         "Link created. Try to find people with actual conviction, not just bots.",
-        "Your path to Legendary starts here. Or more likely, your path to a Common mint.",
+        "Your path to Mythic starts here. Or more likely, your path to an Epic mint.",
         "The link is live. Start the hustle. My calculator has more ambition than you.",
         "Link live. Try not to spam it like a bot.",
         "Success. Now go generate referrals like your life depends on it.",
@@ -120,7 +120,7 @@ const ROASTS = {
     recheck: {
         parasite: [
             "Still at {count}? Your referral link is as lonely as your wallet.",
-            "Oh look, `$user` invited their mom. Groundbreaking. Back to the Common tier.",
+            "Oh look, `$user` invited their mom. Groundbreaking. Back to the bottom tier.",
             "You're not a Ranger; you're a spectator. Stop wasting our bandwidth.",
             "Only {count} invites? I've seen rugpulls with more community support.",
             "You recruited `{last_ref}`? Even a broken bot could do better than that.",

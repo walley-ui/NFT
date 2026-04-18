@@ -41,10 +41,10 @@ function dotColor(traitKey, val) {
   const opt = TRAITS[traitKey]?.options.find(o => o.val === val);
   if (!opt) return palette.common;
   if (opt.tier) return palette[opt.tier.toLowerCase()] || palette.common;
-  if (opt.weight <= 3)  return palette.legendary;
-  if (opt.weight <= 6)  return palette.epic;
-  if (opt.weight <= 10) return palette.rare;
-  if (opt.weight <= 15) return palette.uncommon;
+  if (opt.weight <= 5)  return palette.mythic;
+  if (opt.weight <= 10) return palette.legendary;
+  if (opt.weight <= 15) return palette.epic;
+  if (opt.weight <= 20) return palette.rare;
   return palette.common;
 }
 
@@ -125,14 +125,14 @@ function updateStats() {
   const bbLeg = document.getElementById('bbLeg');
   if (bbLeg) bbLeg.textContent = (mintedCount.legendary || 0).toLocaleString();
 
-  const TIERS = ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
+  const TIERS = ['mythic', 'legendary', 'epic'];
   TIERS.forEach(r => {
     const countVal = (mintedCount[r] || 0);
     const countEl = document.getElementById('cnt-' + r);
     if (countEl) countEl.textContent = countVal.toLocaleString();
     
-    // Aligned with the SUPPLY_CAPS getter in generator.js
-    const cap = (typeof SUPPLY_CAPS !== 'undefined') ? SUPPLY_CAPS[r] : 2000;
+    // Aligned with the ETHEREUM 10k Forge (Mythic:2k, Leg:3k, Epic:5k)
+    const cap = (r === 'mythic') ? 2000 : (r === 'legendary' ? 3000 : 5000);
     const pct = Math.min(100, (countVal / cap * 100)).toFixed(1);
     const capEl = document.getElementById('cap-' + r);
     if (capEl) {
@@ -155,7 +155,7 @@ function updateStats() {
 ───────────────────────────────────────────── */
 function updateRarityBar() {
   const t = allNFTs.length || 1;
- ['mythic', 'legendary', 'epic', 'rare', 'uncommon', 'common'].forEach(r => {
+ ['mythic', 'legendary', 'epic'].forEach(r => {
     const el = document.getElementById('prb-' + r);
     if (el) {
        el.style.width = ((mintedCount[r] || 0) / t * 100).toFixed(2) + '%';
@@ -255,7 +255,7 @@ function genAll() {
     if (pFill) pFill.style.width = pct + '%';
     
     const pTxt = document.getElementById('progTxt');
-    if (pTxt) pTxt.textContent = `FORGING... ${currentTotal.toLocaleString()} / 10,000 (${pct}%)`;
+    if (pTxt) pTxt.textContent = `FORGING ETHEREUM CORE... ${currentTotal.toLocaleString()} / 10,000 (${pct}%)`;
 
     // SYNC EVERY TICK
     updateStats();
@@ -271,7 +271,7 @@ function genAll() {
       window.isGenerating = false;
       updateStats(); // FINAL SYNC
       renderGrid(240);  
-      if (pTxt) pTxt.textContent = `✓ COLLECTION COMPLETE — ${allNFTs.length} MECHS FORGED`;
+      if (pTxt) pTxt.textContent = `✓ ETHEREUM CORE COMPLETE — ${allNFTs.length} MECHS FORGED`;
       setTimeout(() => { if (pWrap) pWrap.classList.remove('on'); }, 4000);
     }
   };
@@ -279,7 +279,7 @@ function genAll() {
 }
 
 function clearAll() {
-  if (!confirm('DANGER: Wipe all?')) return;
+  if (!confirm('DANGER: Wipe all generated mechs from memory?')) return;
   if (typeof resetGeneratorState === 'function') resetGeneratorState();
   allNFTs = [];
   Object.keys(mintedCount).forEach(k => mintedCount[k] = 0);
@@ -295,15 +295,12 @@ function buildRarityEngine() {
   const grid = document.getElementById('rarityEngineGrid');
   if(!grid) return;
   const caps = (typeof SUPPLY_CAPS !== 'undefined') ? SUPPLY_CAPS : {
-    mythic: 20, legendary: 100, epic: 900, rare: 2000, uncommon: 3000, common: 3880
+    mythic: 2000, legendary: 3000, epic: 5000
   };
   const TIERS = [
     { key:'mythic', label:'MYTHIC', col:'var(--mythic)', cap:caps.mythic },
     { key:'legendary', label:'LEGENDARY', col:'var(--gold)', cap:caps.legendary },
     { key:'epic', label:'EPIC', col:'var(--purple)', cap:caps.epic },
-    { key:'rare', label:'RARE', col:'var(--cyan)', cap:caps.rare },
-    { key:'uncommon', label:'UNCOMMON', col:'var(--green)', cap:caps.uncommon },
-    { key:'common', label:'COMMON', col:'var(--muted2)', cap:caps.common },
   ];
   grid.innerHTML = TIERS.map(t => `
     <div class="rarity-card ${t.key}">
@@ -316,7 +313,7 @@ function buildRarityEngine() {
    INITIALIZATION (PREVENTS AUTO-GENERATION)
 ───────────────────────────────────────────── */
 function initDashboard() {
-  console.log("Mech Rangers Admin Ready. Waiting for user input.");
+  console.log("Mech Rangers Ethereum Admin Ready. Waiting for user input.");
   updateStats();
 }
 
@@ -356,7 +353,7 @@ function createActionFeed() {
  */
 const originalGenAll = genAll;
 genAll = function() {
-  logAction("CRITICAL: FULL FORGE INITIATED", "warn");
+  logAction("CRITICAL: FULL FORGE INITIATED (ETH MAINNET)", "warn");
   document.body.classList.add('forging-mode');
   originalGenAll();
 };

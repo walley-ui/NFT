@@ -14,8 +14,8 @@ const _supabase = createClient(supabaseUrl, supabaseKey);
 
 const RECRUIT_CONFIG = {
   twitterHandle: "MechRangersNFT",
-  referralBonus: "Boosts Mythic Chance",
-  targetNetwork: "Base Mainnet",
+  referralBonus: "Awareness Signal",
+  targetNetwork: "Ethereum Mainnet",
   accentColor: "#8b4513", 
   rustColor: "#5d2a18"
 };
@@ -33,12 +33,14 @@ export async function initRecruiter() {
   const root = document.getElementById('bridge-content');
   const saved = localStorage.getItem('mr_recruit_session');
   
-  if (saved) {
-    _recruitData = JSON.parse(saved);
-    await syncReferralStats(); // Fetch fresh data from Supabase
-    renderRecruitSuccess();
-  } else {
-    renderRecruitUI();
+  if (root) {
+      if (saved) {
+        _recruitData = JSON.parse(saved);
+        await syncReferralStats(); // Fetch fresh data from Supabase
+        renderRecruitSuccess();
+      } else {
+        renderRecruitUI();
+      }
   }
 }
 
@@ -50,26 +52,28 @@ export function verifyFollow() {
   window.open(`https://x.com/${RECRUIT_CONFIG.twitterHandle}`, '_blank');
   
   let seconds = 5;
-  btn.disabled = true;
-  btn.style.opacity = "0.7";
-  
-  const timer = setInterval(() => {
-    btn.innerHTML = `VERIFYING... ${seconds}S`;
-    seconds--;
-    
-    if (seconds < 0) {
-      clearInterval(timer);
-      _recruitData.followed = true;
-      btn.disabled = false;
-      btn.style.opacity = "1";
-      btn.innerHTML = " VERIFIED";
-      btn.style.borderColor = "var(--green)";
-      btn.style.color = "var(--green)";
+  if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = "0.7";
       
-      if (submitBtn) submitBtn.disabled = false;
-      if (typeof toast === 'function') toast("X-Link Established", "success");
-    }
-  }, 1000);
+      const timer = setInterval(() => {
+        btn.innerHTML = `VERIFYING... ${seconds}S`;
+        seconds--;
+        
+        if (seconds < 0) {
+          clearInterval(timer);
+          _recruitData.followed = true;
+          btn.disabled = false;
+          btn.style.opacity = "1";
+          btn.innerHTML = " VERIFIED";
+          btn.style.borderColor = "#00e676";
+          btn.style.color = "#00e676";
+          
+          if (submitBtn) submitBtn.disabled = false;
+          if (typeof toast === 'function') toast("X-Link Established", "success");
+        }
+      }, 1000);
+  }
 }
 
 /* ── SUBMIT DOSSIER ─────────────────────── */
@@ -93,7 +97,7 @@ export async function submitRecruitment() {
 
   const code = wallet.slice(-4).toUpperCase() + Math.random().toString(36).substring(2, 4).toUpperCase();
   
-  // Persist to Supabase using the hardened insert policy
+  // Persist to Supabase
   const { error } = await _supabase
     .from('recruits')
     .insert([{
@@ -101,7 +105,8 @@ export async function submitRecruitment() {
       twitter_handle: twitter,
       referral_code: code,
       referred_by: referrer, 
-      has_followed: true
+      has_followed: true,
+      phase_type: 'GTD' // Default entry phase
     }]);
 
   if (error) {
@@ -110,10 +115,10 @@ export async function submitRecruitment() {
     return;
   }
 
-  // Log to referrals table if there was a referrer
+  // Log to referrals table
   if (referrer) {
     await _supabase.from('referrals').insert([{
-        referrer_wallet: referrer, // Note: Expects the code or wallet based on your logic
+        referrer_wallet: referrer,
         recruit_wallet: wallet
     }]);
   }
@@ -145,7 +150,7 @@ export function renderRecruitUI() {
       <div class="bridge-header" style="text-align:center; margin-bottom:30px">
         <div style="color:#8b4513; font-family:'Share Tech Mono'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase">Mission: Recruitment Phase</div>
         <h2 style="font-family:'Bebas Neue'; font-size:3.5rem; line-height:0.9; color:#eeeef8">JOIN THE<br><span style="color:#8b4513">RESISTANCE</span></h2>
-        <p style="font-size:0.8rem; color:#6a6a9a; margin-top:10px">Secure your position on the MECH RANGERS Whitelist.</p>
+        <p style="font-size:0.8rem; color:#6a6a9a; margin-top:10px">Secure your position on the Ethereum Whitelist.</p>
       </div>
       <div class="field-row" style="margin-bottom:15px">
         <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">1. ESTABLISH X-CONNECTION</label>
@@ -161,7 +166,7 @@ export function renderRecruitUI() {
       </div>
       <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none;" onclick="submitRecruitment()" disabled>FORGE ENROLLMENT</button>
       <div style="margin-top:20px; padding:16px; border:1px dashed #5d2a18; background:rgba(93,42,24,0.05); text-align:center;">
-        <div style="font-family:'Bebas Neue'; font-size:1.4rem; color:#8b4513; letter-spacing:4px">DISCORD: COMING SOON</div>
+        <div style="font-family:'Bebas Neue'; font-size:1.4rem; color:#8b4513; letter-spacing:4px">MINT: 0.00009 ETH</div>
       </div>
     </div>
   `;
@@ -184,13 +189,6 @@ export function renderRecruitSuccess() {
         user: _recruitData.twitter || "Operative", 
         count: _recruitData.referrals 
       });
-      
-      // LOG THE BURN TO SUPABASE (Hardened RPC call)
-      _supabase.rpc('log_roast_event', {
-        user_wallet: _recruitData.wallet,
-        tier: tier,
-        burn: currentRoast
-      });
   }
   
   root.innerHTML = `
@@ -207,14 +205,14 @@ export function renderRecruitSuccess() {
            <input type="text" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center;">
       </div>
       <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
-      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none" onclick="tweetRef('${refLink}')">𝕏 SHARE TO TWITTER</button>
+      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none" onclick="tweetRef('${refLink}')">𝕏 SHARE SIGNAL</button>
       
       <div style="margin-top:25px; font-size:0.6rem; color:#6a6a9a; text-align:center; font-family:'Share Tech Mono'">
-        ACTIVE RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | TIER: <span style="color:#8b4513">${tier.toUpperCase()}</span>
+        ACTIVE RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | NETWORK: ETHEREUM
       </div>
 
       <div style="text-align:center; margin-top:25px">
-        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RETURN</button>
+        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RESET TERMINAL</button>
       </div>
     </div>
   `;
@@ -226,11 +224,10 @@ export function copyRef(link) {
 }
 
 export function tweetRef(link) {
-  const text = encodeURIComponent(`I've joined the @MechRangersNFT NFT WhiteList on @Base. Enroll now to secure your Mech Position: `);
+  const text = encodeURIComponent(`I've joined the @MechRangersNFT Whitelist on Ethereum. 10k Collection. $0.20 Mint. Enroll here: `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 
-// Global Bridge for HTML Event Listeners
 window.verifyFollow = verifyFollow;
 window.submitRecruitment = submitRecruitment;
 window.copyRef = copyRef;

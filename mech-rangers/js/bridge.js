@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
      bridge.js — Phase 2: User Verification & Claiming
-     Upgraded for X-Referrals + Roasting + Base Mainnet
+     Upgraded for X-Referrals + Roasting + Ethereum Mainnet
      Depends on: modal.js, app.js, export.js, roast.js
 ═══════════════════════════════════════════════════════ */
 
@@ -12,23 +12,25 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const _supabase = createClient(supabaseUrl, supabaseKey);
 
-/* ── CONFIG ─────────────────────────────────────────── */
+/* ── CONFIG (UPDATED FOR ETH MAINNET) ───────────────── */
 const BRIDGE_CONFIG = {
   contractAddress: 'UPDATE_TO_MY_ACTUAL_CONTRACT_ADDRESS', 
-  mintPriceEth: '0.005', 
-  chainId: 8453, 
-  chainName: 'Base',
-  rpcUrl: 'https://mainnet.base.org',
+  mintPriceEth: '0.00009', 
+  chainId: 1, 
+  chainName: 'Ethereum',
+  rpcUrl: 'https://eth.llamarpc.com',
   openSeaBase: 'https://opensea.io/collection/mech-rangers-official', 
-  // UPGRADE: Pointing to the absolute root where /public files are served
-  snapshotUrl: '/tree.json', 
+  // UPGRADE: Pointing to dual snapshots for 700 WL and 4,000 GTD
+  wlSnapshotUrl: '/wl-tree.json',
+  gtdSnapshotUrl: '/gtd-tree.json', 
   xAccount: 'MechRangersNFT'
 };
 
 /* ── STATE ──────────────────────────────────────────── */
 let _userWallet = null;
 let _assignedNFT = null;
-let _snapshot = null;
+let _wlSnapshot = null;
+let _gtdSnapshot = null;
 
 /* ── INIT (HITS THE BRIDGE ROOT) ───────────────────── */
 export async function initBridge() {
@@ -36,14 +38,19 @@ export async function initBridge() {
   if (root) root.innerHTML = `<div id="bridgeRoot" class="wrap" style="margin-top:100px; max-width:500px"></div>`;
   
   try {
-    // UPGRADE: Force fresh fetch from the server root
-    const res = await fetch(`${BRIDGE_CONFIG.snapshotUrl}?t=${Date.now()}`);
-    if (!res.ok) throw new Error("Snapshot not found at /tree.json");
-    _snapshot = await res.json();
-    console.log("🛡️ Mech Rangers: Whitelist Snapshot Loaded.");
+    // UPGRADE: Fetching dual roots for WL and GTD phases
+    const [wlRes, gtdRes] = await Promise.all([
+      fetch(`${BRIDGE_CONFIG.wlSnapshotUrl}?t=${Date.now()}`),
+      fetch(`${BRIDGE_CONFIG.gtdSnapshotUrl}?t=${Date.now()}`)
+    ]);
+
+    if (wlRes.ok) _wlSnapshot = await wlRes.json();
+    if (gtdRes.ok) _gtdSnapshot = await gtdRes.json();
+    
+    console.log("🛡️ Mech Rangers: Ethereum Phase Snapshots Loaded.");
   } catch (err) {
     console.error("⛔ Bridge Error:", err.message);
-    bridgeShowStatus('error', 'SYSTEM OFFLINE: Snapshot missing in /public');
+    bridgeShowStatus('error', 'SYSTEM OFFLINE: Snapshots missing in /public');
   }
   renderBridgeUI();
 }
@@ -60,17 +67,15 @@ export async function bridgeVerifyAddress() {
 
   _userWallet = address;
   
-  // UPGRADE: Ensure snapshot exists before lookup to prevent crashes
-  if (!_snapshot) {
-      bridgeShowStatus('error', 'Snapshot not loaded. Re-initializing...');
-      initBridge();
+  if (!_wlSnapshot && !_gtdSnapshot) {
+      bridgeShowStatus('error', 'Snapshot data unavailable.');
       return;
   }
 
-  // 1. Check Merkle Snapshot (tree.json) - Case Insensitive Keys
-  const assignment = _snapshot[_userWallet] || null;
+  // Check both potential assignment trees
+  const assignment = (_wlSnapshot ? _wlSnapshot[_userWallet] : null) || 
+                     (_gtdSnapshot ? _gtdSnapshot[_userWallet] : null);
 
-  // 2. Fetch Real-time handle from Supabase for Roast context
   const { data: dbUser } = await _supabase
     .from('recruits')
     .select('twitter_handle')
@@ -78,6 +83,8 @@ export async function bridgeVerifyAddress() {
     .single();
 
   if (assignment) {
+    // Allowance is now a flat 2 for the 10k collection move
+    assignment.allowance = 2; 
     _assignedNFT = (typeof allNFTs !== 'undefined' && assignment.id) ? allNFTs.find(n => n.id === assignment.id) : null;
     renderWalletStatus(assignment, dbUser);
     if (typeof toast === 'function') toast("Clearance Confirmed!", "success");
@@ -92,7 +99,7 @@ export async function bridgeVerifyAddress() {
 
 /* ── X (TWITTER) REFERRAL LOGIC ─────────────────────── */
 export function shareToX() {
-  const text = encodeURIComponent(`Checking my clearance for the @${BRIDGE_CONFIG.xAccount} drop on @Base. \n\nForge your destiny here: `);
+  const text = encodeURIComponent(`Checking my clearance for the @${BRIDGE_CONFIG.xAccount} drop on @Ethereum. \n\nForge your destiny here: `);
   const url = encodeURIComponent(window.location.origin);
   window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
   if (typeof toast === 'function') toast("Signal sent to the grid!", "info");
@@ -108,25 +115,10 @@ export async function bridgeConnect() {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
     if (parseInt(currentChainId, 16) !== BRIDGE_CONFIG.chainId) {
-        try {
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: '0x' + BRIDGE_CONFIG.chainId.toString(16) }],
-            });
-        } catch (switchError) {
-            if (switchError.code === 4902) {
-                await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
-                        chainId: '0x' + BRIDGE_CONFIG.chainId.toString(16),
-                        chainName: BRIDGE_CONFIG.chainName,
-                        rpcUrls: [BRIDGE_CONFIG.rpcUrl],
-                        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-                        blockExplorerUrls: ["https://basescan.org"]
-                    }]
-                });
-            }
-        }
+        await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x1' }], // Ethereum Mainnet
+        });
     }
     document.getElementById('bridgeWalletInput').value = accounts[0];
     bridgeVerifyAddress();
@@ -147,7 +139,7 @@ async function renderWalletStatus(assignment, dbUser) {
       <div class="bridge-status not-listed" style="text-align:center; padding:20px; border:1px solid #ff1744; background: rgba(255,23,68,0.05)">
         <div class="bridge-title" style="color:#ff1744; font-family:'Bebas Neue'; font-size:1.5rem">ACCESS DENIED</div>
         <div class="bridge-msg" style="margin:10px 0; font-size:0.8rem; color:#6a6a9a">
-          Address <code>${_userWallet.slice(0,8)}...</code> isn't in the snapshot.
+          Wallet <code>${_userWallet.slice(0,8)}...</code> is not currently authorized.
         </div>
         <button class="btn btn-outline" onclick="shareToX()" style="width:100%; margin-bottom:10px">
           𝕏 REQUEST 
@@ -157,20 +149,19 @@ async function renderWalletStatus(assignment, dbUser) {
     return;
   }
 
-  const tierColors = { mythic: '#ff3d00', legendary: '#ffc400', epic: '#b44fff', rare: '#00e5ff', uncommon: '#00e676', common: '#6a6a9a' };
-  const tierColor = tierColors[assignment.tier] || '#fff';
+  const tierColors = { mythic: '#ff3d00', legendary: '#ffc400', epic: '#b44fff' };
+  const tierColor = tierColors[assignment.tier] || '#eeeef8';
 
-  let welcomeRoast = "CLEARANCE CONFIRMED";
+  let welcomeRoast = "AUTHORIZED FOR DEPLOYMENT";
   if (typeof getRoast === 'function') {
-      // Points default to 1 for registrants if not specified in tree
-      welcomeRoast = getRoast('welcome', assignment.tier, { user: handle, count: assignment.points || 1 });
+      welcomeRoast = getRoast('welcome', assignment.tier || 'epic', { user: handle, count: 2 });
   }
 
   panel.innerHTML = `
     <div class="bridge-status whitelisted" style="text-align:center; border:1px solid ${tierColor}; padding:25px; background: rgba(0,0,0,0.4)">
       <div style="font-family:'Share Tech Mono'; color:${tierColor}; font-size:0.8rem; margin-bottom:15px; font-style:italic">"${welcomeRoast.toUpperCase()}"</div>
-      <div class="bridge-tier" style="color:${tierColor}; font-family:'Bebas Neue'; font-size:2rem">★ ${assignment.tier.toUpperCase()} ★</div>
-      <div class="bridge-msg" style="margin:10px 0; font-size:0.9rem">Authorized for <strong>${assignment.allowance} Unit(s)</strong></div>
+      <div class="bridge-tier" style="color:${tierColor}; font-family:'Bebas Neue'; font-size:2rem">CLEARANCE GRANTED</div>
+      <div class="bridge-msg" style="margin:10px 0; font-size:0.9rem">Authorized for <strong>2 Unit(s)</strong> @ 0.00009 ETH</div>
       
       <div class="bridge-mint-row" style="margin-top:20px">
         <a href="${BRIDGE_CONFIG.openSeaBase}" target="_blank" class="btn btn-gen" style="display:block; width:100%; background:${tierColor}; color:#000; text-decoration:none; padding:15px; font-weight:bold; text-align:center">
@@ -179,7 +170,7 @@ async function renderWalletStatus(assignment, dbUser) {
       </div>
 
       <div class="bridge-trust-box" style="margin-top:15px; border: 1px solid ${tierColor}44; padding: 10px; font-size: 0.7rem; color:#6a6a9a">
-        <p>Target: <strong>Base Mainnet</strong> | Proof: Verified</p>
+        <p>Network: <strong>Ethereum Mainnet</strong> | Proof: Verified</p>
       </div>
       
       <button class="btn btn-outline" onclick="shareToX()" style="width:100%; margin-top:10px">
@@ -237,7 +228,6 @@ export function renderBridgeUI() {
     </div>`;
 }
 
-// Global Mappings for HTML Compatibility
 window.bridgeVerifyAddress = bridgeVerifyAddress;
 window.shareToX = shareToX;
 window.bridgeConnect = bridgeConnect;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Mech Rangers ERC-721 — Production Contract v2.3 (Tiered Allowance Upgrade)
+// Mech Rangers ERC-721 — Production Contract v2.4 (ETH Mainnet Upgrade)
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -16,8 +16,8 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     // ── Supply & Pricing ──────────────────────────────────────
     uint256 public totalSupply;
     uint256 public constant MAX_SUPPLY     = 10000;
-    uint256 public mintPrice               = 0.005 ether; 
-    uint256 public constant MAX_PER_WALLET = 5;
+    uint256 public mintPrice               = 0.00009 ether; 
+    uint256 public constant MAX_PER_WALLET = 2;
     uint256 public teamReserve             = 100;
 
     // ── Rarity Hard Caps ──────────────────────────────────────
@@ -25,8 +25,12 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     mapping(string => uint256) public rarityMinted;
 
     // ── Whitelist & Provenance ────────────────────────────────
-    bytes32 public merkleRoot;
-    bool    public whitelistOnly = true;
+    bytes32 public wlRoot;
+    bytes32 public gtdRoot;
+    
+    enum MintStep { Closed, WL, GTD, Public }
+    MintStep public currentStep = MintStep.Closed;
+
     string  public provenanceHash; 
     mapping(address => uint256) public walletMinted;
 
@@ -40,39 +44,39 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     event Revealed(string baseURI);
     event BaseURISet(string newURI);
     event PermanentURI(string _value, uint256 indexed _id);
+    event StepChanged(MintStep newStep);
 
     // ── Constructor ───────────────────────────────────────────
     constructor(string memory initialBaseURI)
         ERC721("MechRangers", "MECHR")
         Ownable(msg.sender)
     {
-        _baseTokenURI = ""; 
+        _baseTokenURI = initialBaseURI; 
         _setDefaultRoyalty(msg.sender, 500); // 5%
 
-        rarityCap["mythic"]    = 20;
-        rarityCap["legendary"] = 100;
-        rarityCap["epic"]      = 900;
-        rarityCap["rare"]      = 2000;
-        rarityCap["uncommon"]  = 3000;
-        rarityCap["common"]    = 3980;
+        // UPDATED: 3-Tier Distribution
+        rarityCap["mythic"]    = 2000;
+        rarityCap["legendary"] = 3000;
+        rarityCap["epic"]      = 5000;
     }
 
-    // ── Public Mint (UPGRADED for Tiered Allowances) ──────────
+    // ── Public Mint (UPGRADED for ETH Mainnet Phases) ──────────
     function mint(
         uint256 quantity,
-        uint256 maxAllowance,
         bytes32[] calldata merkleProof
     ) external payable whenNotPaused {
+        require(currentStep != MintStep.Closed, "Minting is Closed");
         require(totalSupply + quantity <= MAX_SUPPLY, "Collection Sold Out");
         require(msg.value >= mintPrice * quantity, "Insufficient Payment");
+        require(walletMinted[msg.sender] + quantity <= MAX_PER_WALLET, "Exceeds Wallet Limit");
 
-        if (whitelistOnly) {
-            // UPGRADE: Matches points.js encoding: keccak256(address, uint256)
-            bytes32 leaf = keccak256(abi.encodePacked(msg.sender, maxAllowance));
-            require(MerkleProof.verify(merkleProof, merkleRoot, leaf), "Not on Whitelist or Tier Mismatch");
-            require(walletMinted[msg.sender] + quantity <= maxAllowance, "Exceeds Tier Allowance");
-        } else {
-            require(walletMinted[msg.sender] + quantity <= MAX_PER_WALLET, "Exceeds Wallet Limit");
+        if (currentStep == MintStep.WL) {
+            bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
+            require(MerkleProof.verify(merkleProof, wlRoot, leaf), "Not on WL");
+        } 
+        else if (currentStep == MintStep.GTD) {
+            bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
+            require(MerkleProof.verify(merkleProof, gtdRoot, leaf), "Not on GTD List");
         }
 
         for (uint256 i = 0; i < quantity; i++) {
@@ -113,8 +117,17 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
 
     // ── Admin Functions ───────────────────────────────────────
     function setMintPrice(uint256 newPrice)   external onlyOwner { mintPrice = newPrice; }
-    function setMerkleRoot(bytes32 newRoot)   external onlyOwner { merkleRoot = newRoot; }
-    function setWhitelistOnly(bool state)     external onlyOwner { whitelistOnly = state; }
+    
+    function setRoots(bytes32 _wl, bytes32 _gtd) external onlyOwner {
+        wlRoot = _wl;
+        gtdRoot = _gtd;
+    }
+    
+    function setStep(MintStep _step) external onlyOwner { 
+        currentStep = _step; 
+        emit StepChanged(_step);
+    }
+    
     function setHiddenURI(string memory uri)  external onlyOwner { hiddenURI = uri; }
     
     function setRoyaltyInfo(address receiver, uint96 fee) external onlyOwner {

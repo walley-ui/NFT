@@ -9,9 +9,9 @@ if (typeof document === 'undefined') {
     global.document = {
         getElementById: (id) => ({
             value: {
-                'cMaxMythic': 20, 'cMaxLegendary': 100, 'cMaxEpic': 900, 
-                'cMaxRare': 2000, 'cMaxUncommon': 3000, 'cMaxCommon': 3980,
-                'tLegendary': 18, 'tEpic': 13, 'tRare': 9, 'tUncommon': 5
+                'cMaxMythic': 2000, 'cMaxLegendary': 3000, 'cMaxEpic': 5000, 
+                'cMaxRare': 0, 'cMaxUncommon': 0, 'cMaxCommon': 0,
+                'tLegendary': 22, 'tEpic': 14, 'tRare': 0, 'tUncommon': 0
             }[id] || 0
         })
     };
@@ -26,14 +26,14 @@ const AdminAuth = {
     }
 };
 
-/* ── DYNAMIC RARITY SYSTEM (UPGRADED) ── */
+/* ── DYNAMIC RARITY SYSTEM (ALIGNED TO 10K / 3-TIER) ── */
 const SUPPLY_CAPS = {
-  get mythic()    { return parseInt(document.getElementById('cMaxMythic')?.value || document.getElementById('capMythic')?.value) || 20; },
-  get legendary() { return parseInt(document.getElementById('cMaxLegendary')?.value || document.getElementById('capLegendary')?.value) || 100; },
-  get epic()      { return parseInt(document.getElementById('cMaxEpic')?.value || document.getElementById('capEpic')?.value) || 900; },
-  get rare()      { return parseInt(document.getElementById('cMaxRare')?.value || document.getElementById('capRare')?.value) || 2000; },
-  get uncommon()  { return parseInt(document.getElementById('cMaxUncommon')?.value || document.getElementById('capUncommon')?.value) || 3000; },
-  get common()    { return parseInt(document.getElementById('cMaxCommon')?.value || document.getElementById('capCommon')?.value) || 3980; }
+  get mythic()    { return parseInt(document.getElementById('cMaxMythic')?.value || document.getElementById('capMythic')?.value) || 2000; },
+  get legendary() { return parseInt(document.getElementById('cMaxLegendary')?.value || document.getElementById('capLegendary')?.value) || 3000; },
+  get epic()      { return parseInt(document.getElementById('cMaxEpic')?.value || document.getElementById('capEpic')?.value) || 5000; },
+  get rare()      { return parseInt(document.getElementById('cMaxRare')?.value || document.getElementById('capRare')?.value) || 0; },
+  get uncommon()  { return parseInt(document.getElementById('cMaxUncommon')?.value || document.getElementById('capUncommon')?.value) || 0; },
+  get common()    { return parseInt(document.getElementById('cMaxCommon')?.value || document.getElementById('capCommon')?.value) || 0; }
 };
 
 const mintedCount = {
@@ -51,7 +51,7 @@ let tokenCounter = 0;
 let hashSet      = new Set();
 let isGenerating = false;
 
-/* ── RARITY SCORING (DYNAMIC ENGINE) ── */
+/* ── RARITY SCORING (3-TIER REWRITE) ── */
 function calcRarity(traits) {
   // ALIGNED WITH TRAITS.JS DATA
   const bgScore = { void:1, urban:1, plasma:2, volcanic:2, cyber:3, arctic:3, dimension:4, golden:5, cosmic:6 };
@@ -72,15 +72,16 @@ function calcRarity(traits) {
     (suitBonus[traits.suit.val]      || 1);
 
   const thresh = {
-    legendary: parseInt(document.getElementById('tLegendary')?.value) || 18,
-    epic:      parseInt(document.getElementById('tEpic')?.value)      || 13,
-    rare:      parseInt(document.getElementById('tRare')?.value)      || 9,
-    uncommon:  parseInt(document.getElementById('tUncommon')?.value)  || 5
+    legendary: parseInt(document.getElementById('tLegendary')?.value) || 22,
+    epic:      parseInt(document.getElementById('tEpic')?.value)      || 14,
+    rare:      parseInt(document.getElementById('tRare')?.value)      || 0,
+    uncommon:  parseInt(document.getElementById('tUncommon')?.value)  || 0
   };
 
   if (score >= 22) return "mythic"; 
   if (score >= thresh.legendary) return "legendary";
-  if (score >= thresh.epic)      return "epic";
+  return "epic"; 
+  // Code preserved but bypassed via return:
   if (score >= thresh.rare)      return "rare";
   if (score >= thresh.uncommon)  return "uncommon";
   return "common";
@@ -95,9 +96,9 @@ function massForge10k() {
     
     resetGeneratorState();
     isGenerating = true;
-    if (typeof toast === 'function') toast("Forging 10,000 Mech Rangers on Base...", "info");
+    if (typeof toast === 'function') toast("Forging 10,000 Mech Rangers on Ethereum...", "info");
 
-    while (allNFTs.length < 10000 && tokenCounter < 60000) {
+    while (allNFTs.length < 10000 && tokenCounter < 100000) {
         const nft = generateNFT();
         if (nft) allNFTs.push(nft);
         else if (allNFTs.length >= 10000) break;
@@ -113,7 +114,6 @@ function generateNFT(attempt = 0) {
   if (attempt > 500) return null; 
 
   tokenCounter++;
-  // Utilizing rng32 with its built-in seed scrambler from rng.js
   const seed = ((Math.random() * 2147483647) | 0) ^ (tokenCounter * 31337);
   const roll  = rng32(seed);
 
@@ -138,7 +138,8 @@ function generateNFT(attempt = 0) {
   };
 
   if (mintedCount[rarity] >= (currentCaps[rarity] || 0)) {
-    const sequence = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+    // Aligned sequence for 3-tier fallback
+    const sequence = ['epic', 'legendary', 'mythic', 'common', 'uncommon', 'rare'];
     rarity = sequence.find(t => mintedCount[t] < currentCaps[t]);
     
     if (!rarity) {
@@ -156,7 +157,6 @@ function generateNFT(attempt = 0) {
   hashSet.add(hash);
   mintedCount[rarity]++;
 
-  // Using secondary roll from the same utility
   const roll2 = rng32(seed + 888);
   const name = NAMES[Math.floor(roll2() * NAMES.length)] + ' ' + SUFX[Math.floor(roll2() * SUFX.length)];
   const basePower = Math.floor(roll2() * 24) + 76;
@@ -168,7 +168,7 @@ function generateNFT(attempt = 0) {
     rarity,
     traits,
     score:  basePower,
-    network: "Base",
+    network: "Ethereum",
     submitted: false 
   };
 }

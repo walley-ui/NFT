@@ -87,35 +87,39 @@ function dnaToSeed(dna) {
 }
 
 /**
- * ─── UPGRADE: MECH ASSEMBLY ───
+ * ─── UPGRADE: MECH ASSEMBLY (ETH Mainnet Optimized) ───
  * Generates a complete Mech attribute set from a single DNA source.
  */
 function generateMechData(dna, config) {
   const seed = dnaToSeed(dna);
   const roll = rng32(seed);
   
-  // Resolve Rarity
+  // 1. Resolve Global Rarity
   const tier = weightedPick(config.tiers, roll);
   
-  // ─── UPGRADE: VISUAL TRAIT SELECTION ───
-  // This picks the actual parts that the renderer.js looks for.
-  // Without these, your image remains "invisible" or blank.
+  // 2. Filter Traits by Tier (Upgrade: Tier-Locked Generation)
+  // Ensures Mythic mechs get Mythic-tier parts.
+  const filterByTier = (opts, targetTier) => {
+    const filtered = opts.filter(o => o.tier === targetTier);
+    return filtered.length > 0 ? filtered : opts; // Fallback to all if specific tier has no parts
+  };
+
   const traits = {
-    suit: weightedPick(config.suits, roll),
-    background: weightedPick(config.backgrounds, roll),
-    aura: weightedPick(config.auras, roll),
-    weapon: weightedPick(config.weapons, roll),
-    badge: weightedPick(config.badges, roll),
-    helmet: weightedPick(config.helmets, roll)
+    suit: weightedPick(filterByTier(config.suits, tier.name), roll),
+    background: weightedPick(filterByTier(config.backgrounds, tier.name), roll),
+    aura: weightedPick(filterByTier(config.auras, tier.name), roll),
+    weapon: weightedPick(filterByTier(config.weapons, tier.name), roll),
+    badge: weightedPick(filterByTier(config.badges, tier.name), roll),
+    helmet: weightedPick(filterByTier(config.helmets, tier.name), roll)
   };
 
   return {
-    id: Math.abs(seed % 10000), // Adds a numeric ID for the watermark
+    id: Math.abs(seed % 10000), 
     seed: seed,
     dna: dna,
     tier: tier.name,
     multiplier: tier.multiplier,
-    traits: traits, // This is the "map" for renderer.js
+    traits: traits, 
     stats: {
       atk: Math.floor(randInt(config.minAtk, config.maxAtk, roll) * tier.multiplier),
       def: Math.floor(randInt(config.minDef, config.maxDef, roll) * tier.multiplier),

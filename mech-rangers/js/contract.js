@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
-   contract.js — Smart Contract Panel (BASE OPTIMIZED)
+   contract.js — Smart Contract Panel (ETHEREUM OPTIMIZED)
    Builds & displays the Solidity contract + deploy script.
-   Enforced Network: Base (Mainnet)
+   Enforced Network: Ethereum (Mainnet)
    ═══════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────
@@ -12,8 +12,8 @@ function getContractConfig() {
     name:      document.getElementById('cName')?.value      || 'MechRangers',
     sym:       document.getElementById('cSymbol')?.value    || 'MECHR',
     maxSupply: document.getElementById('cMaxSupply')?.value || '10000',
-    price:     parseFloat(document.getElementById('cPrice')?.value)     || 0.005,
-    maxWallet: document.getElementById('cMaxWallet')?.value || '5',
+    price:     parseFloat(document.getElementById('cPrice')?.value)     || 0.00009,
+    maxWallet: document.getElementById('cMaxWallet')?.value || '2',
     royalty:   parseFloat(document.getElementById('cRoyalty')?.value)   || 5,
     baseURI:   document.getElementById('cBaseURI')?.value   || 'ipfs://YOUR_METADATA_CID/',
     // UPGRADE: Dynamic Merkle Root check from terminal output/state
@@ -24,13 +24,13 @@ function getContractConfig() {
 }
 
 /* ─────────────────────────────────────────────
-   SOLIDITY CONTRACT — (BASE COMPATIBLE)
+   SOLIDITY CONTRACT — (ETHEREUM COMPATIBLE)
 ───────────────────────────────────────────── */
 function buildSolidityHTML(cfg) {
   const priceInWei = (cfg.price * 1e18).toString();
   
   return `<span class="cm">// SPDX-License-Identifier: MIT</span>
-<span class="cm">// Mech Rangers ERC-721 — Production Contract v2.2 (Base Mainnet)</span>
+<span class="cm">// Mech Rangers ERC-721 — Production Contract v3.0 (Ethereum Mainnet)</span>
 <span class="kw">pragma solidity</span> ^<span class="num">0.8.20</span>;
 
 <span class="kw">import</span> <span class="str">"@openzeppelin/contracts/token/ERC721/ERC721.sol"</span>;
@@ -72,31 +72,25 @@ function buildSolidityHTML(cfg) {
         _baseTokenURI    = baseURI_;
         _royaltyReceiver = msg.sender;
         
-        <span class="cm">// SYNCED CAPS: Based on 10k collection distribution</span>
-        rarityCap[<span class="str">"mythic"</span>]    = <span class="num">20</span>;
-        rarityCap[<span class="str">"legendary"</span>] = <span class="num">100</span>;
-        rarityCap[<span class="str">"epic"</span>]      = <span class="num">900</span>;
-        rarityCap[<span class="str">"rare"</span>]      = <span class="num">2000</span>;
-        rarityCap[<span class="str">"uncommon"</span>]  = <span class="num">3000</span>;
-        rarityCap[<span class="str">"common"</span>]    = <span class="num">3980</span>;
+        <span class="cm">// SYNCED CAPS: Based on 10k Ethereum distribution (3-Tier)</span>
+        rarityCap[<span class="str">"mythic"</span>]    = <span class="num">2000</span>;
+        rarityCap[<span class="str">"legendary"</span>] = <span class="num">3000</span>;
+        rarityCap[<span class="str">"epic"</span>]      = <span class="num">5000</span>;
     }
 
     <span class="kw">function</span> <span class="fn">mint</span>(
         <span class="type">uint256</span> quantity,
-        <span class="type">uint256</span> maxAllowance,
         <span class="type">bytes32[] calldata</span> merkleProof
     ) <span class="kw">external payable whenNotPaused</span> {
         <span class="kw">require</span>(totalSupply + quantity &lt;= MAX_SUPPLY,           <span class="str">"Max supply reached"</span>);
         <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity,             <span class="str">"Insufficient ETH"</span>);
         
         <span class="kw">if</span> (whitelistOnly) {
-            <span class="cm">// Validates address + dynamic allowance (e.g. Mythic 1, Common 5)</span>
-            <span class="type">bytes32</span> leaf = <span class="fn">keccak256</span>(<span class="fn">abi.encodePacked</span>(msg.sender, maxAllowance));
+            <span class="cm">// Validates address for the 10k flat-allowance Ethereum phase</span>
+            <span class="type">bytes32</span> leaf = <span class="fn">keccak256</span>(<span class="fn">abi.encodePacked</span>(msg.sender));
             <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(merkleProof, merkleRoot, leaf), <span class="str">"Invalid proof"</span>);
-            <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= maxAllowance, <span class="str">"Exceeds tier allowance"</span>);
-        } <span class="kw">else</span> {
-            <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= MAX_PER_WALLET, <span class="str">"Exceeds wallet limit"</span>);
         }
+        <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= MAX_PER_WALLET, <span class="str">"Exceeds wallet limit"</span>);
 
         <span class="kw">for</span> (<span class="type">uint256</span> i = <span class="num">0</span>; i &lt; quantity; i++) {
             <span class="type">uint256</span> tokenId = ++totalSupply;
@@ -158,22 +152,22 @@ function buildSolidityHTML(cfg) {
 }
 
 /* ─────────────────────────────────────────────
-   HARDHAT DEPLOY SCRIPT (BASE MAINNET)
+   HARDHAT DEPLOY SCRIPT (ETHEREUM MAINNET)
 ───────────────────────────────────────────── */
 function buildDeployHTML(cfg) {
-  return `<span class="cm">// scripts/deploy.js (Hardhat - Optimized for Base Mainnet)</span>
+  return `<span class="cm">// scripts/deploy.js (Hardhat - Optimized for Ethereum Mainnet)</span>
 <span class="kw">const</span> { ethers } = <span class="fn">require</span>(<span class="str">"hardhat"</span>);
 
 <span class="kw">async function</span> <span class="fn">main</span>() {
   <span class="kw">const</span> [deployer] = <span class="kw">await</span> ethers.<span class="fn">getSigners</span>();
-  console.<span class="fn">log</span>(<span class="str">"Deploying ${cfg.name} to Base from:"</span>, deployer.address);
+  console.<span class="fn">log</span>(<span class="str">"Deploying ${cfg.name} to Ethereum from:"</span>, deployer.address);
 
   <span class="kw">const</span> baseURI = <span class="str">"${cfg.baseURI}"</span>;
   <span class="kw">const</span> Factory  = <span class="kw">await</span> ethers.<span class="fn">getContractFactory</span>(<span class="str">"${cfg.name}"</span>);
   <span class="kw">const</span> contract = <span class="kw">await</span> Factory.<span class="fn">deploy</span>(baseURI);
   
   <span class="kw">await</span> contract.<span class="fn">waitForDeployment</span>();
-  console.<span class="fn">log</span>(<span class="str">"✓ Mech Ranger Unit Deployed on Base:"</span>, <span class="kw">await</span> contract.<span class="fn">getAddress</span>());
+  console.<span class="fn">log</span>(<span class="str">"✓ Mech Ranger Unit Deployed on Ethereum:"</span>, <span class="kw">await</span> contract.<span class="fn">getAddress</span>());
 }
 
 <span class="fn">main</span>().<span class="fn">catch</span>(e => { console.<span class="fn">error</span>(e); process.<span class="fn">exit</span>(1); });`;
@@ -195,7 +189,7 @@ function buildContractCode() {
 
 function updateContract() {
   buildContractCode();
-  if (typeof toast === 'function') toast('Base Logic Synchronized', 'success');
+  if (typeof toast === 'function') toast('Ethereum Logic Synchronized', 'success');
 }
 
 /* ─────────────────────────────────────────────
@@ -205,23 +199,20 @@ function updateMintSim() {
   const wrap = document.getElementById('mintSimRows');
   if (!wrap) return;
 
-  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.005;
+  const price   = parseFloat(document.getElementById('cPrice')?.value)     || 0.00009;
   const total   = parseInt(document.getElementById('cMaxSupply')?.value)   || 10000;
   const royalty = parseFloat(document.getElementById('cRoyalty')?.value)   || 5;
 
   const TIERS = [
-    { key:'mythic',    label:'MYTHIC',    col:'#ff0055', allowance: 1 },
+    { key:'mythic',    label:'MYTHIC',    col:'#ff0055', allowance: 2 },
     { key:'legendary', label:'LEGENDARY', col:'#ffc400', allowance: 2 },
-    { key:'epic',      label:'EPIC',      col:'#b44fff', allowance: 3 },
-    { key:'rare',      label:'RARE',      col:'#00e5ff', allowance: 4 },
-    { key:'uncommon',  label:'UNCOMMON',  col:'#00e676', allowance: 5 },
-    { key:'common',    label:'COMMON',    col:'#4a4a72', allowance: 5 },
+    { key:'epic',      label:'EPIC',      col:'#b44fff', allowance: 2 }
   ];
 
   const estRevenue = total * price;
 
   wrap.innerHTML = TIERS.map(t => {
-    const cap = (typeof SUPPLY_CAPS !== 'undefined' ? SUPPLY_CAPS[t.key] : (t.key === 'mythic' ? 20 : t.key === 'legendary' ? 100 : t.key === 'epic' ? 900 : t.key === 'rare' ? 2000 : t.key === 'uncommon' ? 3000 : 3980));
+    const cap = (typeof SUPPLY_CAPS !== 'undefined' ? SUPPLY_CAPS[t.key] : (t.key === 'mythic' ? 2000 : t.key === 'legendary' ? 3000 : 5000));
     const count = (typeof mintedCount !== 'undefined' ? mintedCount[t.key] : 0);
     return `
     <div class="mint-tier-row">
@@ -237,21 +228,21 @@ function updateMintSim() {
   const sRoy = document.getElementById('simRoyalty');
 
   if(sTot) sTot.textContent = total.toLocaleString();
-  if(sRev) sRev.textContent = estRevenue.toFixed(2) + ' ETH';
-  if(sRoy) sRoy.textContent = royalty + '% Royalty (Base Secured)';
+  if(sRev) sRev.textContent = estRevenue.toFixed(4) + ' ETH';
+  if(sRoy) sRoy.textContent = royalty + '% Royalty (Ethereum Secured)';
 }
 
 /* ─────────────────────────────────────────────
-   NETWORK PICKER (LOCKED TO BASE)
+   NETWORK PICKER (LOCKED TO ETHEREUM)
 ───────────────────────────────────────────── */
 const NETWORK_RPCS = {
-  '8453':  'https://mainnet.base.org',
+  '1':  'https://eth.llamarpc.com',
 };
 
 function pickNet(el, name, chainId) {
   document.querySelectorAll('.network-badge').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const rpcInput = document.getElementById('netRPC');
-  if(rpcInput) rpcInput.value = NETWORK_RPCS['8453'];
+  if(rpcInput) rpcInput.value = NETWORK_RPCS['1'];
   if (typeof toast === 'function') toast('NETWORK LOCKED: ' + name + ' Deployment Only', 'warn');
 }

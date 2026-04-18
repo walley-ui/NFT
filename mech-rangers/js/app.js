@@ -26,7 +26,7 @@ function initApp() {
  * ADMIN MODE: Forge & Collection Management
  */
 function setupAdminEnvironment() {
-    console.log("Welcome, Admin ix_prinx. Base Forge Status: ONLINE.");
+    console.log("Welcome, Admin ix_prinx. Ethereum Forge Status: ONLINE.");
     
     // UI Toggles
     const adminUI = document.getElementById('adminControls');
@@ -38,12 +38,22 @@ function setupAdminEnvironment() {
     // Initialize Admin-only components
     if (typeof updateContract === 'function') updateContract();
     
-    // LEVEL 0 SYNC CHECK: Ensure rarity caps are ready for the 10k run
-    const commonCap = document.getElementById('cMaxCommon');
-    if (commonCap && commonCap.value !== "3980") {
-        console.warn("Syncing Common Cap to 3980 for 10k total.");
-        commonCap.value = "3980";
-    }
+    // LEVEL 0 SYNC CHECK: Aligned for 10k Ethereum Run (3-Tier System)
+    const mythicCap = document.getElementById('cMaxMythic');
+    const legendaryCap = document.getElementById('cMaxLegendary');
+    const epicCap = document.getElementById('cMaxEpic');
+
+    if (mythicCap) mythicCap.value = "2000";
+    if (legendaryCap) legendaryCap.value = "3000";
+    if (epicCap) epicCap.value = "5000";
+    
+    // Disable legacy tiers to prevent accidental generation
+    ['cMaxRare', 'cMaxUncommon', 'cMaxCommon'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "0";
+    });
+
+    console.log("Admin: Supply caps synced to 2k/3k/5k distribution.");
     
     // Upgrade: Auto-trigger verification prompt for ix_prinx if not authenticated
     if (typeof Admin !== 'undefined' && !Admin.isAuthenticated) {
@@ -55,7 +65,7 @@ function setupAdminEnvironment() {
  * PUBLIC MODE: Verification & Claiming
  */
 function setupPublicBridge() {
-    console.log("Public Bridge Mode Active. Awaiting Base Verification.");
+    console.log("Public Bridge Mode Active. Awaiting Ethereum Verification.");
     
     const adminUI = document.getElementById('adminControls');
     const userUI  = document.getElementById('userInterface');
@@ -90,11 +100,9 @@ function setupUniversalListeners() {
 }
 
 // Global Toast System (Used by Admin & User actions)
-// Upgrade: Integrated fallback for dynamic ui.js toast system
 function toast(msg, type = 'info') {
     const wrap = document.getElementById('toastWrap');
     if (wrap) {
-        // Use the advanced dynamic toast system from ui.js if available
         const el = document.createElement('div');
         el.className = `toast ${type}`;
         el.innerHTML = `<div class="toast-dot"></div>${msg}`;

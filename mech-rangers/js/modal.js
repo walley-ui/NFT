@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    modal.js — Modal Open · Close · Single-Token Exports
-   Upgraded: Base Mainnet Sync & Terminal-Safe Strings
+   Upgraded: Ethereum Mainnet Sync & Terminal-Safe Strings
    Depends on: traits.js, renderer.js, export.js
    ═══════════════════════════════════════════════════════ */
 
@@ -28,12 +28,13 @@ function openModal(nft) {
     mythic:    '#ff0055',
     legendary: '#ffc400',
     epic:      '#b44fff',
+    // Fallback support for legacy imports
     rare:      '#00e5ff',
     uncommon:  '#00e676',
     common:    '#6a6a9a',
   };
 
-  // UPGRADE: Aligned with Base Mainnet Metadata standards
+  // UPGRADE: Aligned with Ethereum Mainnet Metadata standards
   const metaEl = document.getElementById('mMeta');
   if (metaEl) {
     metaEl.innerHTML = 
@@ -41,7 +42,7 @@ function openModal(nft) {
       '<span style="cursor:pointer" onclick="copyToClipboard(\'' + nft.id + '\')">#' + String(nft.id).padStart(4,'0') + '</span>' +
       '<span>Score: ' + nft.score + '</span>' +
       '<span>' + (nft.traits.suit?.label || 'Standard') + '</span>' +
-      '<span class="net-badge">BASE</span>';
+      '<span class="net-badge" style="background:#627eea; color:white">ETH</span>';
   }
 
   // Trait grid
