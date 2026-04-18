@@ -28,12 +28,12 @@ const AdminAuth = {
 
 /* ── DYNAMIC RARITY SYSTEM (UPGRADED) ── */
 const SUPPLY_CAPS = {
-  mythic:    parseInt(document.getElementById('cMaxMythic')?.value)    || 20,
-  legendary: parseInt(document.getElementById('cMaxLegendary')?.value) || 100,
-  epic:      parseInt(document.getElementById('cMaxEpic')?.value)      || 900,
-  rare:      parseInt(document.getElementById('cMaxRare')?.value)      || 2000,
-  uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value)  || 3000,
-  common:    parseInt(document.getElementById('cMaxCommon')?.value)    || 3980
+  get mythic()    { return parseInt(document.getElementById('cMaxMythic')?.value || document.getElementById('capMythic')?.value) || 20; },
+  get legendary() { return parseInt(document.getElementById('cMaxLegendary')?.value || document.getElementById('capLegendary')?.value) || 100; },
+  get epic()      { return parseInt(document.getElementById('cMaxEpic')?.value || document.getElementById('capEpic')?.value) || 900; },
+  get rare()      { return parseInt(document.getElementById('cMaxRare')?.value || document.getElementById('capRare')?.value) || 2000; },
+  get uncommon()  { return parseInt(document.getElementById('cMaxUncommon')?.value || document.getElementById('capUncommon')?.value) || 3000; },
+  get common()    { return parseInt(document.getElementById('cMaxCommon')?.value || document.getElementById('capCommon')?.value) || 3980; }
 };
 
 const mintedCount = {
@@ -53,12 +53,16 @@ let isGenerating = false;
 
 /* ── RARITY SCORING (DYNAMIC ENGINE) ── */
 function calcRarity(traits) {
-  // ALIGNED WITH TRAITS.JS
+  // ALIGNED WITH TRAITS.JS DATA
   const bgScore = { void:1, urban:1, plasma:2, volcanic:2, cyber:3, arctic:3, dimension:4, golden:5, cosmic:6 };
   const helmScore = { standard:1, horned:2, visor:2, crown:3, dragon:3, angular:3, ancient:4, legendary:5, oni:6 };
   const wpnScore = { sword:1, blaster:1, lance:2, shield:2, gauntlets:2, twin:3, cannon:3, staff:4, none:1 };
   const auraScore = { none:0, electric:2, fire:2, shadow:3, holy:4, plasma:4, cosmic:5 };
-  const suitBonus = { ranger_cosmic:6, ranger_void:5, ranger_gold:5, ranger_silver:3, ranger_white:3, ranger_pink:2, ranger_yellow:2 };
+  const suitBonus = { 
+    ranger_red:1, ranger_blue:1, ranger_black:2, ranger_green:2, 
+    ranger_yellow:2, ranger_pink:2, ranger_white:3, ranger_silver:3, 
+    ranger_gold:5, ranger_void:5, ranger_cosmic:6 
+  };
 
   const score =
     (bgScore[traits.background.val]  || 1) +
@@ -93,10 +97,10 @@ function massForge10k() {
     isGenerating = true;
     if (typeof toast === 'function') toast("Forging 10,000 Mech Rangers on Base...", "info");
 
-    while (allNFTs.length < 10000 && tokenCounter < 40000) {
+    while (allNFTs.length < 10000 && tokenCounter < 60000) {
         const nft = generateNFT();
         if (nft) allNFTs.push(nft);
-        else break; 
+        else if (allNFTs.length >= 10000) break;
     }
     
     isGenerating = false;
@@ -109,27 +113,28 @@ function generateNFT(attempt = 0) {
   if (attempt > 500) return null; 
 
   tokenCounter++;
+  // Utilizing rng32 with its built-in seed scrambler from rng.js
   const seed = ((Math.random() * 2147483647) | 0) ^ (tokenCounter * 31337);
-  const rng  = rng32(seed);
+  const roll  = rng32(seed);
 
   const traits = {
-    background: weightedPick(TRAITS.background.options, rng),
-    suit:       weightedPick(TRAITS.suit.options,       rng),
-    helmet:     weightedPick(TRAITS.helmet.options,     rng),
-    weapon:     weightedPick(TRAITS.weapon.options,     rng),
-    aura:       weightedPick(TRAITS.aura.options,       rng),
-    badge:      weightedPick(TRAITS.badge.options,      rng),
+    background: weightedPick(TRAITS.background.options, roll),
+    suit:       weightedPick(TRAITS.suit.options,       roll),
+    helmet:     weightedPick(TRAITS.helmet.options,     roll),
+    weapon:     weightedPick(TRAITS.weapon.options,     roll),
+    aura:       weightedPick(TRAITS.aura.options,       roll),
+    badge:      weightedPick(TRAITS.badge.options,      roll),
   };
 
   let rarity = calcRarity(traits);
 
   const currentCaps = {
-    mythic:    parseInt(document.getElementById('cMaxMythic')?.value || document.getElementById('capMythic')?.value)    || 20,
-    legendary: parseInt(document.getElementById('cMaxLegendary')?.value || document.getElementById('capLegendary')?.value) || 100,
-    epic:      parseInt(document.getElementById('cMaxEpic')?.value || document.getElementById('capEpic')?.value)      || 900,
-    rare:      parseInt(document.getElementById('cMaxRare')?.value || document.getElementById('capRare')?.value)      || 2000,
-    uncommon:  parseInt(document.getElementById('cMaxUncommon')?.value || document.getElementById('capUncommon')?.value)  || 3000,
-    common:    parseInt(document.getElementById('cMaxCommon')?.value || document.getElementById('capCommon')?.value)    || 3980,
+    mythic:    SUPPLY_CAPS.mythic,
+    legendary: SUPPLY_CAPS.legendary,
+    epic:      SUPPLY_CAPS.epic,
+    rare:      SUPPLY_CAPS.rare,
+    uncommon:  SUPPLY_CAPS.uncommon,
+    common:    SUPPLY_CAPS.common
   };
 
   if (mintedCount[rarity] >= (currentCaps[rarity] || 0)) {
@@ -151,9 +156,10 @@ function generateNFT(attempt = 0) {
   hashSet.add(hash);
   mintedCount[rarity]++;
 
-  const rng2 = rng32(seed + 99);
-  const name = NAMES[Math.floor(rng2() * NAMES.length)] + ' ' + SUFX[Math.floor(rng2() * SUFX.length)];
-  const basePower = Math.floor(rng2() * 24) + 76;
+  // Using secondary roll from the same utility
+  const roll2 = rng32(seed + 888);
+  const name = NAMES[Math.floor(roll2() * NAMES.length)] + ' ' + SUFX[Math.floor(roll2() * SUFX.length)];
+  const basePower = Math.floor(roll2() * 24) + 76;
 
   return {
     id:     allNFTs.length + 1, 
