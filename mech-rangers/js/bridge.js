@@ -152,7 +152,7 @@ async function renderWalletStatus(assignment, dbUser) {
   const tierColors = { mythic: '#ff3d00', legendary: '#ffc400', epic: '#b44fff' };
   const tierColor = tierColors[assignment.tier] || '#eeeef8';
 
-  let welcomeRoast = "AUTHORIZED FOR DEPLOYMENT";
+  let welcomeRoast = "AUTHORIZED";
   if (typeof getRoast === 'function') {
       welcomeRoast = getRoast('welcome', assignment.tier || 'epic', { user: handle, count: 2 });
   }
@@ -160,7 +160,7 @@ async function renderWalletStatus(assignment, dbUser) {
   panel.innerHTML = `
     <div class="bridge-status whitelisted" style="text-align:center; border:1px solid ${tierColor}; padding:25px; background: rgba(0,0,0,0.4)">
       <div style="font-family:'Share Tech Mono'; color:${tierColor}; font-size:0.8rem; margin-bottom:15px; font-style:italic">"${welcomeRoast.toUpperCase()}"</div>
-      <div class="bridge-tier" style="color:${tierColor}; font-family:'Bebas Neue'; font-size:2rem">CLEARANCE GRANTED</div>
+      <div class="bridge-tier" style="color:${tierColor}; font-family:'Bebas Neue'; font-size:2rem"> GRANTED</div>
       <div class="bridge-msg" style="margin:10px 0; font-size:0.9rem">Authorized for <strong>2 Unit(s)</strong> @ 0.00009 ETH</div>
       
       <div class="bridge-mint-row" style="margin-top:20px">

@@ -1,8 +1,8 @@
-/* ═══════════════════════════════════════════════════════
+/* ════───────────────────────────────────────────────────────────────────
      recruiter.js — Phase 1: Recruitment & Whitelisting
      Handles wallet submission, X-verification, and Referrals
      Theme: Rust & Carbon (Reddish Brown Premium)
-═══════════════════════════════════════════════════════ */
+════─────────────────────────────────────────────────────────────────── */
 
 import { createClient } from '@supabase/supabase-js';
 import { getRoast } from './roast.js';
@@ -17,7 +17,16 @@ const RECRUIT_CONFIG = {
   referralBonus: "Awareness Signal",
   targetNetwork: "Ethereum Mainnet",
   accentColor: "#8b4513", 
-  rustColor: "#5d2a18"
+  rustColor: "#5d2a18",
+  // ── SOCIAL TASKS: UPDATE LINKS FOR NEW MISSIONS HERE ──
+  tasks: {
+    twitter: {
+      like: "https://x.com/intent/like?tweet_id=YOUR_TWEET_ID",
+      repost: "https://x.com/intent/retweet?tweet_id=YOUR_TWEET_ID",
+      quote: "https://x.com/intent/tweet?text=Joining%20the%20Resistance&url=YOUR_TWEET_URL"
+    },
+    discord: "COMING SOON" 
+  }
 };
 
 let _recruitData = {
@@ -97,7 +106,6 @@ export async function submitRecruitment() {
 
   const code = wallet.slice(-4).toUpperCase() + Math.random().toString(36).substring(2, 4).toUpperCase();
   
-  // Persist to Supabase
   const { error } = await _supabase
     .from('recruits')
     .insert([{
@@ -106,7 +114,7 @@ export async function submitRecruitment() {
       referral_code: code,
       referred_by: referrer, 
       has_followed: true,
-      phase_type: 'GTD' // Default entry phase
+      phase_type: 'GTD'
     }]);
 
   if (error) {
@@ -115,7 +123,6 @@ export async function submitRecruitment() {
     return;
   }
 
-  // Log to referrals table
   if (referrer) {
     await _supabase.from('referrals').insert([{
         referrer_wallet: referrer,
@@ -165,9 +172,6 @@ export function renderRecruitUI() {
         <input type="text" id="recTwitter" class="field-in" placeholder="@username" style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3)">
       </div>
       <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none;" onclick="submitRecruitment()" disabled>FORGE ENROLLMENT</button>
-      <div style="margin-top:20px; padding:16px; border:1px dashed #5d2a18; background:rgba(93,42,24,0.05); text-align:center;">
-        <div style="font-family:'Bebas Neue'; font-size:1.4rem; color:#8b4513; letter-spacing:4px">MINT: 0.00009 ETH</div>
-      </div>
     </div>
   `;
 }
@@ -179,10 +183,7 @@ export function renderRecruitSuccess() {
   const refLink = `${window.location.origin}?ref=${_recruitData.refCode}`;
 
   let currentRoast = "SYSTEM ONLINE...";
-  let tier = 'parasite';
-  
-  if (_recruitData.referrals > 10) tier = 'threat';
-  if (_recruitData.referrals > 50) tier = 'legendary';
+  let tier = _recruitData.referrals > 50 ? 'legendary' : (_recruitData.referrals > 10 ? 'threat' : 'parasite');
 
   if (typeof getRoast === 'function') {
       currentRoast = getRoast('welcome', tier, { 
@@ -194,6 +195,7 @@ export function renderRecruitSuccess() {
   root.innerHTML = `
     <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 80px auto; padding: 40px; border: 1px solid #8b4513; background: #0c0807;">
       <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8"> LINK<br><span style="color:#8b4513">CONFIRMED</span></h2>
+      
       <div style="background:rgba(139,69,19,0.08); padding:25px; border:1px solid #8b4513; margin:25px 0; text-align:center;">
         <div style="margin-bottom:20px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:15px">
             <div style="font-size:1.1rem; font-family:'Share Tech Mono'; color:#ffab91; font-style:italic;">"${currentRoast.toUpperCase()}"</div>
@@ -201,6 +203,19 @@ export function renderRecruitSuccess() {
         <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">YOUR INVITE CODE</div>
         <div style="font-size:2rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:8px;">${_recruitData.refCode}</div>
       </div>
+
+      <div style="margin: 20px 0; padding: 20px; border: 1px solid #5d2a18; background: rgba(0,0,0,0.4);">
+        <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1.2rem; letter-spacing:2px; margin-bottom:15px; text-align:center">SOCIAL MISSIONS</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px">
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.like}','_blank')">LIKE</button>
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.repost}','_blank')">REPOST</button>
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.quote}','_blank')">QUOTE</button>
+        </div>
+        <div style="text-align:center; padding:10px; border:1px dashed #5865F2; color:#5865F2; font-family:'Share Tech Mono'; font-size:0.7rem">
+          DISCORD: ${RECRUIT_CONFIG.tasks.discord}
+        </div>
+      </div>
+
       <div class="field-row">
            <input type="text" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center;">
       </div>
@@ -224,7 +239,7 @@ export function copyRef(link) {
 }
 
 export function tweetRef(link) {
-  const text = encodeURIComponent(`I've joined the @MechRangersNFT Whitelist on Ethereum. 10k Collection. $0.20 Mint. Enroll here: `);
+  const text = encodeURIComponent(`I've joined the @MechRangersNFT Whitelist on Ethereum. 10k Collection. Enroll here: `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 

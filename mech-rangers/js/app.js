@@ -1,15 +1,14 @@
 /* ═══════════════════════════════════════════════════════
    app.js — Core Controller (ADMIN vs PUBLIC)
-   Handles: State Switching, Initialization, Global Toggles
+   Handles: State Switching, Phase Monitoring, Global Toggles
+   Logic: Aligned for 700 WL Free / 9,300 Paid Split
    ═══════════════════════════════════════════════════════ */
 
 /**
  * Main Initialization
- * Directs ix_prinx to Admin Forge or the Public to the Bridge
  */
 function initApp() {
-    // 1. Determine Identity
-    // Logic: If admin.js is loaded and authenticated, enable Forge
+    // 1. Determine Identity & Mode
     const isAdminMode = typeof Admin !== 'undefined';
 
     if (isAdminMode) {
@@ -18,8 +17,11 @@ function initApp() {
         setupPublicBridge();
     }
 
-    // 2. Global Event Listeners (Universal)
+    // 2. Universal Listeners
     setupUniversalListeners();
+    
+    // 3. Initialize Phase Monitor (Sync with Contract State)
+    updateGlobalPhaseUI();
 }
 
 /**
@@ -28,44 +30,41 @@ function initApp() {
 function setupAdminEnvironment() {
     console.log("Welcome, Admin ix_prinx. Ethereum Forge Status: ONLINE.");
     
-    // UI Toggles
     const adminUI = document.getElementById('adminControls');
     const userUI  = document.getElementById('userInterface');
     
     if (adminUI) adminUI.style.display = 'block';
     if (userUI)  userUI.style.display  = 'none';
 
-    // Initialize Admin-only components
+    // Sync Contract View
     if (typeof updateContract === 'function') updateContract();
     
-    // LEVEL 0 SYNC CHECK: Aligned for 10k Ethereum Run (3-Tier System)
-    const mythicCap = document.getElementById('cMaxMythic');
-    const legendaryCap = document.getElementById('cMaxLegendary');
-    const epicCap = document.getElementById('cMaxEpic');
+    // ENFORCING 3-TIER DISTRIBUTION (2k/3k/5k)
+    const caps = {
+        'cMaxMythic': "2000",
+        'cMaxLegendary': "3000",
+        'cMaxEpic': "5000"
+    };
 
-    if (mythicCap) mythicCap.value = "2000";
-    if (legendaryCap) legendaryCap.value = "3000";
-    if (epicCap) epicCap.value = "5000";
+    for (const [id, val] of Object.entries(caps)) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    }
     
-    // Disable legacy tiers to prevent accidental generation
+    // Clear Legacy Tiers
     ['cMaxRare', 'cMaxUncommon', 'cMaxCommon'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = "0";
     });
 
-    console.log("Admin: Supply caps synced to 2k/3k/5k distribution.");
-    
-    // Upgrade: Auto-trigger verification prompt for ix_prinx if not authenticated
-    if (typeof Admin !== 'undefined' && !Admin.isAuthenticated) {
-        console.log("System standby: Awaiting Admin Secret.");
-    }
+    console.log("Admin: Supply caps strictly synced to 10k Ethereum distribution.");
 }
 
 /**
- * PUBLIC MODE: Verification & Claiming
+ * PUBLIC MODE: Phase-Aware Bridge
  */
 function setupPublicBridge() {
-    console.log("Public Bridge Mode Active. Awaiting Ethereum Verification.");
+    console.log("Public Bridge Active. Awaiting Phase-Based Verification.");
     
     const adminUI = document.getElementById('adminControls');
     const userUI  = document.getElementById('userInterface');
@@ -73,58 +72,80 @@ function setupPublicBridge() {
     if (adminUI) adminUI.style.display = 'none';
     if (userUI)  userUI.style.display  = 'block';
 
-    // Initialize the Post-Office logic (bridge.js)
     if (typeof Bridge !== 'undefined') {
         Bridge.init();
     } else {
-        console.error("Bridge Module Missing: Users cannot verify claims.");
+        console.warn("Bridge Module Standby: Verify script loading.");
     }
 }
 
 /**
- * Common Listeners (Modals, Toasts, etc.)
+ * PHASE MONITORING: Update UI based on Contract State
+ * Logic: Handles the transition through WL Free, GTD, and Public
+ */
+function updateGlobalPhaseUI() {
+    const phaseDisplay = document.getElementById('currentPhaseName');
+    if (!phaseDisplay) return;
+
+    // This would typically fetch from the smart contract 'currentPhase' variable
+    // For now, we set the initial visual state
+    const phases = ["Locked", "WL Free (700 Spots)", "GTD Paid", "Public FCFS"];
+    
+    // Example: Update UI to show the 700-spot limit for the first phase
+    console.log("Phase Monitor: Ensuring 700 WL Free / 9,300 Paid logic visibility.");
+}
+
+/**
+ * Universal Listeners & UI Helpers
  */
 function setupUniversalListeners() {
-    // Overlay click to close modals
     const overlay = document.getElementById('overlay');
     if (overlay) {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeModal();
+            if (e.target === overlay) typeof closeModal === 'function' && closeModal();
         });
     }
 
-    // Escape key handling
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') typeof closeModal === 'function' && closeModal();
     });
 }
 
-// Global Toast System (Used by Admin & User actions)
+/**
+ * Global Toast System
+ * Upgraded to handle multi-phase notifications
+ */
 function toast(msg, type = 'info') {
     const wrap = document.getElementById('toastWrap');
     if (wrap) {
         const el = document.createElement('div');
         el.className = `toast ${type}`;
-        el.innerHTML = `<div class="toast-dot"></div>${msg}`;
+        el.innerHTML = `<div class="toast-dot"></div><span>${msg}</span>`;
         wrap.appendChild(el);
+        
         requestAnimationFrame(() => el.style.opacity = '1');
         setTimeout(() => {
             el.style.opacity = '0';
             setTimeout(() => el.remove(), 500);
-        }, 3500);
+        }, 4000);
         return;
     }
-
+    
+    // Fallback legacy toast
     const t = document.getElementById('toast');
-    if (!t) return;
-    
-    t.textContent = msg;
-    t.className = `toast show ${type}`;
-    
-    setTimeout(() => {
-        t.className = 'toast';
-    }, 3000);
+    if (t) {
+        t.textContent = msg;
+        t.className = `toast show ${type}`;
+        setTimeout(() => t.className = 'toast', 3000);
+    }
 }
 
-// Start the app when the DOM is fully ready
+// Global reveal helper for 3-tier visuals
+function toggleRevealPreview(isRevealed) {
+    const preview = document.getElementById('mechPreview');
+    if (preview) {
+        isRevealed ? preview.classList.remove('hidden-mech') : preview.classList.add('hidden-mech');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', initApp);

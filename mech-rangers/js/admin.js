@@ -2,6 +2,7 @@
    admin.js — Restricted Generation Controls (UPGRADED)
    ONLY FOR ADMIN (ix_prinx)
    Connects to: generator.js (AdminAuth)
+   Logic: Phase-Aware Sync (700 WL Free | 9,300 Paid)
    ═══════════════════════════════════════════════════════ */
 const sharp = require('sharp'); 
 
@@ -40,11 +41,14 @@ const Admin = {
         // ALIGNED: Ethereum Mainnet Deployment Intent
         toast("Initiating Master Forge for Ethereum Mainnet...", "info");
 
-        // We use a loop that allows UI updates so the browser doesn't crash
+        // Loop optimized for Node.js event loop
         for (let i = 0; i < 10000; i++) {
             const nft = generateNFT();
             if (nft) {
                 allNFTs.push(nft);
+                
+                // Determine Mint Type for DB Sync (700 Free vs Rest Paid)
+                const mintType = (i < 700) ? "WL_FREE" : "PAID";
                 
                 // --- PHOTO MAKER START ---
                 // Render at 1000px for high-fidelity Ethereum marketplace standards
@@ -57,14 +61,14 @@ const Admin = {
                     .catch(err => console.error(`Image fail #${nft.id}:`, err)); 
                 // --- PHOTO MAKER END ---
                                                                 
-                this.syncToSupabase(nft);
+                this.syncToSupabase(nft, mintType);
             }
             
             // Log progress every 1000 units
             if (i % 1000 === 0 && i > 0) {
                 console.log(`Forged: ${i}/10000`);
                 toast(`Progress: ${i} Mechs secured for Ethereum Snapshot`, "info");
-                // Upgrade: Small delay to let the Node.js event loop breathe
+                // Delay to prevent UI freeze
                 await new Promise(resolve => setTimeout(resolve, 10));
             }
         }
@@ -75,21 +79,22 @@ const Admin = {
         toast("10,000 Mech Rangers Forged for Ethereum!", "success");
     },
 
-    // UPGRADE: New Helper to push data to the 'mechs' table
-    async syncToSupabase(nft) {
+    // UPGRADE: Refactored to include Mint Type (Free vs Paid)
+    async syncToSupabase(nft, mintType) {
         if (typeof supabase === 'undefined') return;
 
-        // ALIGNED: Enforcing the 3-Tier Rarity in the database
+        // ALIGNED: Tracking the 3-Tier Rarity + the 700 Free WL Logic
         const { error } = await supabase
             .from('mechs')
             .upsert({
                 id: nft.id,
                 name: `Mech Ranger #${nft.id}`,
-                rarity: nft.rarity, // Expecting Mythic, Legendary, or Epic
+                rarity: nft.rarity, // Mythic, Legendary, or Epic
                 traits: nft.traits || nft.attributes, 
                 image_url: `ipfs://SET_IMAGE_CID_HERE/${nft.id}.png`,
                 metadata_url: `ipfs://SET_METADATA_CID_HERE/${nft.id}.json`,
-                network: "Ethereum"
+                network: "Ethereum",
+                mint_category: mintType // "WL_FREE" or "PAID"
             });
 
         if (error) console.error(`DB Sync Error for #${nft.id}:`, error.message);
@@ -103,13 +108,13 @@ const Admin = {
         }
         
         if (allNFTs.length < 10000) {
-            if (!confirm("Collection is incomplete (below 10k). Export anyway?")) return;
+            if (!confirm("Collection is incomplete (below 10k). Export anyway?"));
         }
 
-        // Aligned with the new dual-tree logic in points.js
+        // SYNCED: Aligned with the multi-phase logic (Free WL Root vs GTD Paid Root)
         if (typeof generateSnapshot === 'function') {
             generateSnapshot(); 
-            toast("Dual Roots (WL/GTD) ready for Deployment", "success");
+            toast("Dual Roots (Free WL & GTD Paid) ready for Deployment", "success");
         } else {
             // Fallback to legacy if points.js isn't global
             if (typeof exportMerkleTreeData === 'function') {
@@ -122,5 +127,5 @@ const Admin = {
     }
 };
 
-// Auto-init admin check if needed
-console.log("Admin Module Loaded. System awaiting ix_prinx verification for Ethereum deployment.");
+// Auto-init admin check
+console.log("Admin Module Loaded. System awaiting verification for Phase-Based Ethereum deployment.");

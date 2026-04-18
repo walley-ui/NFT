@@ -2,6 +2,8 @@
    contract.js — Smart Contract Panel (ETHEREUM OPTIMIZED)
    Builds & displays the Solidity contract + deploy script.
    Enforced Network: Ethereum (Mainnet)
+   3-Tier Split: Mythic (2k) | Legendary (3k) | Epic (5k)
+   Logic: 700 WL (Free) | GTD (Paid) | Public FCFS (Paid)
    ═══════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────
@@ -16,10 +18,10 @@ function getContractConfig() {
     maxWallet: document.getElementById('cMaxWallet')?.value || '2',
     royalty:   parseFloat(document.getElementById('cRoyalty')?.value)   || 5,
     baseURI:   document.getElementById('cBaseURI')?.value   || 'ipfs://YOUR_METADATA_CID/',
-    // UPGRADE: Dynamic Merkle Root check from terminal output/state
     merkleRoot: (typeof _snapshot !== 'undefined' && _snapshot?.merkleRoot) 
                 ? _snapshot.merkleRoot 
-                : (document.getElementById('cMerkleRoot')?.value || '0x0000000000000000000000000000000000000000000000000000000000000000')
+                : (document.getElementById('cMerkleRoot')?.value || '0x0000000000000000000000000000000000000000000000000000000000000000'),
+    gtdRoot:   document.getElementById('cGTDRoot')?.value || '0x0000000000000000000000000000000000000000000000000000000000000000'
   };
 }
 
@@ -27,8 +29,6 @@ function getContractConfig() {
    SOLIDITY CONTRACT — (ETHEREUM COMPATIBLE)
 ───────────────────────────────────────────── */
 function buildSolidityHTML(cfg) {
-  const priceInWei = (cfg.price * 1e18).toString();
-  
   return `<span class="cm">// SPDX-License-Identifier: MIT</span>
 <span class="cm">// Mech Rangers ERC-721 — Production Contract v3.0 (Ethereum Mainnet)</span>
 <span class="kw">pragma solidity</span> ^<span class="num">0.8.20</span>;
@@ -41,17 +41,23 @@ function buildSolidityHTML(cfg) {
 
 <span class="kw">contract</span> <span class="type">${cfg.name}</span> <span class="kw">is</span> <span class="type">ERC721</span>, <span class="type">Ownable</span>, <span class="type">IERC2981</span>, <span class="type">Pausable</span> {
 
+    <span class="kw">enum</span> <span class="type">MintPhase</span> { Locked, WL_Free, GTD_Paid, Public_FCFS }
+    <span class="type">MintPhase</span> <span class="kw">public</span> currentPhase = <span class="type">MintPhase</span>.Locked;
+
     <span class="type">uint256</span> <span class="kw">public</span> totalSupply;
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_SUPPLY   = <span class="num">${cfg.maxSupply}</span>;
     <span class="type">uint256</span> <span class="kw">public</span> mintPrice             = <span class="num">${cfg.price} ether</span>;
     <span class="type">uint256</span> <span class="kw">public constant</span> MAX_PER_WALLET = <span class="num">${cfg.maxWallet}</span>;
     <span class="type">uint256</span> <span class="kw">public</span> teamReserve           = <span class="num">100</span>;
+    
+    <span class="type">uint256</span> <span class="kw">public constant</span> MAX_FREE_WL  = <span class="num">700</span>;
+    <span class="type">uint256</span> <span class="kw">public</span> freeMinted;
 
     <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityCap;
-    <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityMinted;
+    
+    <span class="type">bytes32</span> <span class="kw">public</span> wlMerkleRoot = <span class="num">${cfg.merkleRoot}</span>;
+    <span class="type">bytes32</span> <span class="kw">public</span> gtdMerkleRoot = <span class="num">${cfg.gtdRoot}</span>;
 
-    <span class="type">bytes32</span> <span class="kw">public</span> merkleRoot = <span class="num">${cfg.merkleRoot}</span>;
-    <span class="type">bool</span>    <span class="kw">public</span> whitelistOnly = <span class="kw">true</span>;
     <span class="type">mapping</span>(<span class="type">address</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> walletMinted;
 
     <span class="type">string</span> <span class="kw">private</span> _baseTokenURI;
@@ -63,7 +69,7 @@ function buildSolidityHTML(cfg) {
 
     <span class="ev">event</span> <span class="fn">Minted</span>(<span class="type">address indexed</span> to, <span class="type">uint256 indexed</span> tokenId);
     <span class="ev">event</span> <span class="fn">Revealed</span>();
-    <span class="ev">event</span> <span class="fn">BaseURISet</span>(<span class="type">string</span> newURI);
+    <span class="ev">event</span> <span class="fn">PhaseChanged</span>(<span class="type">MintPhase</span> newPhase);
 
     <span class="kw">constructor</span>(<span class="type">string memory</span> baseURI_)
         <span class="fn">ERC721</span>(<span class="str">"${cfg.name}"</span>, <span class="str">"${cfg.sym}"</span>)
@@ -72,31 +78,40 @@ function buildSolidityHTML(cfg) {
         _baseTokenURI    = baseURI_;
         _royaltyReceiver = msg.sender;
         
-        <span class="cm">// SYNCED CAPS: Based on 10k Ethereum distribution (3-Tier)</span>
+        <span class="cm">// 3-Tier Distribution Setup</span>
         rarityCap[<span class="str">"mythic"</span>]    = <span class="num">2000</span>;
         rarityCap[<span class="str">"legendary"</span>] = <span class="num">3000</span>;
         rarityCap[<span class="str">"epic"</span>]      = <span class="num">5000</span>;
     }
 
-    <span class="kw">function</span> <span class="fn">mint</span>(
-        <span class="type">uint256</span> quantity,
-        <span class="type">bytes32[] calldata</span> merkleProof
-    ) <span class="kw">external payable whenNotPaused</span> {
-        <span class="kw">require</span>(totalSupply + quantity &lt;= MAX_SUPPLY,           <span class="str">"Max supply reached"</span>);
-        <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity,             <span class="str">"Insufficient ETH"</span>);
-        
-        <span class="kw">if</span> (whitelistOnly) {
-            <span class="cm">// Validates address for the 10k flat-allowance Ethereum phase</span>
-            <span class="type">bytes32</span> leaf = <span class="fn">keccak256</span>(<span class="fn">abi.encodePacked</span>(msg.sender));
-            <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(merkleProof, merkleRoot, leaf), <span class="str">"Invalid proof"</span>);
-        }
+    <span class="kw">function</span> <span class="fn">setPhase</span>(<span class="type">MintPhase</span> _phase) <span class="kw">external onlyOwner</span> {
+        currentPhase = _phase;
+        <span class="kw">emit</span> <span class="fn">PhaseChanged</span>(_phase);
+    }
+
+    <span class="kw">function</span> <span class="fn">mint</span>(<span class="type">uint256</span> quantity, <span class="type">bytes32[] calldata</span> proof) <span class="kw">external payable whenNotPaused</span> {
+        <span class="kw">require</span>(totalSupply + quantity &lt;= MAX_SUPPLY, <span class="str">"Max supply reached"</span>);
         <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= MAX_PER_WALLET, <span class="str">"Exceeds wallet limit"</span>);
+        
+        <span class="type">bytes32</span> leaf = <span class="fn">keccak256</span>(<span class="fn">abi.encodePacked</span>(msg.sender));
+
+        <span class="kw">if</span> (currentPhase == <span class="type">MintPhase</span>.WL_Free) {
+            <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(proof, wlMerkleRoot, leaf), <span class="str">"Invalid WL Proof"</span>);
+            <span class="kw">require</span>(freeMinted + quantity &lt;= MAX_FREE_WL, <span class="str">"Free WL cap reached"</span>);
+            freeMinted += quantity;
+        } <span class="kw">else if</span> (currentPhase == <span class="type">MintPhase</span>.GTD_Paid) {
+            <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(proof, gtdMerkleRoot, leaf), <span class="str">"Invalid GTD Proof"</span>);
+            <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity, <span class="str">"Insufficient ETH"</span>);
+        } <span class="kw">else if</span> (currentPhase == <span class="type">MintPhase</span>.Public_FCFS) {
+            <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity, <span class="str">"Insufficient ETH"</span>);
+        } <span class="kw">else</span> {
+            <span class="kw">revert</span>(<span class="str">"Minting is locked"</span>);
+        }
 
         <span class="kw">for</span> (<span class="type">uint256</span> i = <span class="num">0</span>; i &lt; quantity; i++) {
-            <span class="type">uint256</span> tokenId = ++totalSupply;
-            <span class="fn">_safeMint</span>(msg.sender, tokenId);
+            <span class="fn">_safeMint</span>(msg.sender, ++totalSupply);
             walletMinted[msg.sender]++;
-            <span class="kw">emit</span> <span class="fn">Minted</span>(msg.sender, tokenId);
+            <span class="kw">emit</span> <span class="fn">Minted</span>(msg.sender, totalSupply);
         }
     }
 
@@ -119,9 +134,7 @@ function buildSolidityHTML(cfg) {
         <span class="kw">return</span> <span class="type">string</span>(<span class="fn">abi.encodePacked</span>(_baseTokenURI, <span class="fn">_toString</span>(tokenId), <span class="str">".json"</span>));
     }
 
-    <span class="kw">function</span> <span class="fn">royaltyInfo</span>(<span class="type">uint256</span>, <span class="type">uint256</span> salePrice)
-        <span class="kw">external view override returns</span> (<span class="type">address</span>, <span class="type">uint256</span>)
-    {
+    <span class="kw">function</span> <span class="fn">royaltyInfo</span>(<span class="type">uint256</span>, <span class="type">uint256</span> salePrice) <span class="kw">external view override returns</span> (<span class="type">address</span>, <span class="type">uint256</span>) {
         <span class="kw">return</span> (_royaltyReceiver, (salePrice * _royaltyFee) / <span class="num">10000</span>);
     }
 
@@ -130,9 +143,7 @@ function buildSolidityHTML(cfg) {
         <span class="kw">require</span>(ok, <span class="str">"Withdraw failed"</span>);
     }
 
-    <span class="kw">function</span> <span class="fn">supportsInterface</span>(<span class="type">bytes4</span> id)
-        <span class="kw">public view override</span>(<span class="type">ERC721</span>, <span class="type">IERC165</span>) <span class="kw">returns</span> (<span class="type">bool</span>)
-    {
+    <span class="kw">function</span> <span class="fn">supportsInterface</span>(<span class="type">bytes4</span> id) <span class="kw">public view override</span>(<span class="type">ERC721</span>, <span class="type">IERC165</span>) <span class="kw">returns</span> (<span class="type">bool</span>) {
         <span class="kw">return</span> id == <span class="kw">type</span>(<span class="type">IERC2981</span>).interfaceId || <span class="kw">super</span>.<span class="fn">supportsInterface</span>(id);
     }
 
@@ -189,11 +200,11 @@ function buildContractCode() {
 
 function updateContract() {
   buildContractCode();
-  if (typeof toast === 'function') toast('Ethereum Logic Synchronized', 'success');
+  if (typeof toast === 'function') toast('Phase Logic & Logic Refactored', 'success');
 }
 
 /* ─────────────────────────────────────────────
-   MINT SIMULATOR (SYNCED WITH POINTS.JS)
+   MINT SIMULATOR (PHASE-BASED REVENUE SYNC)
 ───────────────────────────────────────────── */
 function updateMintSim() {
   const wrap = document.getElementById('mintSimRows');
@@ -204,23 +215,24 @@ function updateMintSim() {
   const royalty = parseFloat(document.getElementById('cRoyalty')?.value)   || 5;
 
   const TIERS = [
-    { key:'mythic',    label:'MYTHIC',    col:'#ff0055', allowance: 2 },
-    { key:'legendary', label:'LEGENDARY', col:'#ffc400', allowance: 2 },
-    { key:'epic',      label:'EPIC',      col:'#b44fff', allowance: 2 }
+    { key:'mythic',    label:'MYTHIC',    col:'#ff0055', cap: 2000, allowance: 2 },
+    { key:'legendary', label:'LEGENDARY', col:'#ffc400', cap: 3000, allowance: 2 },
+    { key:'epic',      label:'EPIC',      col:'#b44fff', cap: 5000, allowance: 2 }
   ];
 
-  const estRevenue = total * price;
+  // REVENUE CALC: 700 units are FREE (Phase 0). All others (9,300) are PAID.
+  const paidUnits = 9300;
+  const estRevenue = paidUnits * price;
 
   wrap.innerHTML = TIERS.map(t => {
-    const cap = (typeof SUPPLY_CAPS !== 'undefined' ? SUPPLY_CAPS[t.key] : (t.key === 'mythic' ? 2000 : t.key === 'legendary' ? 3000 : 5000));
     const count = (typeof mintedCount !== 'undefined' ? mintedCount[t.key] : 0);
     return `
     <div class="mint-tier-row">
       <div class="mt-label" style="color:${t.col}">${t.label} (Max: ${t.allowance})</div>
       <div class="mt-bar-bg">
-        <div class="mt-bar-fill" style="width:${((count / cap) * 100).toFixed(1)}%;background:${t.col}"></div>
+        <div class="mt-bar-fill" style="width:${((count / t.cap) * 100).toFixed(1)}%;background:${t.col}"></div>
       </div>
-      <div class="mt-count">${count}/${cap}</div>
+      <div class="mt-count">${count}/${t.cap}</div>
     </div>`}).join('');
 
   const sTot = document.getElementById('simTotal');
@@ -228,21 +240,22 @@ function updateMintSim() {
   const sRoy = document.getElementById('simRoyalty');
 
   if(sTot) sTot.textContent = total.toLocaleString();
-  if(sRev) sRev.textContent = estRevenue.toFixed(4) + ' ETH';
-  if(sRoy) sRoy.textContent = royalty + '% Royalty (Ethereum Secured)';
+  if(sRev) sRev.textContent = estRevenue.toFixed(4) + ' ETH (9.3k Paid Units)';
+  if(sRoy) sRoy.textContent = royalty + '% Royalty (PHASE: WL → GTD → Public)';
 }
 
 /* ─────────────────────────────────────────────
    NETWORK PICKER (LOCKED TO ETHEREUM)
 ───────────────────────────────────────────── */
-const NETWORK_RPCS = {
-  '1':  'https://eth.llamarpc.com',
-};
+const NETWORK_RPCS = { '1':  'https://eth.llamarpc.com' };
 
 function pickNet(el, name, chainId) {
   document.querySelectorAll('.network-badge').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const rpcInput = document.getElementById('netRPC');
   if(rpcInput) rpcInput.value = NETWORK_RPCS['1'];
-  if (typeof toast === 'function') toast('NETWORK LOCKED: ' + name + ' Deployment Only', 'warn');
+  if (typeof toast === 'function') toast('NETWORK LOCKED: Ethereum Mainnet Only', 'warn');
 }
+
+// Initial Build
+buildContractCode();
