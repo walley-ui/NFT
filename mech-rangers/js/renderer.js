@@ -25,7 +25,7 @@ function renderSVG(nft, sz = 500) {
     c1: bg.color[0],
     c2: bg.color[1],
     isLeft: rng32(seed + 1234)() > 0.5,
-    jit: (v, mag = 0.4) => v + (rng() - 0.5) * mag, 
+   jit: (v, mag = 0.08) => v + (rng() - 0.5) * mag,  
     wp: (pts, attr, jit) => {
         const ps = pts.map(p => `${jit(p[0]).toFixed(1)},${jit(p[1]).toFixed(1)}`).join(' ');
         return `<polygon points="${ps}" ${attr}/>`;
@@ -204,7 +204,8 @@ function _renderAura(ctx, aura) {
  * Assembles legs, waist, arms, torso, weapon, and helmet.
  */
 function _renderMechBody(ctx, traits) {
-  const { w, h, bx=w/2, by=h*.65, tW=w*.265, tH=h*.245, armW=w*.082, armH=h*.195, legW=w*.088, legH=h*.215, uid, A, P, c1, jit, wp, isLeft } = ctx;
+  const { w, h, bx=w/2, by=h*.70, tW=w*.20, tH=h*.18, armW=w*.082, armH=h*.195, legW=w*.088, legH=h*.215, uid, A, P, c1, jit, wp, isLeft } = ctx;
+  const jC = "rgba(0,0,0,0.6)"; 
   const out = [];
 
   /* LEGS */
@@ -223,7 +224,7 @@ function _renderMechBody(ctx, traits) {
   out.push(wp([[bx+legW*.04,fy],[bx+legW*1.48,fy],[bx+legW*1.56,fy+fh],[bx-legW*.04,fy+fh]],`fill="${P}" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`,jit));
 
   /* WAIST */
-  out.push(wp([[bx-tW*.74,by+tH*.38],[bx+tW*.74,by+tH*.38],[bx+tW*.52,by+tH*.58],[bx-tW*.52,by+tH*.58]],`fill="${A}" fill-opacity=".52" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`,jit));
+  out.push(wp([[bx-tW*1.15,by+tH*.38],[bx+tW*1.15,by+tH*.38],[bx+tW*0.9,by+tH*.58],[bx-tW*0.9,by+tH*.58]],`fill="${A}" fill-opacity=".52" stroke="${A}" stroke-width="2" filter="url(#sk${uid})"`,jit));
   out.push(`<rect x="${jit(bx-w*.036).toFixed(1)}" y="${jit(by+tH*.4).toFixed(1)}" width="${(w*.072).toFixed(1)}" height="${(h*.042).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width="1.4" filter="url(#glow${uid})"/>`);
   out.push(`<rect x="${jit(bx-w*.014).toFixed(1)}" y="${jit(by+tH*.41).toFixed(1)}" width="${(w*.028).toFixed(1)}" height="${(h*.022).toFixed(1)}" rx="1" fill="rgba(255,255,255,.48)"/>`);
 
@@ -402,8 +403,8 @@ function _renderWeapon(ctx, wpn, aura) {
 }
 
 function _renderHelmet(ctx, helm) {
-    const { w, h, bx, by, tH, uid, A, P, c1, jit, wp } = ctx;
-    const hx=bx, hy=by-tH*.35, hW=w*.15, hH=h*.16; 
+  const { w, h, bx, by, tH, uid, A, P, c1, jit, wp } = ctx;
+  const hx=bx, hy=by-tH*.92, hW=w*.11, hH=h*.13; 
     const out = [];
     out.push(`<rect x="${jit(hx-w*.05)}" y="${jit(hy+hH*.68)}" width="${(w*.1).toFixed(1)}"  height="${(h*.056).toFixed(1)}" fill="${P}" stroke="${A}" stroke-width="2.2" filter="url(#sk${uid})"/>`);
     out.push(`<rect x="${jit(hx-w*.076)}" y="${jit(hy+hH*.77)}" width="${(w*.152).toFixed(1)}" height="${(h*.026).toFixed(1)}" fill="url(#bevel${uid})" fill-opacity=".65" stroke="${A}" stroke-width="1.2" filter="url(#sk${uid})"/>`);
