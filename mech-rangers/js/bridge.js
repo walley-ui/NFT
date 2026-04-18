@@ -67,7 +67,7 @@ export async function bridgeVerifyAddress() {
       return;
   }
 
-  // 1. Check Merkle Snapshot (tree.json)
+  // 1. Check Merkle Snapshot (tree.json) - Case Insensitive Keys
   const assignment = _snapshot[_userWallet] || null;
 
   // 2. Fetch Real-time handle from Supabase for Roast context
@@ -162,7 +162,8 @@ async function renderWalletStatus(assignment, dbUser) {
 
   let welcomeRoast = "CLEARANCE CONFIRMED";
   if (typeof getRoast === 'function') {
-      welcomeRoast = getRoast('welcome', assignment.tier, { user: handle, count: assignment.points || 0 });
+      // Points default to 1 for registrants if not specified in tree
+      welcomeRoast = getRoast('welcome', assignment.tier, { user: handle, count: assignment.points || 1 });
   }
 
   panel.innerHTML = `
