@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Mech Rangers ERC-721 — Production Contract v2.4 (ETH Mainnet Upgrade)
+// Mech Rangers ERC-721 — Production Contract v2.5 (Free WL + Sequential Alignment)
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-// UPGRADE: Inheriting from ERC2981 directly is more gas-efficient than IERC2981
 contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     using Strings for uint256;
 
@@ -25,8 +24,8 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     mapping(string => uint256) public rarityMinted;
 
     // ── Whitelist & Provenance ────────────────────────────────
-    bytes32 public wlRoot;
-    bytes32 public gtdRoot;
+    bytes32 public wlRoot;  // UPGRADE: This root now contains the first 700 addresses (FREE)
+    bytes32 public gtdRoot; // UPGRADE: This root contains the remaining registered addresses (PAID)
     
     enum MintStep { Closed, WL, GTD, Public }
     MintStep public currentStep = MintStep.Closed;
@@ -54,29 +53,36 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
         _baseTokenURI = initialBaseURI; 
         _setDefaultRoyalty(msg.sender, 500); // 5%
 
-        // UPDATED: 3-Tier Distribution
         rarityCap["mythic"]    = 2000;
         rarityCap["legendary"] = 3000;
         rarityCap["epic"]      = 5000;
     }
 
-    // ── Public Mint (UPGRADED for ETH Mainnet Phases) ──────────
+    // ── Public Mint (UPGRADED for Free WL Alignment) ──────────
     function mint(
         uint256 quantity,
         bytes32[] calldata merkleProof
     ) external payable whenNotPaused {
         require(currentStep != MintStep.Closed, "Minting is Closed");
         require(totalSupply + quantity <= MAX_SUPPLY, "Collection Sold Out");
-        require(msg.value >= mintPrice * quantity, "Insufficient Payment");
         require(walletMinted[msg.sender] + quantity <= MAX_PER_WALLET, "Exceeds Wallet Limit");
 
+        // ── PHASE LOGIC ──
         if (currentStep == MintStep.WL) {
+            // WL Phase = The 700 Free Spots
             bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-            require(MerkleProof.verify(merkleProof, wlRoot, leaf), "Not on WL");
+            require(MerkleProof.verify(merkleProof, wlRoot, leaf), "Not on Free WL");
+            // NOTE: No msg.value requirement here as it's a Free Mint phase.
         } 
         else if (currentStep == MintStep.GTD) {
+            // GTD Phase = Paid Registered Spots
             bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
             require(MerkleProof.verify(merkleProof, gtdRoot, leaf), "Not on GTD List");
+            require(msg.value >= mintPrice * quantity, "Insufficient Payment for GTD");
+        }
+        else if (currentStep == MintStep.Public) {
+            // Public Phase = Everyone Else
+            require(msg.value >= mintPrice * quantity, "Insufficient Payment for Public");
         }
 
         for (uint256 i = 0; i < quantity; i++) {

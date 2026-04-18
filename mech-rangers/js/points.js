@@ -1,8 +1,8 @@
 /**
  * ═══════════════════════════════════════════════════════
- * points.js — Secure Snapshot & Merkle Engine (ESM)
- * Purpose: Run this to lock the whitelist and generate the root.
- * Integrates: Supabase Leaderboard + Solidity-Matched Merkle Tree
+ * points.js — Secure Snapshot & Merkle Engine (UPGRADED)
+ * Purpose: Locks the 700 Free WL and 9,300 GTD Paid into roots.
+ * Logic: Sequential Sort (First 700 = WL_ROOT | Rest = GTD_ROOT)
  * ═══════════════════════════════════════════════════════ */
 
 import { createClient } from '@supabase/supabase-js';
@@ -13,11 +13,10 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 
-// ── UPGRADED ENV LOADER (TARGETED PATH) ────────────────
+// ── UPGRADED ENV LOADER ────────────────────────────────
 const envPath = path.resolve(process.cwd(), 'mech-rangers', '.env');
 dotenv.config({ path: envPath });
 
-// 1. SECURE CONFIGURATION
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
@@ -28,23 +27,9 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 2. TIER & ALLOWANCE LOGIC (ALIGNED TO 10K / 3-TIER)
-// UPGRADE: All eligible users get a flat allowance of 2 for the ETH mint.
-const TIER_THRESHOLDS = [
-    { tier: 'mythic',    minPoints: 0, allowance: 2 },  
-    { tier: 'legendary', minPoints: 0, allowance: 2 }, 
-    { tier: 'epic',      minPoints: 0, allowance: 2 }
-];
-
-function getTierData(points) {
-    // Referrals are for awareness only; everyone on the list is approved for 2.
-    return { tier: 'verified', allowance: 2 };
-}
-
 /**
- * 3. LEAF ENCODER (STRICT ALIGNMENT)
- * Matches Solidity: keccak256(abi.encodePacked(address))
- * Note: Removed maxAllowance from leaf to match simplified ETH contract.
+ * LEAF ENCODER (SOLIDITY COMPATIBLE)
+ * keccak256(abi.encodePacked(address))
  */
 function encodeLeaf(wallet) {
     return Buffer.from(
@@ -57,57 +42,58 @@ function encodeLeaf(wallet) {
 }
 
 async function generateSnapshot() {
-    console.log("\n📡 CONNECTION DIAGNOSTIC");
-    console.log(`Target URL: ${SUPABASE_URL.substring(0, 18)}...`);
-    console.log("════════════════════════════════════════");
+    console.log("\n📡 MECH RANGERS — DUAL ROOT GEN (700/9300 SPLIT)");
+    console.log("══════════════════════════════════════════════");
 
-    console.log("\n📸 MECH RANGERS — DUAL SNAPSHOT ENGINE START");
-    console.log("════════════════════════════════════════");
-
-    console.log("[1/4] Querying Operative Database...");
+    console.log("[1/4] Querying Recruits by Registration Order...");
     
-    // Fetching from recruits table
+    // Fetching and ordering by ID (First come, first served)
     const { data: users, error } = await supabase
         .from('recruits')
-        .select('wallet_address, twitter_handle, referred_by, phase_type'); 
+        .select('id, wallet_address, registered_at')
+        .order('id', { ascending: true });
 
     if (error) {
         console.error("❌ Database Error:", error.message);
         return;
     }
 
-    console.log(`[2/4] Sorting ${users.length} Operatives into WL and GTD...`);
+    console.log(`[2/4] Processing ${users.length} Operatives...`);
 
     const wlList = [];
     const gtdList = [];
     const seenWallets = new Set(); 
 
-    users.forEach(user => {
+    users.forEach((user, index) => {
         if (!user.wallet_address) return;
         const addr = user.wallet_address.toLowerCase();
         if (seenWallets.has(addr)) return; 
         
         const entry = {
             wallet: ethers.getAddress(addr),
-            allowance: 2,
-            twitter: user.twitter_handle || 'unknown'
+            rank: user.id
         };
 
-        // phase_type logic determines which tree they enter
-        if (user.phase_type === 'WL') {
+        // SEQUENTIAL LOGIC: First 700 get the WL_ROOT (Free Mint)
+        // Everything after 700 gets GTD_ROOT (Paid Mint)
+        if (wlList.length < 700) {
             wlList.push(entry);
         } else {
-            gtdList.push(entry); // Default to GTD (4,000 slots)
+            gtdList.push(entry);
         }
         seenWallets.add(addr);
     });
 
+    console.log(` -> Assigned ${wlList.length} to Phase 0 (Free WL)`);
+    console.log(` -> Assigned ${gtdList.length} to Phase 1 (GTD Paid)`);
+
     // 4. GENERATE TREES
-    console.log("[3/4] Building Dual Merkle Trees (WL & GTD)...");
+    console.log("[3/4] Building Dual Merkle Trees...");
     
     const wlLeaves = wlList.map(e => encodeLeaf(e.wallet));
     const gtdLeaves = gtdList.map(e => encodeLeaf(e.wallet));
     
+    // sortPairs: true is mandatory for OpenZeppelin MerkleProof.sol compatibility
     const wlTree = new MerkleTree(wlLeaves, keccak256, { sortPairs: true });
     const gtdTree = new MerkleTree(gtdLeaves, keccak256, { sortPairs: true });
 
@@ -115,14 +101,14 @@ async function generateSnapshot() {
     const gtdRoot = gtdTree.getHexRoot();
 
     // 5. EXPORT RESULTS
-    console.log("[4/4] Exporting wl-tree.json & gtd-tree.json...");
+    console.log("[4/4] Exporting JSON Snapshots to /public...");
     
     const exportTree = (list, tree, leaves, filename) => {
         const output = {};
         list.forEach((entry, index) => {
             output[entry.wallet.toLowerCase()] = {
                 checksummed: entry.wallet,
-                allowance: 2,
+                rank: entry.rank,
                 proof: tree.getHexProof(leaves[index])
             };
         });
@@ -135,15 +121,20 @@ async function generateSnapshot() {
     exportTree(wlList, wlTree, wlLeaves, 'wl-tree.json');
     exportTree(gtdList, gtdTree, gtdLeaves, 'gtd-tree.json');
 
+    // Create a Certificate for Contract Deployment
     const certPath = path.join(process.cwd(), 'merkle-roots.txt');
     const certContent = `
-MECH RANGERS ETH MAINNET SNAPSHOT
+MECH RANGERS ETH MAINNET ROOTS
 Generated: ${new Date().toISOString()}
 ------------------------------------------
-PHASE 1 (WL) ROOT:  ${wlRoot} (${wlList.length} wallets)
-PHASE 2 (GTD) ROOT: ${gtdRoot} (${gtdList.length} wallets)
+PHASE 0 (FREE WL) ROOT: ${wlRoot}
+PHASE 1 (GTD PAID) ROOT: ${gtdRoot}
 ------------------------------------------
-ACTION: Use setRoots("${wlRoot}", "${gtdRoot}") in MechRangers.sol
+INSTRUCTIONS: 
+1. Open MechRangers.sol
+2. Update the Merkle Root variables:
+   _wlRoot = "${wlRoot}";
+   _gtdRoot = "${gtdRoot}";
 `;
     fs.writeFileSync(certPath, certContent);
 

@@ -1,6 +1,6 @@
 /* ════───────────────────────────────────────────────────────────────────
      recruiter.js — Phase 1: Recruitment & Whitelisting
-     Handles wallet submission, X-verification, and Referrals
+     Upgraded for: Sequential Registry (1-700 Free WL Logic)
      Theme: Rust & Carbon (Reddish Brown Premium)
 ════─────────────────────────────────────────────────────────────────── */
 
@@ -25,7 +25,7 @@ const RECRUIT_CONFIG = {
       repost: "https://x.com/intent/retweet?tweet_id=YOUR_TWEET_ID",
       quote: "https://x.com/intent/tweet?text=Joining%20the%20Resistance&url=YOUR_TWEET_URL"
     },
-    discord: "COMING SOON" 
+    discord: "COMMUNICATIONS OFFLINE" 
   }
 };
 
@@ -34,7 +34,8 @@ let _recruitData = {
   twitter: null,
   referrals: 0,
   refCode: null,
-  followed: false
+  followed: false,
+  rank: null
 };
 
 /* ── INITIALIZE RECRUITMENT ─────────────────────────── */
@@ -45,7 +46,7 @@ export async function initRecruiter() {
   if (root) {
       if (saved) {
         _recruitData = JSON.parse(saved);
-        await syncReferralStats(); // Fetch fresh data from Supabase
+        await syncReferralStats(); 
         renderRecruitSuccess();
       } else {
         renderRecruitUI();
@@ -66,7 +67,7 @@ export function verifyFollow() {
       btn.style.opacity = "0.7";
       
       const timer = setInterval(() => {
-        btn.innerHTML = `VERIFYING... ${seconds}S`;
+        btn.innerHTML = `SCANNING... ${seconds}S`;
         seconds--;
         
         if (seconds < 0) {
@@ -74,7 +75,7 @@ export function verifyFollow() {
           _recruitData.followed = true;
           btn.disabled = false;
           btn.style.opacity = "1";
-          btn.innerHTML = " VERIFIED";
+          btn.innerHTML = "✓ CONNECTION VERIFIED";
           btn.style.borderColor = "#00e676";
           btn.style.color = "#00e676";
           
@@ -85,54 +86,66 @@ export function verifyFollow() {
   }
 }
 
-/* ── SUBMIT DOSSIER ─────────────────────── */
+/* ── SUBMIT DOSSIER (UPGRADED FOR SEQUENTIAL) ──────── */
 export async function submitRecruitment() {
   const wallet = document.getElementById('recWallet').value.trim().toLowerCase();
   const twitter = document.getElementById('recTwitter').value.trim();
   const referrer = new URLSearchParams(window.location.search).get('ref');
 
   if (!_recruitData.followed) {
-    if (typeof toast === 'function') toast("Follow on X", "error");
+    if (typeof toast === 'function') toast("Follow on X first", "error");
     return;
   }
   if (!wallet.startsWith('0x') || wallet.length !== 42) {
-    if (typeof toast === 'function') toast("Invalid Wallet Signal", "error");
+    if (typeof toast === 'function') toast("Invalid Wallet Address", "error");
     return;
   }
   if (!twitter.startsWith('@')) {
-    if (typeof toast === 'function') toast("ID must start with @", "warn");
+    if (typeof toast === 'function') toast("Handle must start with @", "warn");
     return;
   }
 
   const code = wallet.slice(-4).toUpperCase() + Math.random().toString(36).substring(2, 4).toUpperCase();
   
-  const { error } = await _supabase
+  // ALIGNED: We omit 'registered_at' and 'id' to let the DB defaults handle security.
+  // This ensures the Rank is assigned by the server, not the client.
+  const { data: newEntry, error } = await _supabase
     .from('recruits')
     .insert([{
       wallet_address: wallet,
       twitter_handle: twitter,
       referral_code: code,
       referred_by: referrer, 
-      has_followed: true,
-      phase_type: 'GTD'
-    }]);
+      has_followed: true
+    }])
+    .select('id')
+    .single();
 
   if (error) {
-    if (error.code === '23505') toast("Wallet already enlisted!", "warn");
-    else toast("Database Error", "error");
+    if (error.code === '23505') toast("Address already in the grid!", "warn");
+    else toast("Database Offline", "error");
     return;
   }
 
   if (referrer) {
-    await _supabase.from('referrals').insert([{
+    // Background task: link referral
+    _supabase.from('referrals').insert([{
         referrer_wallet: referrer,
         recruit_wallet: wallet
     }]);
   }
 
-  _recruitData = { wallet, twitter, refCode: code, referrals: 0, followed: true };
+  _recruitData = { 
+    wallet, 
+    twitter, 
+    refCode: code, 
+    referrals: 0, 
+    followed: true,
+    rank: newEntry.id 
+  };
+
   localStorage.setItem('mr_recruit_session', JSON.stringify(_recruitData));
-  if (typeof toast === 'function') toast("Dossier Forged!", "success");
+  if (typeof toast === 'function') toast("Recruitment Confirmed!", "success");
   renderRecruitSuccess();
 }
 
@@ -157,32 +170,37 @@ export function renderRecruitUI() {
       <div class="bridge-header" style="text-align:center; margin-bottom:30px">
         <div style="color:#8b4513; font-family:'Share Tech Mono'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase">Mission: Recruitment Phase</div>
         <h2 style="font-family:'Bebas Neue'; font-size:3.5rem; line-height:0.9; color:#eeeef8">JOIN THE<br><span style="color:#8b4513">RESISTANCE</span></h2>
-        <p style="font-size:0.8rem; color:#6a6a9a; margin-top:10px">Secure your position on the Ethereum Whitelist.</p>
+        <p style="font-size:0.8rem; color:#6a6a9a; margin-top:10px">Secure your rank for the 10,000 unit Ethereum drop.</p>
       </div>
       <div class="field-row" style="margin-bottom:15px">
         <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">1. ESTABLISH X-CONNECTION</label>
         <button id="followBtn" class="btn btn-outline" style="width:100%; border-color:#5d2a18; color:#8b4513" onclick="verifyFollow()">FOLLOW @MECHRANGERSNFT</button>
       </div>
       <div class="field-row" style="margin-bottom:15px">
-        <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">2. SUBMIT WALLET FOR WL </label>
-        <input type="text" id="recWallet" class="field-in" placeholder="0x..." style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3)">
+        <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">2. WALLET ADDRESS</label>
+        <input type="text" id="recWallet" class="field-in" placeholder="0x..." style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3); font-family:'Share Tech Mono'">
       </div>
       <div class="field-row" style="margin-bottom:20px">
-        <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">3. YOUR X-HANDLE</label>
+        <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">3. X-HANDLE</label>
         <input type="text" id="recTwitter" class="field-in" placeholder="@username" style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3)">
       </div>
-      <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none;" onclick="submitRecruitment()" disabled>FORGE ENROLLMENT</button>
+      <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px" onclick="submitRecruitment()" disabled>ENROLL IN GRID</button>
     </div>
   `;
 }
 
-/* ── RENDER UI: SUCCESS & REFERRAL ─────────────────── */
+/* ── RENDER UI: SUCCESS (UPGRADED STATUS) ──────────── */
 export function renderRecruitSuccess() {
   const root = document.getElementById('bridge-content');
   if(!root) return;
   const refLink = `${window.location.origin}?ref=${_recruitData.refCode}`;
 
-  let currentRoast = "SYSTEM ONLINE...";
+  // UPGRADE: Determine phase visibility based on rank returned from DB
+  const isFreeWL = (_recruitData.rank && _recruitData.rank <= 700);
+  const phaseLabel = isFreeWL ? "FREE WL MINT" : "GTD PAID MINT";
+  const labelColor = isFreeWL ? "#00e676" : "#8b4513";
+
+  let currentRoast = "LINK CONFIRMED...";
   let tier = _recruitData.referrals > 50 ? 'legendary' : (_recruitData.referrals > 10 ? 'threat' : 'parasite');
 
   if (typeof getRoast === 'function') {
@@ -194,40 +212,38 @@ export function renderRecruitSuccess() {
   
   root.innerHTML = `
     <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 80px auto; padding: 40px; border: 1px solid #8b4513; background: #0c0807;">
-      <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8"> LINK<br><span style="color:#8b4513">CONFIRMED</span></h2>
+      <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8"> CLEARANCE<br><span style="color:${labelColor}">${phaseLabel}</span></h2>
       
       <div style="background:rgba(139,69,19,0.08); padding:25px; border:1px solid #8b4513; margin:25px 0; text-align:center;">
         <div style="margin-bottom:20px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:15px">
             <div style="font-size:1.1rem; font-family:'Share Tech Mono'; color:#ffab91; font-style:italic;">"${currentRoast.toUpperCase()}"</div>
         </div>
-        <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">YOUR INVITE CODE</div>
+        <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">REFERRAL CODE</div>
         <div style="font-size:2rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:8px;">${_recruitData.refCode}</div>
+        <div style="font-size:0.5rem; color:#6a6a9a; margin-top:10px">Rank: #${_recruitData.rank || 'Pending'}</div>
       </div>
 
       <div style="margin: 20px 0; padding: 20px; border: 1px solid #5d2a18; background: rgba(0,0,0,0.4);">
         <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1.2rem; letter-spacing:2px; margin-bottom:15px; text-align:center">SOCIAL MISSIONS</div>
         <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px">
-          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.like}','_blank')">LIKE</button>
-          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.repost}','_blank')">REPOST</button>
-          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.quote}','_blank')">QUOTE</button>
-        </div>
-        <div style="text-align:center; padding:10px; border:1px dashed #5865F2; color:#5865F2; font-family:'Share Tech Mono'; font-size:0.7rem">
-          DISCORD: ${RECRUIT_CONFIG.tasks.discord}
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.like}','_blank')">LIKE</button>
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.repost}','_blank')">REPOST</button>
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.quote}','_blank')">QUOTE</button>
         </div>
       </div>
 
       <div class="field-row">
            <input type="text" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center;">
       </div>
-      <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
-      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none" onclick="tweetRef('${refLink}')">𝕏 SHARE SIGNAL</button>
+      <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513; border-color:#5d2a18" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
+      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE SIGNAL</button>
       
       <div style="margin-top:25px; font-size:0.6rem; color:#6a6a9a; text-align:center; font-family:'Share Tech Mono'">
-        ACTIVE RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | NETWORK: ETHEREUM
+        SUCCESSFUL RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | NETWORK: ETHEREUM
       </div>
 
       <div style="text-align:center; margin-top:25px">
-        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RESET TERMINAL</button>
+        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RESET SESSION</button>
       </div>
     </div>
   `;
@@ -238,8 +254,8 @@ export function copyRef(link) {
   if (typeof toast === 'function') toast("Signal Link Copied", "info");
 }
 
-export function tweetRef(link) {
-  const text = encodeURIComponent(`I've joined the @MechRangersNFT Whitelist on Ethereum. 10k Collection. Enroll here: `);
+export function tweetRef(link, phase) {
+  const text = encodeURIComponent(`I've secured clearance for the @MechRangersNFT drop on Ethereum. \n\nStatus: ${phase}\n\nEnroll here: `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 
