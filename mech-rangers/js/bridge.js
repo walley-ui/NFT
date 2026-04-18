@@ -20,7 +20,8 @@ const BRIDGE_CONFIG = {
   chainName: 'Base',
   rpcUrl: 'https://mainnet.base.org',
   openSeaBase: 'https://opensea.io/collection/mech-rangers-official', 
-  snapshotUrl: './tree.json', // Shifted to tree.json from points.js
+  // UPGRADE: Pointing to the absolute root where /public files are served
+  snapshotUrl: '/tree.json', 
   xAccount: 'MechRangersNFT'
 };
 
@@ -35,12 +36,14 @@ export async function initBridge() {
   if (root) root.innerHTML = `<div id="bridgeRoot" class="wrap" style="margin-top:100px; max-width:500px"></div>`;
   
   try {
-    const res = await fetch(BRIDGE_CONFIG.snapshotUrl);
-    if (!res.ok) throw new Error("Snapshot not found");
+    // UPGRADE: Force fresh fetch from the server root
+    const res = await fetch(`${BRIDGE_CONFIG.snapshotUrl}?t=${Date.now()}`);
+    if (!res.ok) throw new Error("Snapshot not found at /tree.json");
     _snapshot = await res.json();
-    console.log("Survivor Snapshot Loaded via Merkle Tree.");
+    console.log("🛡️ Mech Rangers: Whitelist Snapshot Loaded.");
   } catch (err) {
-    console.warn("⛔ No snapshot found. ix_prinx: You must run node js/points.js first.");
+    console.error("⛔ Bridge Error:", err.message);
+    bridgeShowStatus('error', 'SYSTEM OFFLINE: Snapshot missing in /public');
   }
   renderBridgeUI();
 }
@@ -57,8 +60,15 @@ export async function bridgeVerifyAddress() {
 
   _userWallet = address;
   
+  // UPGRADE: Ensure snapshot exists before lookup to prevent crashes
+  if (!_snapshot) {
+      bridgeShowStatus('error', 'Snapshot not loaded. Re-initializing...');
+      initBridge();
+      return;
+  }
+
   // 1. Check Merkle Snapshot (tree.json)
-  const assignment = _snapshot ? _snapshot[_userWallet] : null;
+  const assignment = _snapshot[_userWallet] || null;
 
   // 2. Fetch Real-time handle from Supabase for Roast context
   const { data: dbUser } = await _supabase
@@ -68,13 +78,11 @@ export async function bridgeVerifyAddress() {
     .single();
 
   if (assignment) {
-    // If your snapshot contains an ID, keep the original NFT lookup logic
     _assignedNFT = (typeof allNFTs !== 'undefined' && assignment.id) ? allNFTs.find(n => n.id === assignment.id) : null;
     renderWalletStatus(assignment, dbUser);
-    if (typeof toast === 'function') toast("Assignment Verified!", "success");
+    if (typeof toast === 'function') toast("Clearance Confirmed!", "success");
   } else {
     renderWalletStatus(null, dbUser);
-    // Trigger Roast on Rejection
     if (typeof getRoast === 'function') {
         const roast = getRoast('rejected', 'parasite', { user: dbUser?.twitter_handle || 'Stranger' });
         bridgeShowStatus('error', roast.toUpperCase());
@@ -152,7 +160,6 @@ async function renderWalletStatus(assignment, dbUser) {
   const tierColors = { mythic: '#ff3d00', legendary: '#ffc400', epic: '#b44fff', rare: '#00e5ff', uncommon: '#00e676', common: '#6a6a9a' };
   const tierColor = tierColors[assignment.tier] || '#fff';
 
-  // Integrate Welcome Roast
   let welcomeRoast = "CLEARANCE CONFIRMED";
   if (typeof getRoast === 'function') {
       welcomeRoast = getRoast('welcome', assignment.tier, { user: handle, count: assignment.points || 0 });

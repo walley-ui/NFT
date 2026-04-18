@@ -74,14 +74,15 @@ async function generateSnapshot() {
 
     // Pull from both potential sources to ensure no data loss
     console.log("[1/4] Querying Supabase Resistance Records...");
-    const { data: users, error } = await supabase
-        .from('recruits')
-        .select('wallet_address, twitter_handle, referred_by');
+    
+    // UPGRADE: Parallel execution for faster production response
+    const [usersResponse, pointsResponse] = await Promise.all([
+        supabase.from('recruits').select('wallet_address, twitter_handle, referred_by'),
+        supabase.from('referrals').select('referrer_wallet, count')
+    ]);
 
-    // Also pull points if you have a separate leaderboard/referrals view
-    const { data: pointsData } = await supabase
-        .from('referrals')
-        .select('referrer_wallet, count');
+    const { data: users, error } = usersResponse;
+    const { data: pointsData } = pointsResponse;
 
     if (error) {
         console.error("❌ Database Error:", error.message);
@@ -90,16 +91,27 @@ async function generateSnapshot() {
 
     console.log(`[2/4] Processing ${users.length} Operatives...`);
 
+    // UPGRADE: Create a Point Map for O(1) lookup speed at production scale
+    const pointsMap = new Map();
+    if (pointsData) {
+        pointsData.forEach(p => {
+            if (p.referrer_wallet) {
+                pointsMap.set(p.referrer_wallet.toLowerCase(), p.count);
+            }
+        });
+    }
+
     const whitelist = [];
     const tierCounts = { mythic: 0, legendary: 0, epic: 0, rare: 0, uncommon: 0, common: 0 };
     const seenWallets = new Set(); 
 
     users.forEach(user => {
+        if (!user.wallet_address) return;
         const addr = user.wallet_address.toLowerCase();
         if (seenWallets.has(addr)) return; 
         
-        // Calculate points based on referrals found in the referrals table
-        const userPoints = pointsData?.find(p => p.referrer_wallet.toLowerCase() === addr)?.count || 0;
+        // UPGRADE: Instant Map lookup instead of .find() array search
+        const userPoints = pointsMap.get(addr) || 0;
         
         // Logic: Even if 0 points, they are 'common' if they registered (base allowance 1)
         const finalPoints = Math.max(userPoints, 1); 
@@ -138,17 +150,24 @@ async function generateSnapshot() {
         };
     });
 
-    // Ensure directory exists using process.cwd() for mobile/terminal environments
-    const publicDir = path.join(process.cwd(), 'public');
-    if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+    // UPGRADE: Multi-path safety to ensure both local and nested public dirs are updated
+    const rootDir = process.cwd();
+    const pathsToSync = [
+        path.join(rootDir, 'public'),
+        path.join(rootDir, 'mech-rangers', 'public')
+    ];
 
-    // Save the Tree for the Bridge.js to read
-    fs.writeFileSync(path.join(publicDir, 'tree.json'), JSON.stringify(treeOutput, null, 2));
-    
-    // Save detailed logs for ix_prinx
-    fs.writeFileSync(path.join(publicDir, 'snapshot-logs.json'), JSON.stringify(whitelist, null, 2));
+    pathsToSync.forEach(publicDir => {
+        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+        
+        // Save the Tree for the Bridge.js to read
+        fs.writeFileSync(path.join(publicDir, 'tree.json'), JSON.stringify(treeOutput, null, 2));
+        
+        // Save detailed logs for ix_prinx
+        fs.writeFileSync(path.join(publicDir, 'snapshot-logs.json'), JSON.stringify(whitelist, null, 2));
+    });
 
-    const certPath = path.join(process.cwd(), 'merkle-root.txt');
+    const certPath = path.join(rootDir, 'merkle-root.txt');
     const certContent = `
 MECH RANGERS SNAPSHOT CERTIFICATE
 Generated: ${new Date().toISOString()}
