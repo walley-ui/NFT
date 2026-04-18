@@ -69,6 +69,11 @@ function encodeLeaf(wallet, maxAllowance) {
 }
 
 async function generateSnapshot() {
+    console.log("\n📡 CONNECTION DIAGNOSTIC");
+    console.log(`Target URL: ${SUPABASE_URL.substring(0, 18)}...`);
+    console.log(`Working Directory: ${process.cwd()}`);
+    console.log("════════════════════════════════════════");
+
     console.log("\n📸 MECH RANGERS — SNAPSHOT ENGINE START");
     console.log("════════════════════════════════════════");
 
@@ -78,11 +83,11 @@ async function generateSnapshot() {
     // UPGRADE: Parallel execution for faster production response
     const [usersResponse, pointsResponse] = await Promise.all([
         supabase.from('recruits').select('wallet_address, twitter_handle, referred_by'),
-        supabase.from('referrals').select('referrer_wallet, count')
+        supabase.from('referrals').select('referrer_wallet') // Dynamic aggregation logic
     ]);
 
     const { data: users, error } = usersResponse;
-    const { data: pointsData } = pointsResponse;
+    const { data: rawReferrals } = pointsResponse;
 
     if (error) {
         console.error("❌ Database Error:", error.message);
@@ -91,12 +96,14 @@ async function generateSnapshot() {
 
     console.log(`[2/4] Processing ${users.length} Operatives...`);
 
-    // UPGRADE: Create a Point Map for O(1) lookup speed at production scale
+    // DYNAMIC UPGRADE: Aggregate raw referral rows into a points map
     const pointsMap = new Map();
-    if (pointsData) {
-        pointsData.forEach(p => {
-            if (p.referrer_wallet) {
-                pointsMap.set(p.referrer_wallet.toLowerCase(), p.count);
+    if (rawReferrals) {
+        rawReferrals.forEach(ref => {
+            if (ref.referrer_wallet) {
+                const cleanAddr = ref.referrer_wallet.toLowerCase();
+                const currentCount = pointsMap.get(cleanAddr) || 0;
+                pointsMap.set(cleanAddr, currentCount + 1);
             }
         });
     }
@@ -154,17 +161,23 @@ async function generateSnapshot() {
     const rootDir = process.cwd();
     const pathsToSync = [
         path.join(rootDir, 'public'),
-        path.join(rootDir, 'mech-rangers', 'public')
+        path.join(rootDir, 'mech-rangers', 'public'),
+        path.join(rootDir, 'mech-rangers', 'js', 'public') // Extra fallback for dev
     ];
 
     pathsToSync.forEach(publicDir => {
-        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-        
-        // Save the Tree for the Bridge.js to read
-        fs.writeFileSync(path.join(publicDir, 'tree.json'), JSON.stringify(treeOutput, null, 2));
-        
-        // Save detailed logs for ix_prinx
-        fs.writeFileSync(path.join(publicDir, 'snapshot-logs.json'), JSON.stringify(whitelist, null, 2));
+        try {
+            if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+            
+            // Save the Tree for the Bridge.js to read
+            fs.writeFileSync(path.join(publicDir, 'tree.json'), JSON.stringify(treeOutput, null, 2));
+            
+            // Save detailed logs for ix_prinx
+            fs.writeFileSync(path.join(publicDir, 'snapshot-logs.json'), JSON.stringify(whitelist, null, 2));
+            console.log(`✅ Synced: ${publicDir}/tree.json`);
+        } catch (e) {
+            console.warn(`⚠️ Could not write to ${publicDir}: ${e.message}`);
+        }
     });
 
     const certPath = path.join(rootDir, 'merkle-root.txt');
