@@ -182,6 +182,12 @@ function resetGeneratorState() {
   console.log("Admin: Factory Cleaned. Ready for New Epoch.");
 }
 
+// Global Exports
+window.AdminAuth = AdminAuth;
+window.generateNFT = generateNFT;
+window.resetGeneratorState = resetGeneratorState;
+window.SUPPLY_CAPS = SUPPLY_CAPS;
+
 if (typeof module !== 'undefined') {
     module.exports = { AdminAuth, massForge10k, generateNFT, resetGeneratorState, allNFTs, mintedCount };
 }
