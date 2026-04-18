@@ -257,7 +257,7 @@ function _renderMechBody(ctx, traits) {
   out.push(_renderBadge(ctx, traits.badge.val));
 
   /* WEAPON */
-  out.push(_renderWeapon(ctx, traits.weapon.val));
+  out.push(_renderWeapon(ctx, traits.weapon.val, traits.aura));
 
   /* HELMET */
   out.push(_renderHelmet(ctx, traits.helmet.val));
@@ -295,7 +295,7 @@ function _renderBadge(ctx, badge) {
     return out.join('');
 }
 
-function _renderWeapon(ctx, wpn) {
+function _renderWeapon(ctx, wpn, aura) {
     if(wpn === 'none') return '';
     const { w, h, by, tH, armW, tW, uid, A, jit, wp, isLeft, bx } = ctx;
     const lr=isLeft?-1:1;
@@ -391,7 +391,7 @@ function _renderWeapon(ctx, wpn) {
         for(let r2=0;r2<3;r2++){const ry=wy+h*.15-r2*(h*.18);out.push(`<rect x="${jit(wx-w*.016)}" y="${jit(ry)}" width="${(w*.032).toFixed(1)}" height="${(h*.018).toFixed(1)}" fill="url(#bevel${uid})" stroke="${A}" stroke-width=".8" filter="url(#wm${uid})"/>`)}
         out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.058).toFixed(1)}" fill="rgba(0,0,0,.52)" stroke="${A}" stroke-width="2.2" filter="url(#wm${uid})"/>`);
         out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.046).toFixed(1)}" fill="url(#orb${uid})" filter="url(#bloom${uid})"/>`);
-        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.02).toFixed(1)}" fill="${ctx.auraVal!=='none'?ctx.auraColor:A}" filter="url(#glow${uid})"/>`);
+        out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.02).toFixed(1)}" fill="${aura.val !== 'none' ? aura.color : A}" filter="url(#glow${uid})"/>`);
         out.push(`<circle cx="${jit(wx)}" cy="${jit(wy-h*.36)}" r="${(w*.066).toFixed(1)}" fill="none" stroke="${A}" stroke-opacity=".4" stroke-width="1.3" stroke-dasharray="4,4"/>`);
         out.push(`<ellipse cx="${jit(wx)}" cy="${jit(wy-h*.36)}" rx="${(w*.066).toFixed(1)}" ry="${(w*.03).toFixed(1)}" fill="none" stroke="${A}" stroke-opacity=".24" stroke-width="1" stroke-dasharray="3,5" transform="rotate(60,${wx.toFixed(1)},${(wy-h*.36).toFixed(1)})"/>`);
         break;

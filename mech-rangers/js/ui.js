@@ -131,6 +131,7 @@ function updateStats() {
     const countEl = document.getElementById('cnt-' + r);
     if (countEl) countEl.textContent = countVal.toLocaleString();
     
+    // Aligned with the SUPPLY_CAPS getter in generator.js
     const cap = (typeof SUPPLY_CAPS !== 'undefined') ? SUPPLY_CAPS[r] : 2000;
     const pct = Math.min(100, (countVal / cap * 100)).toFixed(1);
     const capEl = document.getElementById('cap-' + r);

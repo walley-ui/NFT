@@ -35,6 +35,10 @@ function rng32(seed) {
  * @returns {Object}  selected option
  */
 function weightedPick(opts, rng) {
+  // ─── UPGRADE: SAFETY CHECK ───
+  // Ensures the app doesn't go "blank" if data is missing.
+  if (!opts || opts.length === 0) return { name: "default", weight: 1, label: "Standard", color: "#888" };
+
   const total = opts.reduce((acc, o) => acc + (o.weight || 0), 0);
   if (total <= 0) return opts[0];
   
@@ -75,6 +79,7 @@ function randInt(min, max, rng) {
  * Converts string-based identifiers (Wallet, Hash) into a numeric seed.
  */
 function dnaToSeed(dna) {
+  if (typeof dna !== 'string') dna = String(dna);
   return dna.split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a;
@@ -92,10 +97,25 @@ function generateMechData(dna, config) {
   // Resolve Rarity
   const tier = weightedPick(config.tiers, roll);
   
+  // ─── UPGRADE: VISUAL TRAIT SELECTION ───
+  // This picks the actual parts that the renderer.js looks for.
+  // Without these, your image remains "invisible" or blank.
+  const traits = {
+    suit: weightedPick(config.suits, roll),
+    background: weightedPick(config.backgrounds, roll),
+    aura: weightedPick(config.auras, roll),
+    weapon: weightedPick(config.weapons, roll),
+    badge: weightedPick(config.badges, roll),
+    helmet: weightedPick(config.helmets, roll)
+  };
+
   return {
+    id: Math.abs(seed % 10000), // Adds a numeric ID for the watermark
+    seed: seed,
     dna: dna,
     tier: tier.name,
     multiplier: tier.multiplier,
+    traits: traits, // This is the "map" for renderer.js
     stats: {
       atk: Math.floor(randInt(config.minAtk, config.maxAtk, roll) * tier.multiplier),
       def: Math.floor(randInt(config.minDef, config.maxDef, roll) * tier.multiplier),
