@@ -258,7 +258,7 @@ export function renderRecruitSuccess() {
   
   root.innerHTML = `
     <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 40px auto; padding: 30px; border: 1px solid #8b4513; background: #0c0807; border-radius:4px">
-      <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8; margin:0"> SUBMISSION<br><span style="color:${labelColor}">FORM</span></h2>
+      <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8; margin:0"> CHECK<br><span style="color:${labelColor}">INVITES?</span></h2>
       
       <div style="background:rgba(139,69,19,0.08); padding:20px; border:1px solid #8b4513; margin:20px 0; text-align:center;">
         <div style="margin-bottom:15px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:10px">

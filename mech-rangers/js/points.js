@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════
  * points.js — Secure Snapshot & Merkle Engine (UPGRADED)
  * Purpose: Locks the 700 Free WL and 9,300 GTD Paid into roots.
- * Logic: Sequential Sort (First 700 = WL_ROOT | Rest = GTD_ROOT)
+ * Logic: ID-Based Filter (ID <= 700 = WL_ROOT | ID > 700 = GTD_ROOT)
  * Update: Hard-coded absolute path for Sanity-Hub stability.
  * ═══════════════════════════════════════════════════════ */
 
@@ -67,12 +67,13 @@ async function generateSnapshot() {
     const gtdList = [];
     const seenWallets = new Set(); 
 
-    users.forEach((user, index) => {
+    users.forEach((user) => {
         if (!user.wallet_address) return;
         const addr = user.wallet_address.toLowerCase().trim();
         if (seenWallets.has(addr)) return; 
         
-        if (wlList.length < 700) {
+        // FIX: Check actual database ID/Rank instead of array index
+        if (user.id <= 700) {
             wlList.push({
                 wallet: ethers.getAddress(addr),
                 rank: user.id,
@@ -129,7 +130,6 @@ async function generateSnapshot() {
     exportTree(gtdList, gtdTree, 'gtd-tree.json');
 
     // Create a Certificate for Contract Deployment
-    // Placed in project root for easy terminal access
     const certPath = '/workspaces/NFT/mech-rangers/merkle-roots.txt';
     const certContent = `
 MECH RANGERS ETH MAINNET ROOTS

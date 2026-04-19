@@ -116,7 +116,7 @@ function renderAccessDenied() {
       <div style="background:rgba(255,255,255,0.03); padding:20px; border:1px solid #252540; margin: 20px 0; border-radius:4px">
         <button class="btn btn-gen" onclick="window.open('${BRIDGE_CONFIG.openSeaBase}','_blank')" style="width:100%; background:#ff1744; color:#fff; border:none; padding:15px; font-weight:bold; cursor:pointer">BUY ON OPENSEA</button>
       </div>
-      <button class="btn btn-outline" onclick="renderBridgeUI()" style="width:100%; border-color:transparent; font-size:0.7rem; color:#6a6a9a; cursor:pointer">CHECK A DIFFERENT ADDRESS</button>
+      <button class="btn btn-outline" onclick="renderBridgeUI()" style="width:100%; border-color:transparent; font-size:0.7rem; color:#6a6a9a; cursor:pointer">OR CHECK A DIFFERENT ADDRESS</button>
     </div>`;
 }
 
@@ -132,7 +132,7 @@ async function renderWalletStatus(assignment) {
   panel.innerHTML = `
     <div class="bridge-status whitelisted" style="text-align:center; border:1px solid ${color}; padding:25px; background: rgba(0,0,0,0.6)">
       <div style="font-family:'Share Tech Mono'; color:${color}; font-size:0.8rem; margin-bottom:15px; font-style:italic">"${welcomeRoast.toUpperCase()}"</div>
-      <div class="bridge-tier" style="color:${color}; font-family:'Bebas Neue'; font-size:2rem">${assignment.phase}</div>
+      <div class="bridge-tier" style="color:${color}; font-family:'Bebas Neue'; font-size:2rem">MINT ALLOCATION</div>
       <div class="bridge-msg" style="margin:10px 0; font-size:0.9rem; color:#fff">Allocation: <strong>${assignment.allowance} Unit(s)</strong></div>
       <div style="background:rgba(255,255,255,0.05); padding:10px; border:1px solid #252540; margin: 20px 0">
         <div style="font-size:0.6rem; color:#6a6a9a; text-transform:uppercase">Verified Wallet</div>
@@ -148,7 +148,7 @@ async function renderWalletStatus(assignment) {
 }
 
 export function shareToX(phase = "CLEARANCE") {
-  const text = encodeURIComponent(`My wallet is secured for the @${BRIDGE_CONFIG.xAccount} drop on @Ethereum. \n\neligible : ${phase}\n\nCheck if you got in: `);
+  const text = encodeURIComponent(`I got the WL for @${BRIDGE_CONFIG.xAccount} NFT drop chance on @Ethereum. \n\neligible for: ${phase}\n\nCheck if you got in: `);
   const url = encodeURIComponent(window.location.origin);
   window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
 }
@@ -189,7 +189,7 @@ export function renderBridgeUI() {
       <div id="bridgeWalletPanel">
         <div class="search-box">
           <input type="text" id="bridgeWalletInput" class="field-in" placeholder="0x..." style="width:100%; margin-bottom:10px; text-align:center; background:rgba(0,0,0,0.3); border:1px solid #333; color:#fff; font-family:'Share Tech Mono'; padding:10px">
-          <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.2rem" onclick="bridgeVerifyAddress()">SCAN GRID</button>
+          <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.2rem" onclick="bridgeVerifyAddress()">CHECK</button>
         </div>
         <div class="divider" style="margin:20px 0; text-align:center; color:#3a3a5a; font-size:0.7rem">OR</div>
         <button class="btn btn-outline" style="width:100%; font-size:0.9rem; border:1px dashed #5d2a18; color:#8b4513; background:transparent; padding:10px; cursor:pointer" onclick="bridgeConnect()">LINK WALLET</button>
