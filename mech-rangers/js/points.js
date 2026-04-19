@@ -3,7 +3,7 @@
  * points.js — Secure Snapshot & Merkle Engine (UPGRADED)
  * Purpose: Locks the 700 Free WL and 9,300 GTD Paid into roots.
  * Logic: Sequential Sort (First 700 = WL_ROOT | Rest = GTD_ROOT)
- * Update: WL = 1 Max Mint | GTD = 2 Max Mint
+ * Update: Hard-coded absolute path for Sanity-Hub stability.
  * ═══════════════════════════════════════════════════════ */
 
 import { createClient } from '@supabase/supabase-js';
@@ -30,7 +30,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /**
  * LEAF ENCODER (SOLIDITY COMPATIBLE)
- * keccak256(abi.encodePacked(address))
  */
 function encodeLeaf(wallet) {
     return Buffer.from(
@@ -46,9 +45,12 @@ async function generateSnapshot() {
     console.log("\n📡 MECH RANGERS — DUAL ROOT GEN (700/9300 SPLIT)");
     console.log("══════════════════════════════════════════════");
 
+    // FIX: Hard-coded Absolute Path to bypass process.cwd() mismatch
+    const PUBLIC_DIR = '/workspaces/NFT/mech-rangers/public';
+    console.log(`📍 FORCED TARGET DIRECTORY: ${PUBLIC_DIR}`);
+
     console.log("[1/4] Querying Recruits by Registration Order...");
     
-    // Fetching and ordering by ID (First come, first served)
     const { data: users, error } = await supabase
         .from('recruits')
         .select('id, wallet_address, registered_at')
@@ -67,29 +69,27 @@ async function generateSnapshot() {
 
     users.forEach((user, index) => {
         if (!user.wallet_address) return;
-        const addr = user.wallet_address.toLowerCase();
+        const addr = user.wallet_address.toLowerCase().trim();
         if (seenWallets.has(addr)) return; 
         
-        // SEQUENTIAL LOGIC: First 700 get the WL_ROOT (Free Mint)
-        // Everything after 700 gets GTD_ROOT (Paid Mint)
         if (wlList.length < 700) {
             wlList.push({
                 wallet: ethers.getAddress(addr),
                 rank: user.id,
-                allowance: 1 // WL Phase: 1 Free Mint
+                allowance: 1 
             });
         } else {
             gtdList.push({
                 wallet: ethers.getAddress(addr),
                 rank: user.id,
-                allowance: 2 // GTD Phase: 2 Max Mints
+                allowance: 2 
             });
         }
         seenWallets.add(addr);
     });
 
-    console.log(` -> Assigned ${wlList.length} to Phase 0 (Free WL - 1 Unit Max)`);
-    console.log(` -> Assigned ${gtdList.length} to Phase 1 (GTD Paid - 2 Units Max)`);
+    console.log(` -> Assigned ${wlList.length} to Phase 0 (Free WL)`);
+    console.log(` -> Assigned ${gtdList.length} to Phase 1 (GTD Paid)`);
 
     // 4. GENERATE TREES
     console.log("[3/4] Building Dual Merkle Trees...");
@@ -97,7 +97,6 @@ async function generateSnapshot() {
     const wlLeaves = wlList.map(e => encodeLeaf(e.wallet));
     const gtdLeaves = gtdList.map(e => encodeLeaf(e.wallet));
     
-    // sortPairs: true is mandatory for OpenZeppelin MerkleProof.sol compatibility
     const wlTree = new MerkleTree(wlLeaves, keccak256, { sortPairs: true });
     const gtdTree = new MerkleTree(gtdLeaves, keccak256, { sortPairs: true });
 
@@ -105,32 +104,33 @@ async function generateSnapshot() {
     const gtdRoot = gtdTree.getHexRoot();
 
     // 5. EXPORT RESULTS
-    console.log("[4/4] Exporting JSON Snapshots to /public...");
+    console.log("[4/4] Exporting JSON Snapshots...");
     
     const exportTree = (list, tree, filename) => {
         const output = {};
         list.forEach((entry) => {
-            // Robust check: re-encode leaf per entry to ensure proof integrity
             const leaf = encodeLeaf(entry.wallet);
             output[entry.wallet.toLowerCase()] = {
                 checksummed: entry.wallet,
                 rank: entry.rank,
-                allowance: entry.allowance, // Included in JSON for Bridge check
+                allowance: entry.allowance,
                 proof: tree.getHexProof(leaf)
             };
         });
         
-        const publicDir = path.join(process.cwd(), 'public');
-        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-        fs.writeFileSync(path.join(publicDir, filename), JSON.stringify(output, null, 2));
-        console.log(` ✅ Generated: ${filename}`);
+        if (!fs.existsSync(PUBLIC_DIR)) fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+        
+        const finalPath = path.join(PUBLIC_DIR, filename);
+        fs.writeFileSync(finalPath, JSON.stringify(output, null, 2));
+        console.log(` ✅ File Locked: ${finalPath}`);
     };
 
     exportTree(wlList, wlTree, 'wl-tree.json');
     exportTree(gtdList, gtdTree, 'gtd-tree.json');
 
     // Create a Certificate for Contract Deployment
-    const certPath = path.join(process.cwd(), 'merkle-roots.txt');
+    // Placed in project root for easy terminal access
+    const certPath = '/workspaces/NFT/mech-rangers/merkle-roots.txt';
     const certContent = `
 MECH RANGERS ETH MAINNET ROOTS
 Generated: ${new Date().toISOString()}
@@ -138,11 +138,6 @@ Generated: ${new Date().toISOString()}
 PHASE 0 (FREE WL) ROOT: ${wlRoot}
 PHASE 1 (GTD PAID) ROOT: ${gtdRoot}
 ------------------------------------------
-INSTRUCTIONS: 
-1. Open MechRangers.sol
-2. Update the Merkle Root variables:
-   _wlRoot = "${wlRoot}";
-   _gtdRoot = "${gtdRoot}";
 `;
     fs.writeFileSync(certPath, certContent);
 

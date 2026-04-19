@@ -165,13 +165,13 @@ export function renderRecruitUI() {
   root.innerHTML = `
     <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 80px auto; padding: 40px; border: 1px solid #5d2a18; background: #0c0807; box-shadow: 0 0 30px rgba(139,69,19,0.15); position:relative">
       <div class="bridge-header" style="text-align:center; margin-bottom:30px">
-        <div style="color:#8b4513; font-family:'Share Tech Mono'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase">Mission: Recruitment Phase</div>
+        <div style="color:#8b4513; font-family:'Share Tech Mono'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase"></div>
         <h2 style="font-family:'Bebas Neue'; font-size:3.5rem; line-height:0.9; color:#eeeef8">JOIN THE<br><span style="color:#8b4513">RESISTANCE</span></h2>
         <p style="font-size:0.8rem; color:#6a6a9a; margin-top:10px">Secure your WL for the 10,000 unit drop on Ethereum.</p>
       </div>
 
       <div style="margin: 20px 0; padding: 20px; border: 1px solid #5d2a18; background: rgba(0,0,0,0.4);">
-        <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1.2rem; letter-spacing:2px; margin-bottom:15px; text-align:center">PRE-ENROLLMENT TASKS</div>
+        <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1.2rem; letter-spacing:2px; margin-bottom:15px; text-align:center">ENROLLMENT TASKS</div>
         <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px">
           <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.like}','_blank')">LIKE</button>
           <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.repost}','_blank')">REPOST</button>
@@ -194,7 +194,7 @@ export function renderRecruitUI() {
         <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">3. X-HANDLE</label>
         <input type="text" id="recTwitter" class="field-in" placeholder="@username" style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3); color:#fff; padding:10px">
       </div>
-      <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.2rem" onclick="submitRecruitment()" disabled>ENROLL IN GRID</button>
+      <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.2rem" onclick="submitRecruitment()" disabled>SUBMIT</button>
     </div>
   `;
 }
