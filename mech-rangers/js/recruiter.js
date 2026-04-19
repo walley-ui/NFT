@@ -99,7 +99,8 @@ export async function submitRecruitment() {
     if (typeof toast === 'function') toast("Follow on X first", "error");
     return;
   }
-  if (!wallet.startsWith('0x') || wallet.length !== 42) {
+  // RELAXED VALIDATION: No longer strictly 42 characters to allow for cropped/test wallets
+  if (!wallet.startsWith('0x') || wallet.length < 10) {
     if (typeof toast === 'function') toast("Invalid Wallet Address", "error");
     return;
   }
@@ -161,10 +162,8 @@ export async function submitRecruitment() {
     localStorage.setItem('mr_recruit_session', JSON.stringify(_recruitData));
     if (typeof toast === 'function') toast("Invites Confirmed!", "success");
     
-    // UI Upgrade: Use a slight delay to ensure localStorage is ready
-    setTimeout(() => {
-        renderRecruitSuccess();
-    }, 100);
+    // UI Upgrade: Direct call to render success screen
+    renderRecruitSuccess();
 
   } catch (err) {
     btn.disabled = false;
@@ -210,12 +209,12 @@ export function renderRecruitUI() {
       </div>
 
       <div class="glass-card" style="margin-bottom: 20px; padding: 15px; border: 1px solid #5d2a18; background: rgba(88,101,242,0.05); border-radius: 4px; text-align:center">
-        <div style="font-family:'Bebas Neue'; color:#5865f2; font-size:1rem; letter-spacing:2px; margin-bottom:5px">2. DISCORD COMMS</div>
+        <div style="font-family:'Bebas Neue'; color:#5865f2; font-size:1rem; letter-spacing:2px; margin-bottom:5px">2. DISCORD CHANNEL</div>
         <div style="font-family:'Share Tech Mono'; font-size:0.7rem; color:#6a6a9a;">STATUS: <span style="color:#ff1744; font-weight:bold">${RECRUIT_CONFIG.tasks.discord}</span></div>
       </div>
 
       <div style="padding: 15px; border: 1px solid #8b4513; background: rgba(0,0,0,0.3); border-radius: 4px;">
-        <div style="font-family:'Bebas Neue'; color:#eee; font-size:1rem; letter-spacing:2px; margin-bottom:15px; text-align:center">3. DOSSIER ENTRY</div>
+        <div style="font-family:'Bebas Neue'; color:#eee; font-size:1rem; letter-spacing:2px; margin-bottom:15px; text-align:center">3. ENTRY</div>
         
         <div class="field-row" style="margin-bottom:12px">
           <button id="followBtn" class="btn btn-outline" style="width:100%; border:1px solid #5d2a18; color:#8b4513; background:transparent; cursor:pointer; font-size:0.7rem; padding:10px" onclick="verifyFollow()">FOLLOW @MECHRANGERSNFT</button>
@@ -236,7 +235,7 @@ export function renderRecruitUI() {
   `;
 }
 
-/* ── RENDER UI: SUCCESS (UPGRADED STATUS) ──────────── */
+/* ── RENDER UI: SUCCESS (REPLACEMENT LOGIC) ──────────── */
 export function renderRecruitSuccess() {
   const root = document.getElementById('bridge-content');
   if(!root) return;
@@ -247,7 +246,7 @@ export function renderRecruitSuccess() {
   const allocationUnits = isFreeWL ? 1 : 2;
   const labelColor = isFreeWL ? "#00e676" : "#8b4513";
 
-  let currentRoast = "LINK CONFIRMED...";
+  let currentRoast = "UPLINK STABLE...";
   let tier = _recruitData.referrals > 50 ? 'legendary' : (_recruitData.referrals > 10 ? 'threat' : 'parasite');
 
   if (typeof getRoast === 'function') {
@@ -259,38 +258,35 @@ export function renderRecruitSuccess() {
   
   root.innerHTML = `
     <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 40px auto; padding: 30px; border: 1px solid #8b4513; background: #0c0807; border-radius:4px">
-      <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8; margin:0"> CLEARANCE<br><span style="color:${labelColor}">${phaseLabel}</span></h2>
+      <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8; margin:0"> SUBMISSION<br><span style="color:${labelColor}">FORM</span></h2>
       
       <div style="background:rgba(139,69,19,0.08); padding:20px; border:1px solid #8b4513; margin:20px 0; text-align:center;">
         <div style="margin-bottom:15px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:10px">
             <div style="font-size:0.9rem; font-family:'Share Tech Mono'; color:#ffab91; font-style:italic;">"${currentRoast.toUpperCase()}"</div>
         </div>
-        <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">ALLOCATION: ${allocationUnits} UNIT(S)</div>
+        <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">REF CODE </div>
         <div style="font-size:1.8rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:6px;">${_recruitData.refCode}</div>
         <div style="font-size:0.5rem; color:#6a6a9a; margin-top:10px">Rank: #${_recruitData.rank || 'Pending'}</div>
       </div>
 
-      <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #5d2a18; background: rgba(0,0,0,0.4); border-radius:4px">
-        <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1rem; letter-spacing:2px; margin-bottom:10px; text-align:center">SOCIAL MISSIONS</div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-          <button class="btn" style="font-size:0.55rem; padding:8px; background:rgba(29,161,242,0.1); border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.like}','_blank')">LIKE</button>
-          <button class="btn" style="font-size:0.55rem; padding:8px; background:rgba(29,161,242,0.1); border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.repost}','_blank')">REPOST</button>
-          <button class="btn" style="font-size:0.55rem; padding:8px; background:rgba(29,161,242,0.1); border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.quote}','_blank')">QUOTE</button>
+      <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #5d2a18; background: rgba(139,69,19,0.05); border-radius:4px; text-align:center">
+        <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1rem; letter-spacing:2px; margin-bottom:10px;">YOUR REFS HUB</div>
+        
+        <div style="background:rgba(0,0,0,0.3); padding:15px; border-radius:4px; border:1px solid rgba(139,69,19,0.2)">
+            <div style="font-family:'Bebas Neue'; font-size:2.5rem; color:#eeeef8; line-height:1">${_recruitData.referrals}</div>
+            <div style="font-size:0.6rem; color:#6a6a9a; font-family:'Share Tech Mono'; letter-spacing:1px; margin-top:5px">SUCCESSFUL INVITES</div>
         </div>
+        <p style="font-size:0.55rem; color:#8b4513; margin-top:10px; font-family:'Share Tech Mono';">Invite more operatives to boost your rank.</p>
       </div>
 
       <div class="field-row">
-           <input type="text" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center; border-radius:4px">
+           <input type="text" id="refLinkInput" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center; border-radius:4px">
       </div>
       <button class="btn btn-outline" style="width:100%; margin: 8px 0; color:#8b4513; border:1px solid #5d2a18; background:transparent; padding:12px; cursor:pointer; font-size:0.7rem" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
-      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.1rem" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE PROGRESS</button>
+      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.1rem" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE</button>
       
-      <div style="margin-top:20px; font-size:0.6rem; color:#6a6a9a; text-align:center; font-family:'Share Tech Mono'">
-        SUCCESSFUL RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | NETWORK: ETH
-      </div>
-
       <div style="text-align:center; margin-top:20px">
-        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RETURN HOME</button>
+        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.3">RETURN</button>
       </div>
     </div>
   `;
@@ -302,7 +298,7 @@ export function copyRef(link) {
 }
 
 export function tweetRef(link, phase) {
-  const text = encodeURIComponent(`I've secured my WL for the @MechRangersNFT drop on Ethereum. \n\nStatus: ${phase}\n\nRegister here: `);
+  const text = encodeURIComponent(`I just just secured my WL chance for the @MechRangersNFT NFT on Ethereum. \n\nRegistration is currently going on, Visit link below `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 
