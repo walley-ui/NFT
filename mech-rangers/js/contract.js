@@ -1,9 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    contract.js — Smart Contract Panel (ETHEREUM OPTIMIZED)
    Builds & displays the Solidity contract + deploy script.
-   Enforced Network: Ethereum (Mainnet)
-   3-Tier Split: Mythic (2k) | Legendary (3k) | Epic (5k)
-   Logic: 700 WL (Free) | GTD (Paid) | Public FCFS (Paid)
+   Logic: 700 WL (Free - 1 Max) | GTD (Paid - 2 Max) | Public (2 Max)
    ═══════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────
@@ -15,7 +13,6 @@ function getContractConfig() {
     sym:       document.getElementById('cSymbol')?.value    || 'MECHR',
     maxSupply: document.getElementById('cMaxSupply')?.value || '10000',
     price:     parseFloat(document.getElementById('cPrice')?.value)     || 0.00009,
-    maxWallet: document.getElementById('cMaxWallet')?.value || '2',
     royalty:   parseFloat(document.getElementById('cRoyalty')?.value)   || 5,
     baseURI:   document.getElementById('cBaseURI')?.value   || 'ipfs://YOUR_METADATA_CID/',
     merkleRoot: (typeof _snapshot !== 'undefined' && _snapshot?.merkleRoot) 
@@ -26,11 +23,11 @@ function getContractConfig() {
 }
 
 /* ─────────────────────────────────────────────
-   SOLIDITY CONTRACT — (ETHEREUM COMPATIBLE)
+   SOLIDITY CONTRACT — (UPGRADED ALLOWANCE LOGIC)
 ───────────────────────────────────────────── */
 function buildSolidityHTML(cfg) {
   return `<span class="cm">// SPDX-License-Identifier: MIT</span>
-<span class="cm">// Mech Rangers ERC-721 — Production Contract v3.0 (Ethereum Mainnet)</span>
+<span class="cm">// Mech Rangers ERC-721 — Production Contract v3.1 (Ethereum Mainnet)</span>
 <span class="kw">pragma solidity</span> ^<span class="num">0.8.20</span>;
 
 <span class="kw">import</span> <span class="str">"@openzeppelin/contracts/token/ERC721/ERC721.sol"</span>;
@@ -45,20 +42,21 @@ function buildSolidityHTML(cfg) {
     <span class="type">MintPhase</span> <span class="kw">public</span> currentPhase = <span class="type">MintPhase</span>.Locked;
 
     <span class="type">uint256</span> <span class="kw">public</span> totalSupply;
-    <span class="type">uint256</span> <span class="kw">public constant</span> MAX_SUPPLY   = <span class="num">${cfg.maxSupply}</span>;
-    <span class="type">uint256</span> <span class="kw">public</span> mintPrice             = <span class="num">${cfg.price} ether</span>;
-    <span class="type">uint256</span> <span class="kw">public constant</span> MAX_PER_WALLET = <span class="num">${cfg.maxWallet}</span>;
-    <span class="type">uint256</span> <span class="kw">public</span> teamReserve           = <span class="num">100</span>;
+    <span class="type">uint256</span> <span class="kw">public constant</span> MAX_SUPPLY       = <span class="num">${cfg.maxSupply}</span>;
+    <span class="type">uint256</span> <span class="kw">public</span> mintPrice                 = <span class="num">${cfg.price} ether</span>;
     
-    <span class="type">uint256</span> <span class="kw">public constant</span> MAX_FREE_WL  = <span class="num">700</span>;
-    <span class="type">uint256</span> <span class="kw">public</span> freeMinted;
+    <span class="type">uint256</span> <span class="kw">public constant</span> MAX_FREE_WL      = <span class="num">700</span>;
+    <span class="type">uint256</span> <span class="kw">public constant</span> LIMIT_WL_FREE    = <span class="num">1</span>;
+    <span class="type">uint256</span> <span class="kw">public constant</span> LIMIT_GENERAL    = <span class="num">2</span>;
 
-    <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityCap;
-    
-    <span class="type">bytes32</span> <span class="kw">public</span> wlMerkleRoot = <span class="num">${cfg.merkleRoot}</span>;
+    <span class="type">uint256</span> <span class="kw">public</span> freeMinted;
+    <span class="type">uint256</span> <span class="kw">public</span> teamReserve               = <span class="num">100</span>;
+
+    <span class="type">bytes32</span> <span class="kw">public</span> wlMerkleRoot  = <span class="num">${cfg.merkleRoot}</span>;
     <span class="type">bytes32</span> <span class="kw">public</span> gtdMerkleRoot = <span class="num">${cfg.gtdRoot}</span>;
 
     <span class="type">mapping</span>(<span class="type">address</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> walletMinted;
+    <span class="type">mapping</span>(<span class="type">string</span> =&gt; <span class="type">uint256</span>) <span class="kw">public</span> rarityCap;
 
     <span class="type">string</span> <span class="kw">private</span> _baseTokenURI;
     <span class="type">string</span> <span class="kw">public</span>  hiddenURI = <span class="str">"ipfs://HIDDEN_CID/hidden.json"</span>;
@@ -78,7 +76,6 @@ function buildSolidityHTML(cfg) {
         _baseTokenURI    = baseURI_;
         _royaltyReceiver = msg.sender;
         
-        <span class="cm">// 3-Tier Distribution Setup</span>
         rarityCap[<span class="str">"mythic"</span>]    = <span class="num">2000</span>;
         rarityCap[<span class="str">"legendary"</span>] = <span class="num">3000</span>;
         rarityCap[<span class="str">"epic"</span>]      = <span class="num">5000</span>;
@@ -91,18 +88,19 @@ function buildSolidityHTML(cfg) {
 
     <span class="kw">function</span> <span class="fn">mint</span>(<span class="type">uint256</span> quantity, <span class="type">bytes32[] calldata</span> proof) <span class="kw">external payable whenNotPaused</span> {
         <span class="kw">require</span>(totalSupply + quantity &lt;= MAX_SUPPLY, <span class="str">"Max supply reached"</span>);
-        <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= MAX_PER_WALLET, <span class="str">"Exceeds wallet limit"</span>);
-        
         <span class="type">bytes32</span> leaf = <span class="fn">keccak256</span>(<span class="fn">abi.encodePacked</span>(msg.sender));
 
         <span class="kw">if</span> (currentPhase == <span class="type">MintPhase</span>.WL_Free) {
+            <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= LIMIT_WL_FREE, <span class="str">"WL Limit: 1 Unit"</span>);
             <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(proof, wlMerkleRoot, leaf), <span class="str">"Invalid WL Proof"</span>);
             <span class="kw">require</span>(freeMinted + quantity &lt;= MAX_FREE_WL, <span class="str">"Free WL cap reached"</span>);
             freeMinted += quantity;
         } <span class="kw">else if</span> (currentPhase == <span class="type">MintPhase</span>.GTD_Paid) {
+            <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= LIMIT_GENERAL, <span class="str">"Limit: 2 Units"</span>);
             <span class="kw">require</span>(<span class="type">MerkleProof</span>.<span class="fn">verify</span>(proof, gtdMerkleRoot, leaf), <span class="str">"Invalid GTD Proof"</span>);
             <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity, <span class="str">"Insufficient ETH"</span>);
         } <span class="kw">else if</span> (currentPhase == <span class="type">MintPhase</span>.Public_FCFS) {
+            <span class="kw">require</span>(walletMinted[msg.sender] + quantity &lt;= LIMIT_GENERAL, <span class="str">"Limit: 2 Units"</span>);
             <span class="kw">require</span>(msg.value &gt;= mintPrice * quantity, <span class="str">"Insufficient ETH"</span>);
         } <span class="kw">else</span> {
             <span class="kw">revert</span>(<span class="str">"Minting is locked"</span>);
@@ -200,7 +198,7 @@ function buildContractCode() {
 
 function updateContract() {
   buildContractCode();
-  if (typeof toast === 'function') toast('Phase Logic & Logic Refactored', 'success');
+  if (typeof toast === 'function') toast('Contract Upgraded: WL(1) | General(2)', 'success');
 }
 
 /* ─────────────────────────────────────────────
@@ -214,21 +212,23 @@ function updateMintSim() {
   const total   = parseInt(document.getElementById('cMaxSupply')?.value)   || 10000;
   const royalty = parseFloat(document.getElementById('cRoyalty')?.value)   || 5;
 
-  const TIERS = [
-    { key:'mythic',    label:'MYTHIC',    col:'#ff0055', cap: 2000, allowance: 2 },
-    { key:'legendary', label:'LEGENDARY', col:'#ffc400', cap: 3000, allowance: 2 },
-    { key:'epic',      label:'EPIC',      col:'#b44fff', cap: 5000, allowance: 2 }
-  ];
-
-  // REVENUE CALC: 700 units are FREE (Phase 0). All others (9,300) are PAID.
-  const paidUnits = 9300;
+  // Revenue calc: 700 are Free WL. 9,300 are Paid (GTD + Public).
+  const paidUnits = total - 700;
   const estRevenue = paidUnits * price;
+
+  const TIERS = [
+    { key:'mythic',    label:'MYTHIC',    col:'#ff0055', cap: 2000 },
+    { key:'legendary', label:'LEGENDARY', col:'#ffc400', cap: 3000 },
+    { key:'epic',      label:'EPIC',      col:'#b44fff', cap: 5000 }
+  ];
 
   wrap.innerHTML = TIERS.map(t => {
     const count = (typeof mintedCount !== 'undefined' ? mintedCount[t.key] : 0);
+    // Visual indicator: Logic check for rank 1-700
+    const phaseNote = t.key === 'mythic' ? ' (Includes Free WL)' : '';
     return `
     <div class="mint-tier-row">
-      <div class="mt-label" style="color:${t.col}">${t.label} (Max: ${t.allowance})</div>
+      <div class="mt-label" style="color:${t.col}">${t.label}${phaseNote}</div>
       <div class="mt-bar-bg">
         <div class="mt-bar-fill" style="width:${((count / t.cap) * 100).toFixed(1)}%;background:${t.col}"></div>
       </div>
@@ -240,8 +240,8 @@ function updateMintSim() {
   const sRoy = document.getElementById('simRoyalty');
 
   if(sTot) sTot.textContent = total.toLocaleString();
-  if(sRev) sRev.textContent = estRevenue.toFixed(4) + ' ETH (9.3k Paid Units)';
-  if(sRoy) sRoy.textContent = royalty + '% Royalty (PHASE: WL → GTD → Public)';
+  if(sRev) sRev.textContent = estRevenue.toFixed(4) + ' ETH (9,300 Paid Units)';
+  if(sRoy) sRoy.textContent = royalty + '% Royalty | Limits: WL(1) GTD(2)';
 }
 
 /* ─────────────────────────────────────────────
@@ -257,5 +257,4 @@ function pickNet(el, name, chainId) {
   if (typeof toast === 'function') toast('NETWORK LOCKED: Ethereum Mainnet Only', 'warn');
 }
 
-// Initial Build
 buildContractCode();

@@ -107,8 +107,6 @@ export async function submitRecruitment() {
 
   const code = wallet.slice(-4).toUpperCase() + Math.random().toString(36).substring(2, 4).toUpperCase();
   
-  // ALIGNED: We omit 'registered_at' and 'id' to let the DB defaults handle security.
-  // This ensures the Rank is assigned by the server, not the client.
   const { data: newEntry, error } = await _supabase
     .from('recruits')
     .insert([{
@@ -128,7 +126,6 @@ export async function submitRecruitment() {
   }
 
   if (referrer) {
-    // Background task: link referral
     _supabase.from('referrals').insert([{
         referrer_wallet: referrer,
         recruit_wallet: wallet
@@ -187,17 +184,17 @@ export function renderRecruitUI() {
 
       <div class="field-row" style="margin-bottom:15px">
         <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">1. ESTABLISH X-CONNECTION</label>
-        <button id="followBtn" class="btn btn-outline" style="width:100%; border-color:#5d2a18; color:#8b4513" onclick="verifyFollow()">FOLLOW @MECHRANGERSNFT</button>
+        <button id="followBtn" class="btn btn-outline" style="width:100%; border-color:#5d2a18; color:#8b4513; background:transparent; cursor:pointer" onclick="verifyFollow()">FOLLOW @MECHRANGERSNFT</button>
       </div>
       <div class="field-row" style="margin-bottom:15px">
         <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">2. WALLET ADDRESS</label>
-        <input type="text" id="recWallet" class="field-in" placeholder="0x..." style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3); font-family:'Share Tech Mono'">
+        <input type="text" id="recWallet" class="field-in" placeholder="0x..." style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3); font-family:'Share Tech Mono'; color:#fff; padding:10px">
       </div>
       <div class="field-row" style="margin-bottom:20px">
         <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">3. X-HANDLE</label>
-        <input type="text" id="recTwitter" class="field-in" placeholder="@username" style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3)">
+        <input type="text" id="recTwitter" class="field-in" placeholder="@username" style="width:100%; text-align:center; border-color:#252540; background:rgba(0,0,0,0.3); color:#fff; padding:10px">
       </div>
-      <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px" onclick="submitRecruitment()" disabled>ENROLL IN GRID</button>
+      <button id="submitBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.2rem" onclick="submitRecruitment()" disabled>ENROLL IN GRID</button>
     </div>
   `;
 }
@@ -208,9 +205,9 @@ export function renderRecruitSuccess() {
   if(!root) return;
   const refLink = `${window.location.origin}?ref=${_recruitData.refCode}`;
 
-  // UPGRADE: Determine phase visibility based on rank returned from DB
   const isFreeWL = (_recruitData.rank && _recruitData.rank <= 700);
   const phaseLabel = isFreeWL ? "FREE WL MINT" : "GTD PAID MINT";
+  const allocationUnits = isFreeWL ? 1 : 2;
   const labelColor = isFreeWL ? "#00e676" : "#8b4513";
 
   let currentRoast = "LINK CONFIRMED...";
@@ -231,7 +228,7 @@ export function renderRecruitSuccess() {
         <div style="margin-bottom:20px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:15px">
             <div style="font-size:1.1rem; font-family:'Share Tech Mono'; color:#ffab91; font-style:italic;">"${currentRoast.toUpperCase()}"</div>
         </div>
-        <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">REFERRAL CODE</div>
+        <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">ALLOCATION: ${allocationUnits} UNIT(S)</div>
         <div style="font-size:2rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:8px;">${_recruitData.refCode}</div>
         <div style="font-size:0.5rem; color:#6a6a9a; margin-top:10px">Rank: #${_recruitData.rank || 'Pending'}</div>
       </div>
@@ -248,8 +245,8 @@ export function renderRecruitSuccess() {
       <div class="field-row">
            <input type="text" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center;">
       </div>
-      <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513; border-color:#5d2a18" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
-      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE TO X</button>
+      <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513; border-color:#5d2a18; background:transparent; padding:10px; cursor:pointer" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
+      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE TO X</button>
       
       <div style="margin-top:25px; font-size:0.6rem; color:#6a6a9a; text-align:center; font-family:'Share Tech Mono'">
         SUCCESSFUL RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | MINT WILL BE ON: ETH

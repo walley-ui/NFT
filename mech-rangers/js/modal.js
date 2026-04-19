@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    modal.js — Modal Open · Close · Single-Token Exports
-   Upgraded: Ethereum Mainnet Sync & Terminal-Safe Strings
-   Depends on: traits.js, renderer.js, export.js
+   Upgraded: Ethereum Mainnet Sync & Tier Enforcement
+   Logic: Aligned for 700 Free WL (Limit 1) / 9,300 Paid (Limit 2)
    ═══════════════════════════════════════════════════════ */
 
 /* Currently open NFT (used by single-token export buttons) */
@@ -24,15 +24,16 @@ function openModal(nft) {
   const nameEl = document.getElementById('mName');
   if (nameEl) nameEl.textContent = nft.name;
 
+  // STRICT 3-TIER PALETTE
   const rarCol = {
     mythic:    '#ff0055',
     legendary: '#ffc400',
-    epic:      '#b44fff',
-    // Fallback support for legacy imports
-    rare:      '#00e5ff',
-    uncommon:  '#00e676',
-    common:    '#6a6a9a',
+    epic:      '#b44fff'
   };
+
+  // Logic: Determine unit class and limit based on ID
+  const isFreeUnit = nft.id <= 700;
+  const unitLimit  = isFreeUnit ? "1" : "2";
 
   // UPGRADE: Aligned with Ethereum Mainnet Metadata standards
   const metaEl = document.getElementById('mMeta');
@@ -41,8 +42,8 @@ function openModal(nft) {
       '<span style="color:' + (rarCol[nft.rarity] || '#fff') + '">' + nft.rarity.toUpperCase() + '</span>' +
       '<span style="cursor:pointer" onclick="copyToClipboard(\'' + nft.id + '\')">#' + String(nft.id).padStart(4,'0') + '</span>' +
       '<span>Score: ' + nft.score + '</span>' +
-      '<span>' + (nft.traits.suit?.label || 'Standard') + '</span>' +
-      '<span class="net-badge" style="background:#627eea; color:white">ETH</span>';
+      '<span>Limit: ' + unitLimit + '</span>' +
+      '<span class="net-badge" style="background:#627eea; color:white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">ETH</span>';
   }
 
   // Trait grid
@@ -51,7 +52,7 @@ function openModal(nft) {
   if (traitsGrid) {
     traitsGrid.innerHTML = traitKeys.map(function(k) {
       const v  = nft.traits[k];
-      if (!v) return ''; // Upgrade: Safety check for missing traits
+      if (!v) return ''; 
       const wt = v.weight ? v.weight + 'w' : '';
       const catName = TRAITS[k]?.name || k;
       return (
@@ -83,7 +84,7 @@ function closeModal(e) {
 
   if (isDirectCall || isOverlayClick || isButtonClick) {
     if (overlayEl) overlayEl.classList.remove('open');
-    activeModal = null; // Upgrade: Clear active state on close
+    activeModal = null; 
   }
 }
 
@@ -101,11 +102,10 @@ function exportSingleSVG() {
 
 function exportSingleMeta() {
   if (!activeModal) return;
-  // Upgrade: Uses the buildMetaObj from export.js to ensure consistency
   if (typeof buildMetaObj === 'function' && typeof dlBlob === 'function') {
     const meta = buildMetaObj(activeModal);
     dlBlob(new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' }), activeModal.id + '.json');
-    if (typeof toast === 'function') toast('Metadata exported: ' + activeModal.id + '.json', 'success');
+    if (typeof toast === 'function') toast('Metadata exported (Limit: ' + (activeModal.id <= 700 ? "1" : "2") + ')', 'success');
   }
 }
 
@@ -119,7 +119,6 @@ function copyTokenJSON() {
   }
 }
 
-// Helper for quick ID copying
 function copyToClipboard(txt) {
     navigator.clipboard.writeText(txt);
     if (typeof toast === 'function') toast('ID ' + txt + ' copied', 'info');

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
      bridge.js — Phase 2: User Eligibility Checker
      Logic: Advanced Snapshot Scan (Merkle & Case Insensitive)
-     1-700: FREE WL | 701-10000: GTD | Not Found: ACCESS DENIED
+     1-700: FREE WL (1 Unit) | 701+: GTD (2 Units)
      Theme: Rust & Carbon
 ═══════════════════════════════════════════════════════ */
 
@@ -36,7 +36,6 @@ export async function initBridge() {
   if (root) root.innerHTML = `<div id="bridgeRoot" class="wrap" style="margin-top:100px; max-width:500px"></div>`;
   
   try {
-    // Verified by vite-check.js: Files in /public are served at root /
     const [wlRes, gtdRes] = await Promise.all([
       fetch(`${BRIDGE_CONFIG.wlSnapshotUrl}?t=${Date.now()}`),
       fetch(`${BRIDGE_CONFIG.gtdSnapshotUrl}?t=${Date.now()}`)
@@ -85,8 +84,8 @@ export async function bridgeVerifyAddress() {
     renderWalletStatus({
       tier: 'mythic',
       phase: 'FREE WL MINT',
-      allowance: wlEntry.allowance || 2,
-      rank: wlEntry.rank || wlEntry.index || "1-700"
+      allowance: wlEntry.allowance || 1, // Fallback to 1 for WL
+      rank: wlEntry.rank || "1-700"
     });
     return;
   }
@@ -96,8 +95,8 @@ export async function bridgeVerifyAddress() {
     renderWalletStatus({
       tier: 'epic',
       phase: 'GTD PAID MINT',
-      allowance: gtdEntry.allowance || 2,
-      rank: gtdEntry.rank || gtdEntry.index || "701-10000"
+      allowance: gtdEntry.allowance || 2, // Fallback to 2 for GTD
+      rank: gtdEntry.rank || "701+"
     });
     return;
   }
@@ -128,13 +127,13 @@ async function renderWalletStatus(assignment) {
   const color = (assignment.phase === 'FREE WL MINT') ? '#00e676' : '#8b4513';
   let welcomeRoast = "AUTHORIZED FOR DEPLOYMENT";
   if (typeof getRoast === 'function') {
-      welcomeRoast = getRoast('welcome', assignment.tier || 'epic', { user: "Operative", count: 2 });
+      welcomeRoast = getRoast('welcome', assignment.tier || 'epic', { user: "Operative", count: assignment.allowance });
   }
   panel.innerHTML = `
     <div class="bridge-status whitelisted" style="text-align:center; border:1px solid ${color}; padding:25px; background: rgba(0,0,0,0.6)">
       <div style="font-family:'Share Tech Mono'; color:${color}; font-size:0.8rem; margin-bottom:15px; font-style:italic">"${welcomeRoast.toUpperCase()}"</div>
       <div class="bridge-tier" style="color:${color}; font-family:'Bebas Neue'; font-size:2rem">${assignment.phase}</div>
-      <div class="bridge-msg" style="margin:10px 0; font-size:0.9rem; color:#fff">Allocation: <strong>${assignment.allowance} Units</strong></div>
+      <div class="bridge-msg" style="margin:10px 0; font-size:0.9rem; color:#fff">Allocation: <strong>${assignment.allowance} Unit(s)</strong></div>
       <div style="background:rgba(255,255,255,0.05); padding:10px; border:1px solid #252540; margin: 20px 0">
         <div style="font-size:0.6rem; color:#6a6a9a; text-transform:uppercase">Verified Wallet</div>
         <div style="font-size:0.75rem; color:#eeeef8; font-family:'Share Tech Mono'"><code>${_userWallet}</code></div>

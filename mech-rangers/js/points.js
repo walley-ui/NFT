@@ -3,6 +3,7 @@
  * points.js — Secure Snapshot & Merkle Engine (UPGRADED)
  * Purpose: Locks the 700 Free WL and 9,300 GTD Paid into roots.
  * Logic: Sequential Sort (First 700 = WL_ROOT | Rest = GTD_ROOT)
+ * Update: WL = 1 Max Mint | GTD = 2 Max Mint
  * ═══════════════════════════════════════════════════════ */
 
 import { createClient } from '@supabase/supabase-js';
@@ -69,23 +70,26 @@ async function generateSnapshot() {
         const addr = user.wallet_address.toLowerCase();
         if (seenWallets.has(addr)) return; 
         
-        const entry = {
-            wallet: ethers.getAddress(addr),
-            rank: user.id
-        };
-
         // SEQUENTIAL LOGIC: First 700 get the WL_ROOT (Free Mint)
         // Everything after 700 gets GTD_ROOT (Paid Mint)
         if (wlList.length < 700) {
-            wlList.push(entry);
+            wlList.push({
+                wallet: ethers.getAddress(addr),
+                rank: user.id,
+                allowance: 1 // WL Phase: 1 Free Mint
+            });
         } else {
-            gtdList.push(entry);
+            gtdList.push({
+                wallet: ethers.getAddress(addr),
+                rank: user.id,
+                allowance: 2 // GTD Phase: 2 Max Mints
+            });
         }
         seenWallets.add(addr);
     });
 
-    console.log(` -> Assigned ${wlList.length} to Phase 0 (Free WL)`);
-    console.log(` -> Assigned ${gtdList.length} to Phase 1 (GTD Paid)`);
+    console.log(` -> Assigned ${wlList.length} to Phase 0 (Free WL - 1 Unit Max)`);
+    console.log(` -> Assigned ${gtdList.length} to Phase 1 (GTD Paid - 2 Units Max)`);
 
     // 4. GENERATE TREES
     console.log("[3/4] Building Dual Merkle Trees...");
@@ -111,6 +115,7 @@ async function generateSnapshot() {
             output[entry.wallet.toLowerCase()] = {
                 checksummed: entry.wallet,
                 rank: entry.rank,
+                allowance: entry.allowance, // Included in JSON for Bridge check
                 proof: tree.getHexProof(leaf)
             };
         });

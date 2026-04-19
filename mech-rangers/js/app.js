@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    app.js — Core Controller (ADMIN vs PUBLIC)
    Handles: State Switching, Phase Monitoring, Global Toggles
-   Logic: Aligned for 700 WL Free / 9,300 Paid Split
+   Logic: Aligned for 700 WL Free (1 Max) / 9,300 Paid (2 Max)
    ═══════════════════════════════════════════════════════ */
 
 /**
@@ -39,11 +39,13 @@ function setupAdminEnvironment() {
     // Sync Contract View
     if (typeof updateContract === 'function') updateContract();
     
-    // ENFORCING 3-TIER DISTRIBUTION (2k/3k/5k)
+    // ENFORCING 3-TIER DISTRIBUTION & PER-WALLET LIMITS
     const caps = {
         'cMaxMythic': "2000",
         'cMaxLegendary': "3000",
-        'cMaxEpic': "5000"
+        'cMaxEpic': "5000",
+        'cWLMaxPerWallet': "1",   // Free WL Limit
+        'cGenMaxPerWallet': "2"   // GTD & Public Limit
     };
 
     for (const [id, val] of Object.entries(caps)) {
@@ -57,7 +59,7 @@ function setupAdminEnvironment() {
         if (el) el.value = "0";
     });
 
-    console.log("Admin: Supply caps strictly synced to 10k Ethereum distribution.");
+    console.log("Admin: Supply caps and variable mint limits (1/2) strictly synced.");
 }
 
 /**
@@ -72,8 +74,8 @@ function setupPublicBridge() {
     if (adminUI) adminUI.style.display = 'none';
     if (userUI)  userUI.style.display  = 'block';
 
-    if (typeof Bridge !== 'undefined') {
-        Bridge.init();
+    if (typeof Bridge !== 'undefined' && typeof Bridge.initBridge === 'function') {
+        Bridge.initBridge();
     } else {
         console.warn("Bridge Module Standby: Verify script loading.");
     }
@@ -81,18 +83,27 @@ function setupPublicBridge() {
 
 /**
  * PHASE MONITORING: Update UI based on Contract State
- * Logic: Handles the transition through WL Free, GTD, and Public
  */
-function updateGlobalPhaseUI() {
+function updateGlobalPhaseUI(activePhaseIndex = 0) {
     const phaseDisplay = document.getElementById('currentPhaseName');
+    const limitDisplay = document.getElementById('currentLimitInfo');
     if (!phaseDisplay) return;
 
-    // This would typically fetch from the smart contract 'currentPhase' variable
-    // For now, we set the initial visual state
-    const phases = ["Locked", "WL Free (700 Spots)", "GTD Paid", "Public FCFS"];
+    const phases = [
+        { name: "Locked", limit: 0 },
+        { name: "WL Free (700 Spots)", limit: 1 },
+        { name: "GTD Paid", limit: 2 },
+        { name: "Public FCFS", limit: 2 }
+    ];
+
+    const current = phases[activePhaseIndex] || phases[0];
+    phaseDisplay.textContent = current.name;
     
-    // Example: Update UI to show the 700-spot limit for the first phase
-    console.log("Phase Monitor: Ensuring 700 WL Free / 9,300 Paid logic visibility.");
+    if (limitDisplay) {
+        limitDisplay.textContent = current.limit > 0 ? `Limit: ${current.limit} Unit(s)` : "Minting Paused";
+    }
+    
+    console.log(`Phase Monitor: ${current.name} Active. Per-wallet limit set to ${current.limit}.`);
 }
 
 /**
@@ -113,7 +124,6 @@ function setupUniversalListeners() {
 
 /**
  * Global Toast System
- * Upgraded to handle multi-phase notifications
  */
 function toast(msg, type = 'info') {
     const wrap = document.getElementById('toastWrap');
@@ -131,7 +141,6 @@ function toast(msg, type = 'info') {
         return;
     }
     
-    // Fallback legacy toast
     const t = document.getElementById('toast');
     if (t) {
         t.textContent = msg;
