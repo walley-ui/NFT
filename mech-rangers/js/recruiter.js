@@ -298,7 +298,7 @@ export function copyRef(link) {
 }
 
 export function tweetRef(link, phase) {
-  const text = encodeURIComponent(`I just just secured my WL chance for the @MechRangersNFT NFT on Ethereum. \n\nRegistration is currently going on, Visit link below `);
+  const text = encodeURIComponent(`I just just secured my WL chance for the @MechRangersNFT NFT on Ethereum. \n\nRegister using the link below `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 
