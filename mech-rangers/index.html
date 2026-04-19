@@ -11,14 +11,14 @@
   <link rel="stylesheet" href="css/base.css">        <link rel="stylesheet" href="css/panels.css">      <link rel="stylesheet" href="css/components.css"> 
   
 <style>
-  /* This hides the Admin Dashboard completely when it's time to recruit */
-  body.phase-bridge #pipeline-layer { 
+  /* Force hide the admin dashboard forever */
+  #pipeline-layer { 
   display: none !important; 
   }
 
-  /* This makes the Signup Page show up on top of everything else */
+  /* Force show the recruitment/bridge layer */
   #bridge-layer { 
-  display: none; 
+  display: block !important; 
   position: fixed; 
   inset: 0; 
   z-index: 99999; 
@@ -528,23 +528,29 @@
 <script type="module" src="js/bridge.js"></script>
 
 <script type="module">
-// We MUST import these because type="module" makes them private otherwise
-import { initRecruiter } from './js/recruiter.js';
-import { initBridge } from './js/bridge.js';
+  // We MUST import these because type="module" makes them private otherwise
+  import { initRecruiter } from './js/recruiter.js';
+  import { initBridge } from './js/bridge.js';
 
-window.addEventListener('DOMContentLoaded', () => {
-console.log("Mech Rangers Phase System Activating...");
+  window.addEventListener('DOMContentLoaded', () => {
+  console.log("Mech Rangers Phase System Activating...");
 
-const RECRUIT_START = new Date("2026-04-18T02:00:00Z").getTime();
-const CHECKER_START = new Date("2026-04-31T00:00:00Z").getTime();
-const now = Date.now();
+  // TIMING CONFIG
+  const RECRUIT_START = new Date("2026-04-22T02:00:00Z").getTime();
+  const CHECKER_START = new Date("2026-04-31T00:00:00Z").getTime();
+  const now = Date.now();
 
-if (now >= RECRUIT_START) {
-document.body.classList.add('phase-bridge');
+  // 1. PERMANENT ADMIN DISABLE
+  // This ensures the pipeline-layer is hidden regardless of the date
+  const adminPanel = document.getElementById('pipeline-layer');
+  if (adminPanel) {
+  adminPanel.remove(); // Physically removes the generator from the DOM for security
+  }
+
+  // 2. PHASE LOGIC
+  if (now >= RECRUIT_START) {
+  document.body.classList.add('phase-bridge');
       
-      const adminPanel = document.getElementById('pipeline-layer');
-      if(adminPanel) adminPanel.style.display = 'none';
-
       if (now >= CHECKER_START) {
       console.log("Status: Whitelist Checker Active");
       if (typeof initBridge === 'function') initBridge();
@@ -553,10 +559,10 @@ document.body.classList.add('phase-bridge');
       if (typeof initRecruiter === 'function') initRecruiter();
       }
       } else {
-      console.log("Status: Admin Active");
-      // Admin-only auto-gens
-      if (typeof genBatch === 'function') genBatch(); 
-      if (typeof updateContract === 'function') updateContract();
+      // BEFORE RECRUITMENT START
+      console.log("Status: Standby - System Offline");
+      document.body.style.background = "#050505";
+      document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; color:#8b4513; font-family:'Share Tech Mono'; letter-spacing:2px;">SYSTEMS OFFLINE- CHECK AGAIN LATER</div>`;
       }
       });
       </script>
