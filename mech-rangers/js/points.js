@@ -103,23 +103,26 @@ async function generateSnapshot() {
     // 5. EXPORT RESULTS
     console.log("[4/4] Exporting JSON Snapshots to /public...");
     
-    const exportTree = (list, tree, leaves, filename) => {
+    const exportTree = (list, tree, filename) => {
         const output = {};
-        list.forEach((entry, index) => {
+        list.forEach((entry) => {
+            // Robust check: re-encode leaf per entry to ensure proof integrity
+            const leaf = encodeLeaf(entry.wallet);
             output[entry.wallet.toLowerCase()] = {
                 checksummed: entry.wallet,
                 rank: entry.rank,
-                proof: tree.getHexProof(leaves[index])
+                proof: tree.getHexProof(leaf)
             };
         });
         
         const publicDir = path.join(process.cwd(), 'public');
         if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
         fs.writeFileSync(path.join(publicDir, filename), JSON.stringify(output, null, 2));
+        console.log(` ✅ Generated: ${filename}`);
     };
 
-    exportTree(wlList, wlTree, wlLeaves, 'wl-tree.json');
-    exportTree(gtdList, gtdTree, gtdLeaves, 'gtd-tree.json');
+    exportTree(wlList, wlTree, 'wl-tree.json');
+    exportTree(gtdList, gtdTree, 'gtd-tree.json');
 
     // Create a Certificate for Contract Deployment
     const certPath = path.join(process.cwd(), 'merkle-roots.txt');

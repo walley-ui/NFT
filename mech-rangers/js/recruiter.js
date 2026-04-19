@@ -25,7 +25,7 @@ const RECRUIT_CONFIG = {
       repost: "https://x.com/intent/retweet?tweet_id=YOUR_TWEET_ID",
       quote: "https://x.com/intent/tweet?text=Joining%20the%20Resistance&url=YOUR_TWEET_URL"
     },
-    discord: "COMMUNICATIONS OFFLINE" 
+    discord: "COMING SOON, STAY TUNED" 
   }
 };
 
@@ -122,8 +122,8 @@ export async function submitRecruitment() {
     .single();
 
   if (error) {
-    if (error.code === '23505') toast("Address already in the grid!", "warn");
-    else toast("Database Offline", "error");
+    if (error.code === '23505') toast("Address already in !", "warn");
+    else toast(" Offline", "error");
     return;
   }
 
@@ -145,7 +145,7 @@ export async function submitRecruitment() {
   };
 
   localStorage.setItem('mr_recruit_session', JSON.stringify(_recruitData));
-  if (typeof toast === 'function') toast("Recruitment Confirmed!", "success");
+  if (typeof toast === 'function') toast("Invites Confirmed!", "success");
   renderRecruitSuccess();
 }
 
@@ -170,8 +170,21 @@ export function renderRecruitUI() {
       <div class="bridge-header" style="text-align:center; margin-bottom:30px">
         <div style="color:#8b4513; font-family:'Share Tech Mono'; font-size:0.7rem; letter-spacing:3px; text-transform:uppercase">Mission: Recruitment Phase</div>
         <h2 style="font-family:'Bebas Neue'; font-size:3.5rem; line-height:0.9; color:#eeeef8">JOIN THE<br><span style="color:#8b4513">RESISTANCE</span></h2>
-        <p style="font-size:0.8rem; color:#6a6a9a; margin-top:10px">Secure your rank for the 10,000 unit Ethereum drop.</p>
+        <p style="font-size:0.8rem; color:#6a6a9a; margin-top:10px">Secure your WL for the 10,000 unit drop on Ethereum.</p>
       </div>
+
+      <div style="margin: 20px 0; padding: 20px; border: 1px solid #5d2a18; background: rgba(0,0,0,0.4);">
+        <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1.2rem; letter-spacing:2px; margin-bottom:15px; text-align:center">PRE-ENROLLMENT TASKS</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px">
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.like}','_blank')">LIKE</button>
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.repost}','_blank')">REPOST</button>
+          <button class="btn" style="font-size:0.6rem; padding:8px; background:#1da1f222; border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.quote}','_blank')">QUOTE</button>
+        </div>
+        <div style="text-align:center; font-family:'Share Tech Mono'; font-size:0.6rem; color:#6a6a9a; border-top:1px solid #5d2a18; padding-top:10px">
+          DISCORD: <span style="color:#ff1744">${RECRUIT_CONFIG.tasks.discord}</span>
+        </div>
+      </div>
+
       <div class="field-row" style="margin-bottom:15px">
         <label style="font-size:0.6rem; color:#8b4513; display:block; margin-bottom:5px; letter-spacing:1px">1. ESTABLISH X-CONNECTION</label>
         <button id="followBtn" class="btn btn-outline" style="width:100%; border-color:#5d2a18; color:#8b4513" onclick="verifyFollow()">FOLLOW @MECHRANGERSNFT</button>
@@ -236,14 +249,14 @@ export function renderRecruitSuccess() {
            <input type="text" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center;">
       </div>
       <button class="btn btn-outline" style="width:100%; margin: 10px 0; color:#8b4513; border-color:#5d2a18" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
-      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE SIGNAL</button>
+      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE TO X</button>
       
       <div style="margin-top:25px; font-size:0.6rem; color:#6a6a9a; text-align:center; font-family:'Share Tech Mono'">
-        SUCCESSFUL RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | NETWORK: ETHEREUM
+        SUCCESSFUL RECRUITS: <span style="color:#8b4513">${_recruitData.referrals}</span> | MINT WILL BE ON: ETH
       </div>
 
       <div style="text-align:center; margin-top:25px">
-        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RESET SESSION</button>
+        <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.5">RETURN HOME</button>
       </div>
     </div>
   `;
@@ -251,11 +264,11 @@ export function renderRecruitSuccess() {
 
 export function copyRef(link) {
   navigator.clipboard.writeText(link);
-  if (typeof toast === 'function') toast("Signal Link Copied", "info");
+  if (typeof toast === 'function') toast("Invite Link Copied", "info");
 }
 
 export function tweetRef(link, phase) {
-  const text = encodeURIComponent(`I've secured clearance for the @MechRangersNFT drop on Ethereum. \n\nStatus: ${phase}\n\nEnroll here: `);
+  const text = encodeURIComponent(`I've secured my WL for the @MechRangersNFT drop on Ethereum. \n\nStatus: ${phase}\n\nRegister here: `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 
