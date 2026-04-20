@@ -112,7 +112,7 @@ function renderAccessDenied() {
     <div class="bridge-status denied" style="text-align:center; border:1px solid #ff1744; padding:25px; background: rgba(20,0,0,0.8)">
       <div style="font-family:'Share Tech Mono'; color:#ff1744; font-size:0.8rem; margin-bottom:15px; letter-spacing:2px">ACCESS DENIED</div>
       <div style="color:#eeeef8; font-family:'Bebas Neue'; font-size:2rem; line-height:1">WALLET NOT FOUND<br>IN THE SNAPSHOT</div>
-      <p style="font-size:0.75rem; color:#6a6a9a; margin: 15px 0">Wallet not in Snapshot.</p>
+      <p style="font-size:0.75rem; color:#6a6a9a; margin: 15px 0"></p>
       <div style="background:rgba(255,255,255,0.03); padding:20px; border:1px solid #252540; margin: 20px 0; border-radius:4px">
         <button class="btn btn-gen" onclick="window.open('${BRIDGE_CONFIG.openSeaBase}','_blank')" style="width:100%; background:#ff1744; color:#fff; border:none; padding:15px; font-weight:bold; cursor:pointer">BUY ON OPENSEA</button>
       </div>

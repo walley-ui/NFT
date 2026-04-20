@@ -115,7 +115,7 @@ export async function submitRecruitment() {
 
   // Visual Feedback: Start processing
   btn.disabled = true;
-  btn.innerHTML = "ESTABLISHING UPLINK...";
+  btn.innerHTML = "SUBMITTING...";
   btn.style.opacity = "0.5";
 
   try {
