@@ -24,7 +24,7 @@ const RECRUIT_CONFIG = {
     twitter: {
       like: "https://x.com/intent/like?tweet_id=2046242813143134478",
       repost: "https://x.com/intent/retweet?tweet_id=2046242813143134478",
-      quote: "https://x.com/intent/tweet?text=I%20just%20joined%20the%20Resistance%20at%20@MechRangersNFT%20for%20their%20upcoming%20NFT%20Whitelist.%20Deployment%20imminent.%20&url=https://mechrangers.xyz"
+      quote: "https://x.com/intent/tweet?text=I%20just%20joined%20the%20Resistance%20at%20@MechRangersNFT%20for%20their%20upcoming%20NFT%20Whitelist...%0Alink%20:%20&url=https://mechrangers.xyz"
     },
     discord: "COMING SOON" 
   }
@@ -76,12 +76,12 @@ export function verifyFollow() {
           _recruitData.followed = true;
           btn.disabled = false;
           btn.style.opacity = "1";
-          btn.innerHTML = "✓ CONNECTION VERIFIED";
+          btn.innerHTML = "✓ VERIFIED";
           btn.style.borderColor = "#00e676";
           btn.style.color = "#00e676";
           
           if (submitBtn) submitBtn.disabled = false;
-          if (typeof toast === 'function') toast("X-Link Established", "success");
+          if (typeof toast === 'function') toast(" Connected", "success");
         }
       }, 1000);
   }
@@ -289,7 +289,6 @@ export function renderRecruitSuccess() {
     </div>
   `+ getFAQHTML();
 
-  // AUTO-REDIRECT LOGIC: Starts counting as soon as success screen renders
   let redirectSecs = 5;
   const redirectBtn = document.getElementById('redirectBtn');
   
@@ -310,7 +309,7 @@ export function copyRef(link) {
 }
 
 export function tweetRef(link, phase) {
-  const text = encodeURIComponent(`I just secured my WL spot for @MechRangersNFT on Ethereum. join with the link below to secure yours. Join the resistance: `);
+  const text = encodeURIComponent(`I just joined the Resistance at @MechRangersNFT for their upcoming NFT Whitelist...\nlink : `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 
