@@ -21,9 +21,9 @@ const RECRUIT_CONFIG = {
   rustColor: "#5d2a18",
   tasks: {
     twitter: {
-      like: "https://x.com/intent/like?tweet_id=YOUR_TWEET_ID",
-      repost: "https://x.com/intent/retweet?tweet_id=YOUR_TWEET_ID",
-      quote: "https://x.com/intent/tweet?text=Joining%20the%20Resistance&url=YOUR_TWEET_URL"
+      like: "https://x.com/intent/like?tweet_id=2046242813143134478",
+      repost: "https://x.com/intent/retweet?tweet_id=2046242813143134478",
+      quote: "https://x.com/intent/tweet?text=I%20just%20joined%20the%20Resistance%20at%20@MechRangersNFT%20for%20their%20upcoming%20NFT%20Whitelist.%20Deployment%20imminent.%20&url=https://mechrangers.xyz"
     },
     discord: "COMING SOON" 
   }
@@ -99,7 +99,6 @@ export async function submitRecruitment() {
     if (typeof toast === 'function') toast("Follow on X first", "error");
     return;
   }
-  // RELAXED VALIDATION: No longer strictly 42 characters to allow for cropped/test wallets
   if (!wallet.startsWith('0x') || wallet.length < 10) {
     if (typeof toast === 'function') toast("Invalid Wallet Address", "error");
     return;
@@ -243,7 +242,6 @@ export function renderRecruitSuccess() {
 
   const isFreeWL = (_recruitData.rank && _recruitData.rank <= 700);
   const phaseLabel = isFreeWL ? "FREE WL MINT" : "GTD PAID MINT";
-  const allocationUnits = isFreeWL ? 1 : 2;
   const labelColor = isFreeWL ? "#00e676" : "#8b4513";
 
   let currentRoast = "UPLINK STABLE...";
@@ -282,14 +280,27 @@ export function renderRecruitSuccess() {
       <div class="field-row">
            <input type="text" id="refLinkInput" readonly value="${refLink}" style="width:100%; background:rgba(0,0,0,0.5); border:1px solid #1c1c30; color:#6a6a9a; font-size:0.7rem; padding:12px; text-align:center; border-radius:4px">
       </div>
-      <button class="btn btn-outline" style="width:100%; margin: 8px 0; color:#8b4513; border:1px solid #5d2a18; background:transparent; padding:12px; cursor:pointer; font-size:0.7rem" onclick="copyRef('${refLink}')">COPY INVITE LINK</button>
-      <button class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.1rem" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE</button>
+      <button id="redirectBtn" class="btn btn-gen" style="width:100%; background:#8b4513; border:none; padding:15px; cursor:pointer; color:#fff; font-family:'Bebas Neue'; font-size:1.1rem; margin-top:10px" onclick="tweetRef('${refLink}', '${phaseLabel}')">𝕏 SHARE (REDIRECT IN 5S)</button>
       
       <div style="text-align:center; margin-top:20px">
         <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.3">RETURN</button>
       </div>
     </div>
   `;
+
+  // AUTO-REDIRECT LOGIC: Starts counting as soon as success screen renders
+  let redirectSecs = 5;
+  const redirectBtn = document.getElementById('redirectBtn');
+  
+  const autoRedirect = setInterval(() => {
+    redirectSecs--;
+    if (redirectBtn) redirectBtn.innerHTML = `𝕏 SHARE (REDIRECT IN ${redirectSecs}S)`;
+    
+    if (redirectSecs <= 0) {
+      clearInterval(autoRedirect);
+      tweetRef(refLink, phaseLabel);
+    }
+  }, 1000);
 }
 
 export function copyRef(link) {
@@ -298,7 +309,7 @@ export function copyRef(link) {
 }
 
 export function tweetRef(link, phase) {
-  const text = encodeURIComponent(`I just just secured my WL chance for the @MechRangersNFT NFT on Ethereum. \n\nRegister using the link below `);
+  const text = encodeURIComponent(`I just secured my WL spot for @MechRangersNFT on Ethereum. join with the link below to secure yours. Join the resistance: `);
   window.open(`https://x.com/intent/tweet?text=${text}&url=${encodeURIComponent(link)}`, '_blank');
 }
 
