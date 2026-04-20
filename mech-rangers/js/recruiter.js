@@ -7,6 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { getRoast } from './roast.js';
+import { getFAQHTML } from './faq.js';
 
 // Securely pull environment variables via Vite
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -231,10 +232,10 @@ export function renderRecruitUI() {
       </div>
 
     </div>
-  `;
+  `+ getFAQHTML();
 }
 
-/* ── RENDER UI: SUCCESS (REPLACEMENT LOGIC) ──────────── */
+/* ── RENDER UI: SUCCESS ───────── */
 export function renderRecruitSuccess() {
   const root = document.getElementById('bridge-content');
   if(!root) return;
@@ -244,7 +245,7 @@ export function renderRecruitSuccess() {
   const phaseLabel = isFreeWL ? "FREE WL MINT" : "GTD PAID MINT";
   const labelColor = isFreeWL ? "#00e676" : "#8b4513";
 
-  let currentRoast = "UPLINK STABLE...";
+  let currentRoast = " STABLE...";
   let tier = _recruitData.referrals > 50 ? 'legendary' : (_recruitData.referrals > 10 ? 'threat' : 'parasite');
 
   if (typeof getRoast === 'function') {
@@ -286,7 +287,7 @@ export function renderRecruitSuccess() {
         <button onclick="localStorage.clear(); location.reload();" style="color:#ff1744; font-size:0.6rem; cursor:pointer; background:none; border:none; opacity:0.3">RETURN</button>
       </div>
     </div>
-  `;
+  `+ getFAQHTML();
 
   // AUTO-REDIRECT LOGIC: Starts counting as soon as success screen renders
   let redirectSecs = 5;
