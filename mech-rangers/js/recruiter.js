@@ -190,16 +190,16 @@ export function renderRecruitUI() {
   if(!root) return;
   
   root.innerHTML = `
-    <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 40px auto; padding: 30px; border: 1px solid #5d2a18; background: #0c0807; box-shadow: 0 0 30px rgba(139,69,19,0.15); position:relative; border-radius: 4px;">
+    <div class="bridge-panel recruit-panel" style="border: 1px solid #5d2a18; background: #0c0807; box-shadow: 0 0 30px rgba(139,69,19,0.15); position:relative; border-radius: 4px;">
       
       <div class="bridge-header" style="text-align:center; margin-bottom:25px">
-        <h2 style="font-family:'Bebas Neue'; font-size:3.5rem; line-height:0.9; color:#eeeef8; margin:0">JOIN THE<br><span style="color:#8b4513">RESISTANCE</span></h2>
+        <h2 style="font-family:'Bebas Neue'; line-height:0.9; color:#eeeef8; margin:0">JOIN THE<br><span style="color:#8b4513">RESISTANCE</span></h2>
         <p style="font-size:0.7rem; color:#6a6a9a; margin-top:10px; font-family:'Share Tech Mono';">Secure your WL for the 10,000 unit drop on Ethereum.</p>
       </div>
 
       <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #5d2a18; background: rgba(139,69,19,0.05); border-radius: 4px;">
         <div style="font-family:'Bebas Neue'; color:#8b4513; font-size:1rem; letter-spacing:2px; margin-bottom:12px; text-align:center">1. SOCIAL MISSIONS</div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:12px">
+        <div class="social-grid" style="margin-bottom:12px">
           <button class="btn" style="font-size:0.55rem; padding:8px; background:rgba(29,161,242,0.1); border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.like}','_blank')">LIKE</button>
           <button class="btn" style="font-size:0.55rem; padding:8px; background:rgba(29,161,242,0.1); border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.repost}','_blank')">REPOST</button>
           <button class="btn" style="font-size:0.55rem; padding:8px; background:rgba(29,161,242,0.1); border:1px solid #1da1f2; color:#1da1f2; cursor:pointer" onclick="window.open('${RECRUIT_CONFIG.tasks.twitter.quote}','_blank')">QUOTE</button>
@@ -255,8 +255,8 @@ export function renderRecruitSuccess() {
   }
   
   root.innerHTML = `
-    <div class="bridge-panel recruit-panel" style="max-width:500px; margin: 40px auto; padding: 30px; border: 1px solid #8b4513; background: #0c0807; border-radius:4px">
-      <h2 style="text-align:center; font-family:'Bebas Neue'; font-size:3rem; line-height:1; color:#eeeef8; margin:0"> CHECK<br><span style="color:${labelColor}">INVITES?</span></h2>
+    <div class="bridge-panel recruit-panel" style="border: 1px solid #8b4513; background: #0c0807; border-radius:4px">
+      <h2 style="text-align:center; font-family:'Bebas Neue'; line-height:1; color:#eeeef8; margin:0"> CHECK<br><span style="color:${labelColor}">INVITES?</span></h2>
       
       <div style="background:rgba(139,69,19,0.08); padding:20px; border:1px solid #8b4513; margin:20px 0; text-align:center;">
         <div style="margin-bottom:15px; border-bottom:1px solid rgba(139,69,19,0.3); padding-bottom:10px">

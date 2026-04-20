@@ -404,3 +404,36 @@
 .mt-bar-bg  { flex: 1; height: 4px; background: var(--border); }
 .mt-bar-fill{ height: 100%; transition: width .6s ease; }
 .mt-count   { width: 60px; text-align: right; color: var(--text); }
+/* --- RESPONSIVE BRIDGE FIXES --- */
+
+/* The main container: 90% width on mobile, maxes out at 500px on desktop */
+.recruit-panel {
+  width: 92% !important;
+  max-width: 500px !important;
+  margin: 20px auto !important;
+  padding: 20px !important; /* Slightly smaller padding for mobile */
+}
+
+/* Fluid Typography for the Big Header */
+.bridge-header h2 {
+  font-size: clamp(2rem, 10vw, 3.5rem) !important;
+}
+
+/* Ensure social buttons don't overlap on small screens */
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)) !important;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .recruit-panel {
+    padding: 15px !important;
+    margin: 10px auto !important;
+  }
+  
+  /* Make input text readable so iOS doesn't zoom in automatically */
+  .field-in {
+    font-size: 16px !important; 
+  }
+}
