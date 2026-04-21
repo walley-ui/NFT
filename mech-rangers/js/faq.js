@@ -2,24 +2,24 @@ export function getFAQHTML() {
   return `
     <div class="faq-standalone-container" style="margin-top: 50px; padding: 30px; border-top: 2px solid #5d2a18; background: rgba(12, 8, 7, 0.95);">
       <div class="faq-content">
-        <h2 style="font-family:'Bebas Neue'; color:#eeeef8; margin-top:0; letter-spacing:4px; text-align:center; font-size: 2.5rem;">THE VANDOR LOGS</h2>
+        <h2 style="font-family:'Bebas Neue'; color:#eeeef8; margin-top:0; letter-spacing:4px; text-align:center; font-size: 2.5rem;">THE MECHIES</h2>
         
         <div style="background: rgba(0, 230, 118, 0.05); padding: 15px; border-left: 3px solid #00e676; margin-bottom: 40px;">
           <p style="color:#00e676; font-family:'Share Tech Mono'; font-size: 0.85rem; margin: 0;">
-            <strong>[LOG START] UNIT 734 (RUSTY):</strong> "Oh, great. Another recruit. Listen, I’m the one who has to buff the scratches out of these 10,000-ton death machines. If you blow yours up in the first five minutes, don't come crying to my repair bay. I'm busy. Here’s the data dump. Read it or don't, I'm not your mother-board."
+            <strong> UNIT 734 (RUSTY):</strong> "Oh, great. Another recruit. Listen, I’m the one who has to buff the scratches out of these 10,000-ton death machines. If you blow yours up in the first five minutes, don't come crying to my repair bay. I'm busy. Here’s the data dump. Read it or don't, I'm not your mother-board."
           </p>
         </div>
 
         <div style="display: grid; gap: 40px;">
           
           <section>
-            <h3 style="font-family:'Bebas Neue'; color:#8b4513; border-bottom: 1px solid #5d2a18; letter-spacing: 2px;">THE DEPLOYMENT (HOW DO I GET ONE?)</h3>
+            <h3 style="font-family:'Bebas Neue'; color:#8b4513; border-bottom: 1px solid #5d2a18; letter-spacing: 2px;">THE MECH (HOW DO I GET ONE?)</h3>
             <p style="font-family:'Share Tech Mono'; color:#eee; font-size: 0.9rem; margin-top: 15px;">RUSTY'S TAKE:</p>
             <p style="font-family:'Share Tech Mono'; color:#6a6a9a; font-size: 0.8rem; line-height: 1.7;">
               "Look, the 'Big Brains' haven't given us the exact second we launch yet. They say 'Deployment Imminent'—which is Commander-speak for 'we're still loading the batteries.' Price? It’s fair. If you have to ask, you probably can't afford the fuel anyway. But we’re keeping it steady so the whole Resistance can actually fight."
             </p>
             
-            <p style="font-family:'Share Tech Mono'; color:#eee; font-size: 0.9rem; margin-top: 20px;">COMMANDER VARK'S INTEL (THE STRUCTURE):</p>
+            <p style="font-family:'Share Tech Mono'; color:#eee; font-size: 0.9rem; margin-top: 20px;">COMMANDER VARK'S INTEL:</p>
             <p style="font-family:'Share Tech Mono'; color:#6a6a9a; font-size: 0.8rem; line-height: 1.7;">
               "We have 10,000 Mechs ready for orbit. We’ve hand-picked 700 of you—the legends, the creators, the ones who didn't run when things got loud—to get yours first. 4,300 are reserved for the GTD operatives. The remaining 5,000? That’s an FCFC scrap-heap. First come, first claimed. If you're slow, you're walking. And walking on Vandor is a death sentence."
             </p>
