@@ -28,7 +28,7 @@ function initApp() {
  * ADMIN MODE: Forge & Collection Management
  */
 function setupAdminEnvironment() {
-    console.log("Welcome, Admin ix_prinx. Ethereum Forge Status: ONLINE.");
+    console.log("Welcome.Forge Status: ONLINE.");
     
     const adminUI = document.getElementById('adminControls');
     const userUI  = document.getElementById('userInterface');

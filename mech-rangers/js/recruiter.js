@@ -9,7 +9,6 @@ import { createClient } from '@supabase/supabase-js';
 import { getRoast } from './roast.js';
 import { getFAQHTML } from './faq.js';
 
-// Securely pull environment variables via Vite
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const _supabase = createClient(supabaseUrl, supabaseKey);
@@ -36,10 +35,10 @@ let _recruitData = {
   referrals: 0,
   refCode: null,
   followed: false,
-  rank: null
+  is_wl: false
 };
 
-/* ── INITIALIZE RECRUITMENT ─────────────────────────── */
+/* ── INITIALIZE RECRUITMENT ───── */
 export async function initRecruiter() {
   const root = document.getElementById('bridge-content');
   const saved = localStorage.getItem('mr_recruit_session');
@@ -55,7 +54,7 @@ export async function initRecruiter() {
   }
 }
 
-/* ── BOT PREVENTION: VERIFY FOLLOW ─────────────────── */
+/* ── BOT PREVENTION: VERIFY FOLLOW ──── */
 export function verifyFollow() {
   const btn = document.getElementById('followBtn');
   const submitBtn = document.getElementById('submitBtn');
@@ -95,7 +94,6 @@ export async function submitRecruitment() {
   const proof = document.getElementById('taskProof').value.trim();
   const referrer = new URLSearchParams(window.location.search).get('ref');
 
-  // Logic Guards
   if (!_recruitData.followed) {
     if (typeof toast === 'function') toast("Follow on X first", "error");
     return;
@@ -113,7 +111,6 @@ export async function submitRecruitment() {
     return;
   }
 
-  // Visual Feedback: Start processing
   btn.disabled = true;
   btn.innerHTML = "SUBMITTING...";
   btn.style.opacity = "0.5";
@@ -131,7 +128,7 @@ export async function submitRecruitment() {
         has_followed: true,
         metadata: { proof_url: proof }
       }])
-      .select('id')
+      .select('id, is_wl')
       .single();
 
     if (error) {
@@ -156,13 +153,12 @@ export async function submitRecruitment() {
       refCode: code, 
       referrals: 0, 
       followed: true,
-      rank: newEntry.id 
+      is_wl: newEntry.is_wl
     };
 
     localStorage.setItem('mr_recruit_session', JSON.stringify(_recruitData));
     if (typeof toast === 'function') toast("Invites Confirmed!", "success");
     
-    // UI Upgrade: Direct call to render success screen
     renderRecruitSuccess();
 
   } catch (err) {
@@ -241,9 +237,8 @@ export function renderRecruitSuccess() {
   if(!root) return;
   const refLink = `${window.location.origin}?ref=${_recruitData.refCode}`;
 
-  const isFreeWL = (_recruitData.rank && _recruitData.rank <= 700);
-  const phaseLabel = isFreeWL ? "FREE WL MINT" : "GTD PAID MINT";
-  const labelColor = isFreeWL ? "#00e676" : "#8b4513";
+  const phaseLabel = _recruitData.is_wl ? "FREE WL MINT" : "WL MINT";
+  const labelColor = _recruitData.is_wl ? "#00e676" : "#8b4513";
 
   let currentRoast = " STABLE...";
   let tier = _recruitData.referrals > 50 ? 'legendary' : (_recruitData.referrals > 10 ? 'threat' : 'parasite');
@@ -265,7 +260,6 @@ export function renderRecruitSuccess() {
         </div>
         <div style="font-size:0.6rem; color:#8b4513; letter-spacing:2px; margin-bottom:5px">REF CODE </div>
         <div style="font-size:1.8rem; font-family:'Share Tech Mono'; color:#8b4513; letter-spacing:6px;">${_recruitData.refCode}</div>
-        <div style="font-size:0.5rem; color:#6a6a9a; margin-top:10px">Rank: #${_recruitData.rank || 'Pending'}</div>
       </div>
 
       <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #5d2a18; background: rgba(139,69,19,0.05); border-radius:4px; text-align:center">
@@ -275,7 +269,7 @@ export function renderRecruitSuccess() {
             <div style="font-family:'Bebas Neue'; font-size:2.5rem; color:#eeeef8; line-height:1">${_recruitData.referrals}</div>
             <div style="font-size:0.6rem; color:#6a6a9a; font-family:'Share Tech Mono'; letter-spacing:1px; margin-top:5px">SUCCESSFUL INVITES</div>
         </div>
-        <p style="font-size:0.55rem; color:#8b4513; margin-top:10px; font-family:'Share Tech Mono';">Invite more operatives to boost your rank.</p>
+        <p style="font-size:0.55rem; color:#8b4513; margin-top:10px; font-family:'Share Tech Mono';">Invite more operatives to boost your chances.</p>
       </div>
 
       <div class="field-row">

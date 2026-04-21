@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
      bridge.js — Phase 2: User Eligibility Checker
      Logic: Advanced Snapshot Scan (Merkle & Case Insensitive)
-     1-700: FREE WL (1 Unit) | 701+: GTD (2 Units)
+     1-700: FREE WL (1 Unit) | 701-5000: GTD (2 Units)
      Theme: Rust & Carbon
 ═══════════════════════════════════════════════════════ */
 
@@ -96,7 +96,7 @@ export async function bridgeVerifyAddress() {
       tier: 'epic',
       phase: 'GTD PAID MINT',
       allowance: gtdEntry.allowance || 2, // Fallback to 2 for GTD
-      rank: gtdEntry.rank || "701+"
+      rank: gtdEntry.rank || "701-5000"
     });
     return;
   }
@@ -124,7 +124,7 @@ function renderAccessDenied() {
 async function renderWalletStatus(assignment) {
   const panel = document.getElementById('bridgeWalletPanel');
   if (!panel) return;
-  const color = (assignment.phase === ' WL MINT') ? '#00e676' : '#8b4513';
+  const color = (assignment.phase === 'FREE WL MINT') ? '#00e676' : '#8b4513';
   let welcomeRoast = "AUTHORIZED";
   if (typeof getRoast === 'function') {
       welcomeRoast = getRoast('welcome', assignment.tier || 'epic', { user: "Operative", count: assignment.allowance });

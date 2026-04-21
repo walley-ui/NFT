@@ -11,8 +11,8 @@ const Admin = {
 
     // 1. Unlock the Generator Engine
     verifyAdmin(secret) {
-        // Simple session unlock for ix_prinx
-        if (secret === "PRINX_FORGE_2026") { 
+    
+        if (secret === "Key") { 
             this.isAuthenticated = true;
             if (typeof AdminAuth !== 'undefined') {
                 AdminAuth.verify();
@@ -48,6 +48,7 @@ const Admin = {
                 allNFTs.push(nft);
                 
                 // Determine Mint Type for DB Sync (700 Free vs Rest Paid)
+                // Aligns with (id <= 700) logic in DB
                 const mintType = (i < 700) ? "WL_FREE" : "PAID";
                 
                 // --- PHOTO MAKER START ---

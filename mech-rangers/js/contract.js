@@ -198,7 +198,7 @@ function buildContractCode() {
 
 function updateContract() {
   buildContractCode();
-  if (typeof toast === 'function') toast('Contract Upgraded: WL(1) | General(2)', 'success');
+  if (typeof toast === 'function') toast('Contract Upgraded: WL(1) | GTD(2)', 'success');
 }
 
 /* ─────────────────────────────────────────────

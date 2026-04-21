@@ -1,9 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════
- * points.js — Secure Snapshot & Merkle Engine (UPGRADED)
- * Purpose: Locks the 700 Free WL and 9,300 GTD Paid into roots.
- * Logic: ID-Based Filter (ID <= 700 = WL_ROOT | ID > 700 = GTD_ROOT)
- * Update: Hard-coded absolute path for Sanity-Hub stability.
+ * points.js — Secure Snapshot & Merkle Engine (PRODUCTION)
+ * Purpose: Locks 700 Free WL and 4300 GTD Paid into roots.
+ * Logic: 
+ * - ID <= 700: Phase 0 (Free WL) - Manual Team Entry
+ * - ID 701 to 5000: Phase 1 (GTD Paid) - Public Recruits
+ * - ID > 5000: Public FCFS (No Proof Required) - Remaining Supply
  * ═══════════════════════════════════════════════════════ */
 
 import { createClient } from '@supabase/supabase-js';
@@ -42,7 +44,7 @@ function encodeLeaf(wallet) {
 }
 
 async function generateSnapshot() {
-    console.log("\n📡 MECH RANGERS — DUAL ROOT GEN (700/9300 SPLIT)");
+    console.log("\n📡 MECH RANGERS — DUAL ROOT GEN (700/4300 SPLIT)");
     console.log("══════════════════════════════════════════════");
 
     // FIX: Hard-coded Absolute Path to bypass process.cwd() mismatch
@@ -72,20 +74,23 @@ async function generateSnapshot() {
         const addr = user.wallet_address.toLowerCase().trim();
         if (seenWallets.has(addr)) return; 
         
-        // FIX: Check actual database ID/Rank instead of array index
+        const checksumAddr = ethers.getAddress(addr);
+
+        // LOGIC: Filter by explicit Database ID (1-700 WL | 701-5000 GTD)
         if (user.id <= 700) {
             wlList.push({
-                wallet: ethers.getAddress(addr),
+                wallet: checksumAddr,
                 rank: user.id,
                 allowance: 1 
             });
-        } else {
+        } else if (user.id > 700 && user.id <= 5000) {
             gtdList.push({
-                wallet: ethers.getAddress(addr),
+                wallet: checksumAddr,
                 rank: user.id,
                 allowance: 2 
             });
         }
+        // Users > 5000 are not added to trees as FCFS is open-access
         seenWallets.add(addr);
     });
 
@@ -135,8 +140,9 @@ async function generateSnapshot() {
 MECH RANGERS ETH MAINNET ROOTS
 Generated: ${new Date().toISOString()}
 ------------------------------------------
-PHASE 0 (FREE WL) ROOT: ${wlRoot}
-PHASE 1 (GTD PAID) ROOT: ${gtdRoot}
+PHASE 0 (FREE WL) ROOT  : ${wlRoot}
+PHASE 1 (GTD PAID) ROOT : ${gtdRoot}
+PHASE 2 (PUBLIC FCFS)  : OPEN ACCESS (TOTAL SUPPLY 10K)
 ------------------------------------------
 `;
     fs.writeFileSync(certPath, certContent);
@@ -148,6 +154,6 @@ PHASE 1 (GTD PAID) ROOT: ${gtdRoot}
 }
 
 generateSnapshot().catch(err => {
-    console.error("🔥 FATAL ERROR:", err);
+    console.error(" FATAL ERROR:", err);
     process.exit(1);
 });

@@ -20,7 +20,9 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
     // Upgraded Limits
     uint256 public constant LIMIT_WL_FREE    = 1;
     uint256 public constant LIMIT_GENERAL    = 2;
+    uint256 public constant MAX_FREE_WL      = 700; // Hard cap for Phase 0
     
+    uint256 public freeMinted; // Tracks manual/community free pool
     uint256 public teamReserve               = 100;
 
     // ── Rarity Hard Caps ──────────────────────────────────────
@@ -72,10 +74,12 @@ contract MechRangers is ERC721, Ownable, ERC2981, Pausable {
 
         // ── PHASE LOGIC ──
         if (currentStep == MintStep.WL) {
-            // WL Phase (1 Unit Max)
+            // WL Phase (1 Unit Max - Hard Capped at 700 total)
             require(walletMinted[msg.sender] + quantity <= LIMIT_WL_FREE, "WL Limit: 1 Unit");
+            require(freeMinted + quantity <= MAX_FREE_WL, "Free WL Pool Exhausted");
             bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
             require(MerkleProof.verify(merkleProof, wlRoot, leaf), "Not on Free WL");
+            freeMinted += quantity;
         } 
         else if (currentStep == MintStep.GTD) {
             // GTD Phase (2 Units Max)
