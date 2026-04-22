@@ -21,8 +21,8 @@ const RECRUIT_CONFIG = {
   rustColor: "#5d2a18",
   tasks: {
     twitter: {
-      like: "https://x.com/intent/like?tweet_id=2046242813143134478",
-      repost: "https://x.com/intent/retweet?tweet_id=2046242813143134478",
+      like: "https://x.com/intent/like?tweet_id=2046852101301510230",
+      repost: "https://x.com/intent/retweet?tweet_id=2046852101301510230",
       quote: "https://x.com/intent/tweet?text=I%20just%20joined%20the%20Resistance%20at%20@MechRangersNFT%20for%20their%20upcoming%20NFT%20Whitelist...%0Alink%20:%20&url=https://mechrangers.xyz"
     },
     discord: "COMING SOON" 

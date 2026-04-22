@@ -1,19 +1,13 @@
-/* ════════════
-   rng.js — Seeded RNG · Weighted Picker
-   Upgraded: MurmurHash-style Pre-Mix for Seed Independence
-   Pure utility — no DOM, no state, no side effects.
-   ════════════ */
+/* ═══════════════════════════════════════════════════════
+   rng.js — Cinematic Single-Ranger Generator
+   Purpose: Seeded RNG for high-fidelity 1-of-1 assets.
+   Logic: Standardized for Ethereum Mainnet 10k Collection.
+   ═══════════════════════════════════════════════════════ */
 
 /**
  * Returns a seeded pseudo-random number generator (xorshift32).
- * Always produces the same sequence for the same seed.
- * @param {number} seed
- * @returns {() => number}  function returning [0, 1)
  */
 function rng32(seed) {
-  // ─── UPGRADE: SEED SCRAMBLER ───
-  // Prevents "Seed Clustering" where sequential seeds produce 
-  // similar initial results. Uses a high-prime mixer.
   let s = (seed >>> 0) || 0xDEADBEEF;
   s = ((s ^ (s >>> 16)) * 0x45d9f3b) >>> 0;
   s = ((s ^ (s >>> 16)) * 0x45d9f3b) >>> 0;
@@ -28,20 +22,12 @@ function rng32(seed) {
 }
 
 /**
- * Picks one item from an array of options using weighted probability.
- * Each option must have a numeric `.weight` property.
- * @param {Array}    opts  - array of option objects
- * @param {Function} rng   - RNG function returning [0, 1)
- * @returns {Object}  selected option
+ * Picks one item from an array using weighted probability.
  */
 function weightedPick(opts, rng) {
-  // ─── UPGRADE: SAFETY CHECK ───
-  // Ensures the app doesn't go "blank" if data is missing.
-  if (!opts || opts.length === 0) return { name: "default", weight: 1, label: "Standard", color: "#888" };
-
+  if (!opts || opts.length === 0) return { val: "standard", weight: 1, label: "Standard" };
   const total = opts.reduce((acc, o) => acc + (o.weight || 0), 0);
   if (total <= 0) return opts[0];
-  
   let r = rng() * total;
   for (const o of opts) {
     r -= o.weight;
@@ -51,11 +37,7 @@ function weightedPick(opts, rng) {
 }
 
 /**
- * Upgraded Utility: Fisher-Yates Shuffle
- * Useful for secondary decorative elements in the renderer.
- * @param {Array} arr 
- * @param {Function} rng 
- * @returns {Array}
+ * Fisher-Yates Shuffle.
  */
 function shuffle(arr, rng) {
   const out = [...arr];
@@ -66,18 +48,10 @@ function shuffle(arr, rng) {
   return out;
 }
 
-/**
- * ─── UPGRADE: SEEDED RANGE ───
- * Returns a random integer between min and max (inclusive).
- */
 function randInt(min, max, rng) {
   return Math.floor(rng() * (max - min + 1)) + min;
 }
 
-/**
- * ─── UPGRADE: DNA TO SEED ───
- * Converts string-based identifiers (Wallet, Hash) into a numeric seed.
- */
 function dnaToSeed(dna) {
   if (typeof dna !== 'string') dna = String(dna);
   return dna.split('').reduce((a, b) => {
@@ -87,30 +61,29 @@ function dnaToSeed(dna) {
 }
 
 /**
- * ─── UPGRADE: MECH ASSEMBLY (ETH Mainnet Optimized) ───
- * Generates a complete Mech attribute set from a single DNA source.
+ * CORE ASSEMBLY: Single Ranger Generation
+ * Every DNA produces exactly one unique cinematic Ranger.
  */
 function generateMechData(dna, config) {
   const seed = dnaToSeed(dna);
   const roll = rng32(seed);
   
-  // 1. Resolve Global Rarity
+  // 1. Determine Rarity Tier
   const tier = weightedPick(config.tiers, roll);
   
-  // 2. Filter Traits by Tier (Upgrade: Tier-Locked Generation)
-  // Ensures Mythic mechs get Mythic-tier parts.
+  // 2. Filter available traits by Tier (Force cinematic alignment)
   const filterByTier = (opts, targetTier) => {
     const filtered = opts.filter(o => o.tier === targetTier);
-    return filtered.length > 0 ? filtered : opts; // Fallback to all if specific tier has no parts
+    return filtered.length > 0 ? filtered : opts;
   };
 
   const traits = {
-    suit: weightedPick(filterByTier(config.suits, tier.name), roll),
+    suit:       weightedPick(filterByTier(config.suits, tier.name), roll),
     background: weightedPick(filterByTier(config.backgrounds, tier.name), roll),
-    aura: weightedPick(filterByTier(config.auras, tier.name), roll),
-    weapon: weightedPick(filterByTier(config.weapons, tier.name), roll),
-    badge: weightedPick(filterByTier(config.badges, tier.name), roll),
-    helmet: weightedPick(filterByTier(config.helmets, tier.name), roll)
+    aura:       weightedPick(filterByTier(config.auras, tier.name), roll),
+    weapon:     weightedPick(filterByTier(config.weapons, tier.name), roll),
+    badge:      weightedPick(filterByTier(config.badges, tier.name), roll),
+    helmet:     weightedPick(filterByTier(config.helmets, tier.name), roll)
   };
 
   return {
@@ -129,7 +102,4 @@ function generateMechData(dna, config) {
   };
 }
 
-/* ── NODE/BROWSER ALIGNMENT EXPORT ── */
-if (typeof module !== 'undefined') {
-    module.exports = { rng32, weightedPick, shuffle, randInt, dnaToSeed, generateMechData };
-}
+export { rng32, weightedPick, shuffle, randInt, dnaToSeed, generateMechData };
